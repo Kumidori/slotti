@@ -11,10 +11,11 @@ const Enemy = forwardRef(function Enemy({ enemy, spriteAnim, hpShaking, hpBarRef
   if (!enemy) return null;
 
   const isEnraged = enemy.enrageAt && enemy.hp <= enemy.maxHp * enemy.enrageAt && enemy.hp > 0;
+  const isPoisonous = !!enemy.poisonOnHit;
   const spriteImage = SPRITE_IMAGES[enemy.sprite];
 
   return (
-    <div className={`enemy-section ${isEnraged ? 'enraged' : ''}`} ref={ref}>
+    <div className={`enemy-section ${isEnraged ? 'enraged' : ''} ${isPoisonous ? 'poisonous' : ''}`} ref={ref}>
       <div className="enemy-name">{enemy.name}</div>
       <div ref={spriteRef} className={`enemy-sprite ${spriteAnim || ''}`}>
         {spriteImage
