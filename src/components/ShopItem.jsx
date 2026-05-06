@@ -2,8 +2,9 @@ import { ensureAudio, sfx } from '../audio';
 import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/Shop.css';
 
-export default function ShopItem({ item, locked, sold, selected, gold, onSelect, onToggleLock }) {
+export default function ShopItem({ item, locked, sold, selected, gold, discount = 1, onSelect, onToggleLock }) {
   const { t } = useTranslation();
+  const finalCost = Math.ceil(item.cost * discount);
   const handleTap = () => {
     if (sold) return;
     onSelect(item);
@@ -17,7 +18,7 @@ export default function ShopItem({ item, locked, sold, selected, gold, onSelect,
     onToggleLock(item);
   };
 
-  const cantAfford = gold < item.cost;
+  const cantAfford = gold < finalCost;
   const prefix = item.type === 'relic' ? 'relic' : 'item';
   const rarity = item.rarity || 'common';
 
@@ -34,7 +35,10 @@ export default function ShopItem({ item, locked, sold, selected, gold, onSelect,
         </div>
         <div className="item-desc">{t(`${prefix}.${item.id}.desc`)}</div>
       </div>
-      <div className="item-cost">💰 {item.cost}</div>
+      <div className="item-cost">
+        {discount < 1 && <span className="item-cost-old">{item.cost}</span>}
+        💰 {finalCost}
+      </div>
       <button
         className={`lock-btn ${locked ? 'locked' : ''}`}
         onClick={handleLock}

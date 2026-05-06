@@ -109,11 +109,22 @@ export const SHOP_ITEMS = [
   { id: 'luckyCharm', type: 'stat',  icon: '🍀', cost: 15, rarity: 'common' },
 
   // Relics (permanent rule modifiers)
+  // Common
   { id: 'magnet',        type: 'relic', icon: '🧲', cost: 30, rarity: 'common' },
+  { id: 'sturdyBoots',   type: 'relic', icon: '🥾', cost: 25, rarity: 'common' },
+  { id: 'tonicVial',     type: 'relic', icon: '💊', cost: 25, rarity: 'common' },
+  { id: 'pennyPincher',  type: 'relic', icon: '🪙', cost: 30, rarity: 'common' },
+  // Rare
   { id: 'ironWill',      type: 'relic', icon: '🛡️', cost: 35, rarity: 'rare' },
   { id: 'vampiricCharm', type: 'relic', icon: '🧛', cost: 45, rarity: 'rare' },
+  { id: 'spikeShield',   type: 'relic', icon: '🌵', cost: 40, rarity: 'rare' },
+  { id: 'quickHands',    type: 'relic', icon: '✋', cost: 45, rarity: 'rare' },
+  { id: 'bargainHunter', type: 'relic', icon: '🏷️', cost: 50, rarity: 'rare' },
+  // Epic
   { id: 'glassCannon',   type: 'relic', icon: '💎', cost: 60, rarity: 'epic' },
   { id: 'cursedCoin',    type: 'relic', icon: '☠️', cost: 55, rarity: 'epic' },
+  { id: 'phoenixFeather',type: 'relic', icon: '🪶', cost: 70, rarity: 'epic' },
+  { id: 'twinFang',      type: 'relic', icon: '🐍', cost: 65, rarity: 'epic' },
 ];
 
 export const RELIC_IDS = SHOP_ITEMS.filter(i => i.type === 'relic').map(i => i.id);
@@ -186,6 +197,6 @@ export function spawnBoss(floor) {
   return boss;
 }
 
-export function calcInterest(gold) {
-  return Math.min(5, Math.floor(gold / 10));
+export function calcInterest(gold, cap = 5) {
+  return Math.min(cap, Math.floor(gold / 10));
 }

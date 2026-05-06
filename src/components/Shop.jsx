@@ -69,10 +69,12 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
     ));
   };
 
-  const nextInterest = calcInterest(state.gold);
-  const canAfford = selectedName
-    ? state.gold >= (entries.find(e => e.item.id === selectedName)?.item.cost ?? Infinity)
-    : true;
+  const discount = state.relics?.includes('bargainHunter') ? 0.8 : 1;
+  const interestCap = state.relics?.includes('pennyPincher') ? 10 : 5;
+  const nextInterest = calcInterest(state.gold, interestCap);
+  const selectedItem = entries.find(e => e.item.id === selectedName)?.item;
+  const selectedCost = selectedItem ? Math.ceil(selectedItem.cost * discount) : Infinity;
+  const canAfford = selectedName ? state.gold >= selectedCost : true;
 
   return (
     <div className="shop-overlay">
@@ -93,6 +95,7 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
             sold={entry.sold}
             selected={entry.item.id === selectedName}
             gold={state.gold}
+            discount={discount}
             onSelect={handleSelect}
             onToggleLock={handleToggleLock}
           />

@@ -195,6 +195,12 @@ export default function Game() {
       sfx.buy();
     }
 
+    if (state.justRevived) {
+      addFloat(playerHpRef, `🪶 REVIVED!`, 'heal');
+      triggerFlash('gold');
+      sfx.heal();
+    }
+
     if (state.justEnraged) {
       setTimeout(() => {
         setComboAnim({
@@ -248,6 +254,12 @@ export default function Game() {
         key: Date.now(),
       });
       enemyAttack();
+      if (incoming > 0 && state.relics?.includes('spikeShield')) {
+        setTimeout(() => {
+          addFloat(enemySpriteRef, '🌵-3', 'damage');
+          triggerBarShake('enemy');
+        }, 200);
+      }
     };
 
     if (isFrenzy) {

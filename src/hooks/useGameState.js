@@ -27,11 +27,33 @@ function spawnForRoom(floor, room) {
   return spawnEnemy(floor, room);
 }
 
+// Apply per-fight relic effects when entering combat (block, heal, locks).
+function applyFightStartRelics(state) {
+  let block = 0;
+  let playerHp = state.playerHp;
+  if (hasRelic(state, 'sturdyBoots')) block = 5;
+  if (hasRelic(state, 'tonicVial')) {
+    playerHp = Math.min(state.playerMaxHp, playerHp + 5);
+  }
+  return { block, playerHp };
+}
+
+// Phoenix Feather: revive at 25% HP if you would die. Once per fight.
+function tryRevive(s) {
+  if (s.playerHp <= 0 && hasRelic(s, 'phoenixFeather') && !s.phoenixUsed) {
+    s.playerHp = Math.max(1, Math.ceil(s.playerMaxHp * 0.25));
+    s.phoenixUsed = true;
+    s.justRevived = true;
+  }
+  return s;
+}
+
 function advanceToNextRoom(state) {
   const nextRoom = state.room + 1;
   const type = roomType(state, nextRoom);
   if (type === 'shop') {
-    const interest = calcInterest(state.gold);
+    const cap = hasRelic(state, 'pennyPincher') ? 10 : 5;
+    const interest = calcInterest(state.gold, cap);
     return {
       ...state,
       room: nextRoom,
@@ -50,18 +72,21 @@ function advanceToNextRoom(state) {
     };
   }
   const enemy = spawnForRoom(state.floor, nextRoom);
+  const fightStart = applyFightStartRelics(state);
   return {
     ...state,
     room: nextRoom,
     enemy,
     spinsLeft: state.maxSpins,
-    block: 0,
+    block: fightStart.block,
+    playerHp: fightStart.playerHp,
     phase: 'combat',
     comboText: '',
     comboType: null,
     reelResults: null,
     locksLeft: state.maxLocks,
     poisonStacks: [],
+    phoenixUsed: false,
   };
 }
 
@@ -242,12 +267,19 @@ function reducer(state, action) {
       s.poisonDmg = poisonDmg;
 
       if (s.playerHp <= 0) {
-        s.playerHp = 0;
-        s.phase = 'gameOver';
+        tryRevive(s);
+        if (s.playerHp <= 0) {
+          s.playerHp = 0;
+          s.phase = 'gameOver';
+        }
       }
 
       if (dmg > 0 && hasRelic(s, 'glassCannon') && comboType === 'triple') {
         dmg = Math.round(dmg * 2);
+      }
+      // Twin Fang: sword combos hit 50% harder
+      if (dmg > 0 && hasRelic(s, 'twinFang') && combo.symbol === 'sword') {
+        dmg = Math.round(dmg * 1.5);
       }
       if (dmg > 0 && s.enemy.enraged) {
         dmg = Math.round(dmg * 1.5);
@@ -312,9 +344,21 @@ function reducer(state, action) {
         ];
       }
 
+      // Spike Shield: retaliate when actually struck
+      if (incomingDmg > 0 && hasRelic(s, 'spikeShield')) {
+        const spikeDmg = 3;
+        s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - spikeDmg) };
+        s.spikeDmg = spikeDmg;
+      } else {
+        s.spikeDmg = 0;
+      }
+
       if (s.playerHp <= 0) {
-        s.playerHp = 0;
-        s.phase = 'gameOver';
+        tryRevive(s);
+        if (s.playerHp <= 0) {
+          s.playerHp = 0;
+          s.phase = 'gameOver';
+        }
       }
 
       return s;
@@ -359,13 +403,15 @@ function reducer(state, action) {
 
     case 'NEXT_FLOOR': {
       const nextFloor = state.floor + 1;
+      const fightStart = applyFightStartRelics(state);
       return {
         ...state,
         floor: nextFloor,
         room: 1,
         enemy: spawnForRoom(nextFloor, 1),
         spinsLeft: state.maxSpins,
-        block: 0,
+        block: fightStart.block,
+        playerHp: fightStart.playerHp,
         phase: 'combat',
         comboText: '',
         comboType: null,
@@ -373,6 +419,7 @@ function reducer(state, action) {
         locksLeft: state.maxLocks,
         floorRoomTypes: generateFloorRoomTypes(),
         poisonStacks: [],
+        phoenixUsed: false,
       };
     }
 
@@ -408,9 +455,16 @@ function reducer(state, action) {
 
     case 'BUY_ITEM': {
       const { item } = action;
-      let s = { ...state, gold: state.gold - item.cost };
+      const discount = hasRelic(state, 'bargainHunter') ? 0.8 : 1;
+      const cost = Math.ceil(item.cost * discount);
+      let s = { ...state, gold: state.gold - cost };
       if (item.type === 'relic') {
         s.relics = [...state.relics, item.id];
+        // Quick Hands: permanent +1 lock token
+        if (item.id === 'quickHands') {
+          s.maxLocks = state.maxLocks + 1;
+          s.locksLeft = state.locksLeft + 1;
+        }
       } else {
         s = applyItemEffect(s, item.id);
       }
@@ -423,18 +477,21 @@ function reducer(state, action) {
     case 'CLOSE_SHOP': {
       const nextRoom = state.room + 1;
       const enemy = spawnForRoom(state.floor, nextRoom);
+      const fightStart = applyFightStartRelics(state);
       return {
         ...state,
         room: nextRoom,
         enemy,
         spinsLeft: state.maxSpins,
-        block: 0,
+        block: fightStart.block,
+        playerHp: fightStart.playerHp,
         phase: 'combat',
         comboText: '',
         comboType: null,
         reelResults: null,
         shopItems: null,
         locksLeft: state.maxLocks,
+        phoenixUsed: false,
       };
     }
 
