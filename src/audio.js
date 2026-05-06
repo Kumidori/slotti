@@ -187,25 +187,59 @@ export const sfx = {
 
 const BPM = 96;
 const STEP = 60 / BPM / 2; // eighth notes
+const BAR_STEPS = 8;
 
-// A natural minor: A C E with passing notes — calm & wistful
-const CALM = {
-  bass:   [110, 110, 87,  87,  98,  98,  110, 110], // A2 A2 F2 F2 G2 G2 A2 A2
-  melody: [440, 523, 659, 523, 440, 587, 523, 440], // arpeggio
-  bassType: 'triangle',
-  melodyType: 'sine',
-  bassVol: 0.05,
-  melodyVol: 0.025,
-};
+// Chord = root frequency + 3 chord-tone frequencies the melody can draw from
+const CALM_CHORDS = [
+  { root: 110, notes: [220, 262, 330, 440] }, // Am: A C E A
+  { root: 87,  notes: [175, 220, 262, 349] }, // F:  F A C F
+  { root: 131, notes: [262, 330, 392, 523] }, // C:  C E G C
+  { root: 98,  notes: [196, 247, 294, 392] }, // G:  G B D G
+];
 
-// Tighter, harder pattern for bosses
-const BOSS = {
-  bass:   [110, 165, 110, 196, 110, 165, 110, 220],
-  melody: [220, 330, 277, 330, 220, 415, 330, 277],
-  bassType: 'square',
-  melodyType: 'triangle',
-  bassVol: 0.06,
-  melodyVol: 0.035,
+const BOSS_CHORDS = [
+  { root: 73,  notes: [147, 175, 220, 294] }, // Dm: D F A D
+  { root: 117, notes: [233, 294, 349, 466] }, // Bb: Bb D F Bb
+  { root: 87,  notes: [175, 220, 262, 349] }, // F:  F A C F
+  { root: 110, notes: [220, 262, 330, 440] }, // Am: A C E A
+];
+
+// Note indices into chord.notes; null = rest
+const CALM_PATTERNS = [
+  [0, null, 1, null, 2, null, 1, null],     // sparse up
+  [3, 2, 1, 2, 0, 2, 1, 2],                  // wandering
+  [null, 1, 2, 1, null, 2, 3, 2],            // offbeat
+  [0, 2, 1, 3, 2, 1, 0, null],               // descent
+];
+
+const BOSS_PATTERNS = [
+  [0, 2, 0, 2, 0, 2, 1, 2],                  // driving
+  [3, null, 2, 1, 0, null, 1, 2],            // chunky
+  [0, 1, 2, 3, 2, 1, 0, 1],                  // walk
+  [2, 2, null, 0, 2, 2, null, 3],            // syncopation
+];
+
+const PROFILES = {
+  calm: {
+    chords: CALM_CHORDS,
+    patterns: CALM_PATTERNS,
+    bassType: 'triangle',
+    melodyType: 'sine',
+    bassVol: 0.05,
+    melodyVol: 0.024,
+    drumVol: 0.05,
+    drumDensity: 0.5,  // probability of a hat
+  },
+  boss: {
+    chords: BOSS_CHORDS,
+    patterns: BOSS_PATTERNS,
+    bassType: 'square',
+    melodyType: 'triangle',
+    bassVol: 0.06,
+    melodyVol: 0.034,
+    drumVol: 0.07,
+    drumDensity: 0.85,
+  },
 };
 
 const musicState = {
@@ -244,16 +278,77 @@ function scheduleNote(time, freq, duration, type, volume) {
   osc.stop(time + duration + 0.05);
 }
 
+function scheduleKick(time, volume) {
+  const ctx = getCtx();
+  const dest = getMasterGain();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(120, time);
+  osc.frequency.exponentialRampToValueAtTime(40, time + 0.12);
+  gain.gain.setValueAtTime(volume, time);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.15);
+  osc.connect(gain);
+  gain.connect(dest);
+  osc.start(time);
+  osc.stop(time + 0.16);
+}
+
+function scheduleHat(time, volume) {
+  const ctx = getCtx();
+  const dest = getMasterGain();
+  const bufferSize = Math.floor(ctx.sampleRate * 0.04);
+  const buf = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.6;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = 7000;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(volume, time);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.04);
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(dest);
+  src.start(time);
+}
+
 function tick() {
   const ctx = getCtx();
   const lookahead = 0.15;
-  const pattern = musicState.intensity === 'boss' ? BOSS : CALM;
+  const profile = PROFILES[musicState.intensity] || PROFILES.calm;
   while (musicState.nextNote < ctx.currentTime + lookahead) {
-    const idx = musicState.step % pattern.bass.length;
-    scheduleNote(musicState.nextNote, pattern.bass[idx], STEP * 0.9, pattern.bassType, pattern.bassVol);
-    if (musicState.step % 2 === 0) {
-      scheduleNote(musicState.nextNote, pattern.melody[idx], STEP * 0.55, pattern.melodyType, pattern.melodyVol);
+    const step = musicState.step;
+    const stepInBar = step % BAR_STEPS;
+    const bar = Math.floor(step / BAR_STEPS) % profile.chords.length;
+    const chord = profile.chords[bar];
+    const pattern = profile.patterns[bar % profile.patterns.length];
+    const time = musicState.nextNote;
+
+    // Bass: root on every beat (every other eighth) — root on downbeats, octave up on offbeats
+    if (stepInBar % 2 === 0) {
+      const useOctave = stepInBar !== 0 && Math.random() < 0.25;
+      const f = useOctave ? chord.root * 2 : chord.root;
+      scheduleNote(time, f, STEP * 1.7, profile.bassType, profile.bassVol);
     }
+
+    // Melody from current pattern, picking from chord tones
+    const noteIdx = pattern[stepInBar];
+    if (noteIdx !== null && noteIdx !== undefined) {
+      const f = chord.notes[noteIdx % chord.notes.length];
+      scheduleNote(time, f, STEP * 0.55, profile.melodyType, profile.melodyVol);
+    }
+
+    // Light percussion: kick on beat 1 and 3, hi-hat on offbeats
+    if (stepInBar === 0 || stepInBar === 4) {
+      scheduleKick(time, profile.drumVol);
+    }
+    if (stepInBar % 2 === 1 && Math.random() < profile.drumDensity) {
+      scheduleHat(time, profile.drumVol * 0.5);
+    }
+
     musicState.nextNote += STEP;
     musicState.step++;
   }
