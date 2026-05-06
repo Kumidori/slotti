@@ -1,10 +1,10 @@
 import { useReducer, useCallback } from 'react';
 import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, BOSSES } from '../gameData';
 
-// Rooms: 1=fight, 2=fight, 3=shop, 4=fight, 5=boss
-function isShopRoom(room) { return room === 3; }
+// Rooms: 1=fight, 2=shop, 3=fight, 4=shop, 5=boss
+function isShopRoom(room) { return room === 2 || room === 4; }
 function isBossRoom(room) { return room === 5; }
-function isFightRoom(room) { return room === 1 || room === 2 || room === 4 || room === 5; }
+function isFightRoom(room) { return room === 1 || room === 3 || room === 5; }
 
 function spawnForRoom(floor, room) {
   if (isBossRoom(room)) return spawnBoss(floor);

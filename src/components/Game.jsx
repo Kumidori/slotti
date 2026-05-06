@@ -243,7 +243,7 @@ export default function Game() {
             <span>Floor {state.floor}</span>
             <div className="floor-progress">
               {[1, 2, 3, 4, 5].map(r => {
-                const isShop = r === 3;
+                const isShop = r === 2 || r === 4;
                 const isBoss = r === 5;
                 const done = r < state.room;
                 const current = r === state.room;
