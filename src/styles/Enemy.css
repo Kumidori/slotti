@@ -28,9 +28,31 @@
   animation: enemyAttack 0.5s;
 }
 
+.enemy-img {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.enemy-section.enraged .enemy-img {
+  box-shadow: 0 0 20px rgba(231, 76, 60, 0.6), 0 0 40px rgba(231, 76, 60, 0.3);
+  animation: enragePulse 0.8s ease-in-out infinite;
+}
+
+.enemy-section.enraged .enemy-name {
+  color: #e74c3c;
+  text-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+}
+
+@keyframes enragePulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(231, 76, 60, 0.6), 0 0 40px rgba(231, 76, 60, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(231, 76, 60, 0.8), 0 0 60px rgba(231, 76, 60, 0.4); }
+}
+
 .enemy-section .hp-bar-container {
-  width: 70vw;
-  max-width: 260px;
+  width: 80%;
+  max-width: 300px;
 }
 
 @keyframes enemyShake {

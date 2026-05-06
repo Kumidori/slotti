@@ -16,6 +16,10 @@ export const ENEMIES = [
   { name: 'Demon Lord',   sprite: '😈', hp: 80,  atk: 12, gold: 35 },
 ];
 
+export const BOSSES = [
+  { name: 'Lili', sprite: 'lili', hp: 80, atk: 6, gold: 30, enrageAt: 0.3, enrageAtk: 12 },
+];
+
 export const SHOP_ITEMS = [
   { name: 'Extra Spin',    icon: '🎰', desc: '+1 spin per fight',    cost: 15, effectKey: 'extraSpin' },
   { name: 'Heal Potion',   icon: '❤️', desc: 'Restore 20 HP',        cost: 10, effectKey: 'healPotion' },
@@ -58,10 +62,10 @@ export function getWeightedSymbol(luckBonus) {
   return adjusted[adjusted.length - 1];
 }
 
-export function spawnEnemy(floor) {
-  const pool = ENEMIES.filter((_, i) => i <= Math.min(floor - 1, ENEMIES.length - 1));
+export function spawnEnemy(floor, room) {
+  const pool = ENEMIES.filter((_, i) => i <= Math.min(floor + 1, ENEMIES.length - 1));
   const template = pool[Math.floor(Math.random() * pool.length)];
-  const scale = 1 + (floor - 1) * 0.15;
+  const scale = 1 + (floor - 1) * 0.2 + (room - 1) * 0.05;
   return {
     name: template.name,
     sprite: template.sprite,
@@ -70,6 +74,25 @@ export function spawnEnemy(floor) {
     atk: Math.round(template.atk * scale),
     gold: Math.round(template.gold * scale),
   };
+}
+
+export function spawnBoss(floor) {
+  const template = BOSSES[Math.min(floor - 1, BOSSES.length - 1)];
+  const scale = 1 + (floor - 1) * 0.3;
+  const boss = {
+    name: template.name,
+    sprite: template.sprite,
+    hp: Math.round(template.hp * scale),
+    maxHp: Math.round(template.hp * scale),
+    atk: Math.round(template.atk * scale),
+    gold: Math.round(template.gold * scale),
+    isBoss: true,
+  };
+  if (template.enrageAt) {
+    boss.enrageAt = template.enrageAt;
+    boss.enrageAtk = Math.round(template.enrageAtk * scale);
+  }
+  return boss;
 }
 
 export function calcInterest(gold) {

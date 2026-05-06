@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import ShopItem from './ShopItem';
 import { SHOP_ITEMS, calcInterest } from '../gameData';
-import { sfx } from '../audio';
+import { sfx, ensureAudio } from '../audio';
 import '../styles/Shop.css';
 
 export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
   const [entries, setEntries] = useState([]);
+  const [selectedName, setSelectedName] = useState(null);
 
   useEffect(() => {
     sfx.shopOpen();
@@ -23,11 +24,41 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
     })));
   }, []);
 
-  const handleBuy = (item) => {
+  const handleSelect = (item) => {
+    ensureAudio();
+    if (selectedName === item.name) {
+      setSelectedName(null);
+      sfx.buttonClick();
+    } else {
+      setSelectedName(item.name);
+      sfx.buttonClick();
+    }
+  };
+
+  const handleChoose = () => {
+    if (!selectedName) {
+      const newLocked = entries.filter(e => e.locked && !e.sold).map(e => e.item);
+      onSetLockedItems(newLocked);
+      sfx.buttonClick();
+      onClose();
+      return;
+    }
+
+    const entry = entries.find(e => e.item.name === selectedName);
+    if (!entry || entry.sold) return;
+
+    ensureAudio();
+    if (state.gold < entry.item.cost) {
+      sfx.cantBuy();
+      return;
+    }
+
+    sfx.buy();
     setEntries(prev => prev.map(e =>
-      e.item.name === item.name ? { ...e, sold: true, locked: false } : e
+      e.item.name === selectedName ? { ...e, sold: true, locked: false } : e
     ));
-    onBuy(item);
+    onBuy(entry.item);
+    setSelectedName(null);
   };
 
   const handleToggleLock = (item) => {
@@ -36,14 +67,10 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
     ));
   };
 
-  const handleClose = () => {
-    const newLocked = entries.filter(e => e.locked && !e.sold).map(e => e.item);
-    onSetLockedItems(newLocked);
-    sfx.buttonClick();
-    onClose();
-  };
-
   const nextInterest = calcInterest(state.gold);
+  const canAfford = selectedName
+    ? state.gold >= (entries.find(e => e.item.name === selectedName)?.item.cost ?? Infinity)
+    : true;
 
   return (
     <div className="shop-overlay">
@@ -62,14 +89,18 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
             item={entry.item}
             locked={entry.locked}
             sold={entry.sold}
+            selected={entry.item.name === selectedName}
             gold={state.gold}
-            onBuy={handleBuy}
+            onSelect={handleSelect}
             onToggleLock={handleToggleLock}
           />
         ))}
       </div>
-      <button className="shop-skip" onClick={handleClose}>
-        Skip →
+      <button
+        className={`shop-action-btn ${selectedName ? 'choose' : ''} ${selectedName && !canAfford ? 'cant-afford' : ''}`}
+        onClick={handleChoose}
+      >
+        {selectedName ? 'Choose' : 'Skip →'}
       </button>
     </div>
   );

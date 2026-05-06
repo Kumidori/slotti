@@ -1,9 +1,20 @@
 import { useReducer, useCallback } from 'react';
-import { spawnEnemy, getWeightedSymbol, applyItemEffect, calcInterest } from '../gameData';
+import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest } from '../gameData';
+
+// Rooms: 1=fight, 2=fight, 3=shop, 4=fight, 5=boss
+function isShopRoom(room) { return room === 3; }
+function isBossRoom(room) { return room === 5; }
+function isFightRoom(room) { return room === 1 || room === 2 || room === 4 || room === 5; }
+
+function spawnForRoom(floor, room) {
+  if (isBossRoom(room)) return spawnBoss(floor);
+  return spawnEnemy(floor, room);
+}
 
 const INITIAL_STATE = {
-  phase: 'combat', // 'combat' | 'victory' | 'shop' | 'gameOver'
+  phase: 'combat',
   floor: 1,
+  room: 1,
   playerHp: 50,
   playerMaxHp: 50,
   gold: 0,
@@ -26,15 +37,12 @@ const INITIAL_STATE = {
 function reducer(state, action) {
   switch (action.type) {
     case 'START_RUN': {
-      const enemy = spawnEnemy(1);
-      return {
-        ...INITIAL_STATE,
-        enemy,
-      };
+      const enemy = spawnForRoom(1, 1);
+      return { ...INITIAL_STATE, enemy };
     }
 
     case 'SET_SPINNING':
-      return { ...state, spinning: action.value, comboText: '', comboType: null, reelResults: null };
+      return { ...state, spinning: action.value, comboText: '', comboType: null, reelResults: null, justEnraged: false };
 
     case 'SET_REEL_RESULTS':
       return { ...state, reelResults: action.results };
@@ -98,8 +106,17 @@ function reducer(state, action) {
         comboType = 'weak';
       }
 
+      if (dmg > 0 && s.enemy.enraged) {
+        dmg = Math.round(dmg * 1.5);
+      }
       if (dmg > 0) {
+        const wasAboveThreshold = !s.enemy.enraged;
         s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - dmg) };
+        if (s.enemy.enrageAt && wasAboveThreshold &&
+            s.enemy.hp > 0 && s.enemy.hp <= s.enemy.maxHp * s.enemy.enrageAt) {
+          s.enemy = { ...s.enemy, atk: s.enemy.enrageAtk, enraged: true };
+          s.justEnraged = true;
+        }
       }
       if (heal > 0) {
         s.playerHp = Math.min(s.playerMaxHp, s.playerHp + heal);
@@ -130,6 +147,8 @@ function reducer(state, action) {
 
       s.playerHp -= incomingDmg;
       s.spinsLeft = s.maxSpins;
+      s.comboText = '';
+      s.comboType = null;
       s.lastEnemyDmg = incomingDmg;
       s.lastBlocked = blocked;
 
@@ -143,10 +162,11 @@ function reducer(state, action) {
 
     case 'ENEMY_DEFEATED': {
       const gold = state.enemy.gold;
+      const isBoss = state.enemy.isBoss;
       return {
         ...state,
         gold: state.gold + gold,
-        phase: 'victory',
+        phase: isBoss ? 'floorComplete' : 'victory',
         lastGoldEarned: gold,
       };
     }
@@ -154,22 +174,24 @@ function reducer(state, action) {
     case 'GAME_OVER':
       return { ...state, phase: 'gameOver' };
 
-    case 'NEXT_FLOOR': {
-      const newFloor = state.floor + 1;
-      if (newFloor % 2 === 0) {
+    case 'NEXT_ROOM': {
+      const nextRoom = state.room + 1;
+
+      if (isShopRoom(nextRoom)) {
         const interest = calcInterest(state.gold);
         return {
           ...state,
-          floor: newFloor,
+          room: nextRoom,
           gold: state.gold + interest,
           lastInterest: interest,
           phase: 'shop',
         };
       }
-      const enemy = spawnEnemy(newFloor);
+
+      const enemy = spawnForRoom(state.floor, nextRoom);
       return {
         ...state,
-        floor: newFloor,
+        room: nextRoom,
         enemy,
         spinsLeft: state.maxSpins,
         block: 0,
@@ -179,13 +201,6 @@ function reducer(state, action) {
         reelResults: null,
       };
     }
-
-    case 'OPEN_SHOP': {
-      return { ...state, phase: 'shop', shopItems: action.items };
-    }
-
-    case 'SET_SHOP_ITEMS':
-      return { ...state, shopItems: action.items };
 
     case 'BUY_ITEM': {
       const { item } = action;
@@ -198,9 +213,11 @@ function reducer(state, action) {
       return { ...state, lockedItems: action.items };
 
     case 'CLOSE_SHOP': {
-      const enemy = spawnEnemy(state.floor);
+      const nextRoom = state.room + 1;
+      const enemy = spawnForRoom(state.floor, nextRoom);
       return {
         ...state,
+        room: nextRoom,
         enemy,
         spinsLeft: state.maxSpins,
         block: 0,
@@ -219,7 +236,7 @@ function reducer(state, action) {
 
 export default function useGameState() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE, (init) => {
-    return { ...init, enemy: spawnEnemy(1) };
+    return { ...init, enemy: spawnForRoom(1, 1) };
   });
 
   const startRun = useCallback(() => dispatch({ type: 'START_RUN' }), []);
@@ -227,7 +244,7 @@ export default function useGameState() {
   const enemyAttack = useCallback(() => dispatch({ type: 'ENEMY_ATTACK' }), []);
   const enemyDefeated = useCallback(() => dispatch({ type: 'ENEMY_DEFEATED' }), []);
   const triggerGameOver = useCallback(() => dispatch({ type: 'GAME_OVER' }), []);
-  const nextFloor = useCallback(() => dispatch({ type: 'NEXT_FLOOR' }), []);
+  const nextRoom = useCallback(() => dispatch({ type: 'NEXT_ROOM' }), []);
   const buyItem = useCallback((item) => dispatch({ type: 'BUY_ITEM', item }), []);
   const setLockedItems = useCallback((items) => dispatch({ type: 'SET_LOCKED_ITEMS', items }), []);
   const closeShop = useCallback(() => dispatch({ type: 'CLOSE_SHOP' }), []);
@@ -241,7 +258,7 @@ export default function useGameState() {
     enemyAttack,
     enemyDefeated,
     triggerGameOver,
-    nextFloor,
+    nextRoom,
     buyItem,
     setLockedItems,
     closeShop,

@@ -4,25 +4,17 @@ import { getWeightedSymbol } from '../gameData';
 import { ensureAudio, sfx } from '../audio';
 import '../styles/SlotMachine.css';
 
-const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, disabled }, ref) {
+const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinningChange, disabled }, ref) {
   const [displayIcons, setDisplayIcons] = useState(['⚔️', '🛡️', '⚔️']);
   const [spinningReels, setSpinningReels] = useState([false, false, false]);
   const [highlights, setHighlights] = useState([null, null, null]);
-  const [comboPop, setComboPop] = useState(false);
   const tickRef = useRef(null);
   const isSpinning = useRef(false);
-
-  useEffect(() => {
-    if (state.comboText) {
-      setComboPop(true);
-      const t = setTimeout(() => setComboPop(false), 500);
-      return () => clearTimeout(t);
-    }
-  }, [state.comboText, state.spinsLeft]);
 
   const spin = useCallback(() => {
     if (disabled || isSpinning.current || state.spinsLeft <= 0) return;
     isSpinning.current = true;
+    onSpinningChange?.(true);
     ensureAudio();
     sfx.spinStart();
 
@@ -57,6 +49,7 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, disabled
     setTimeout(() => {
       clearInterval(tickRef.current);
       isSpinning.current = false;
+      onSpinningChange?.(false);
 
       const ids = results.map(r => r.id);
       const counts = {};
@@ -95,9 +88,6 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, disabled
             highlight={highlights[i]}
           />
         ))}
-      </div>
-      <div className={`combo-text ${comboPop ? 'combo-pop' : ''}`}>
-        {state.comboText}
       </div>
     </div>
   );

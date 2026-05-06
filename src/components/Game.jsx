@@ -10,10 +10,22 @@ import { ensureAudio, sfx } from '../audio';
 import { calcInterest } from '../gameData';
 import '../styles/Game.css';
 
+function buildComboDetail(state) {
+  const parts = [];
+  if (state.dmg > 0) parts.push(`${state.dmg} damage`);
+  if (state.heal > 0) parts.push(`+${state.heal} HP`);
+  if (state.blockGained > 0) parts.push(`+${state.blockGained} 🛡️`);
+  if (state.comboType === 'skull' || state.comboType === 'skull-triple') {
+    const selfDmg = state.comboType === 'skull-triple' ? 15 : 5;
+    parts.push(`${selfDmg} self damage`);
+  }
+  return parts.join(' · ') || null;
+}
+
 export default function Game() {
   const {
     state, startRun, resolveCombo, enemyAttack,
-    enemyDefeated, triggerGameOver, nextFloor,
+    enemyDefeated, triggerGameOver, nextRoom,
     buyItem, setLockedItems, closeShop, setSpinning,
   } = useGameState();
 
@@ -23,6 +35,7 @@ export default function Game() {
   const [enemyHpShake, setEnemyHpShake] = useState(false);
   const [playerHpShake, setPlayerHpShake] = useState(false);
   const [floats, setFloats] = useState([]);
+  const [comboAnim, setComboAnim] = useState(null);
   const floatId = useRef(0);
 
   const enemySpriteRef = useRef(null);
@@ -65,6 +78,17 @@ export default function Game() {
   }, [resolveCombo]);
 
   useEffect(() => {
+    if (state.comboText) {
+      const detail = buildComboDetail(state);
+      setComboAnim({ text: state.comboText, type: state.comboType, detail, key: Date.now() });
+    }
+  }, [state.comboText, state.spinsLeft]);
+
+  useEffect(() => {
+    if (state.spinning) setComboAnim(null);
+  }, [state.spinning]);
+
+  useEffect(() => {
     if (!state.comboType) return;
 
     const ct = state.comboType;
@@ -97,6 +121,19 @@ export default function Game() {
     if (state.blockGained > 0) {
       addFloat(playerHpRef, `🛡️+${state.blockGained}`, 'shield-block');
       if (ct !== 'double' && ct !== 'triple') sfx.shield();
+    }
+
+    if (state.justEnraged) {
+      setTimeout(() => {
+        setComboAnim({
+          text: 'Lili got her period!',
+          type: 'enrage',
+          detail: 'All outgoing and incoming damage increased!',
+          key: Date.now() + 1,
+        });
+        triggerShake();
+        triggerFlash('red');
+      }, 800);
     }
 
     if (state.enemy.hp <= 0) {
@@ -133,6 +170,17 @@ export default function Game() {
         addFloat(playerHpRef, `-${incoming}`, 'damage');
       }
 
+      const parts = [];
+      if (incoming > 0) parts.push(`${incoming} damage`);
+      if (blocked > 0) parts.push(`${blocked} blocked`);
+      if (incoming === 0 && blocked > 0) parts.unshift('fully blocked!');
+      setComboAnim({
+        text: `${state.enemy.name} attacks!`,
+        type: 'enemy-attack',
+        detail: parts.join(' · ') || null,
+        key: Date.now(),
+      });
+
       enemyAttack();
     }, 350);
   }, [state.enemy, state.block, enemyAttack, triggerShake, triggerFlash, triggerBarShake, addFloat]);
@@ -141,10 +189,10 @@ export default function Game() {
     buyItem(item);
   }, [buyItem]);
 
-  const handleNextFloor = useCallback(() => {
+  const handleNextRoom = useCallback(() => {
     sfx.buttonClick();
-    nextFloor();
-  }, [nextFloor]);
+    nextRoom();
+  }, [nextRoom]);
 
   const handleStartRun = useCallback(() => {
     ensureAudio();
@@ -154,7 +202,7 @@ export default function Game() {
 
   const slotRef = useRef(null);
   const interest = calcInterest(state.gold);
-  const spinDisabled = state.phase !== 'combat';
+  const spinDisabled = state.phase !== 'combat' || state.spinning;
   const handleSpin = useCallback(() => {
     slotRef.current?.spin();
   }, []);
@@ -163,7 +211,27 @@ export default function Game() {
     <>
       <div className={`screen-flash ${screenFlash ? `flash-${screenFlash}` : ''}`} />
       <div className={`game ${screenShake ? 'screen-shake' : ''}`}>
-        <div className="floor-info">Floor {state.floor}</div>
+
+        <div className="top-bar">
+          <div className="gold-badge">💰 {state.gold}</div>
+          <div className="floor-badge">
+            <span>Floor {state.floor}</span>
+            <div className="floor-progress">
+              {[1, 2, 3, 4, 5].map(r => {
+                const isShop = r === 3;
+                const isBoss = r === 5;
+                const done = r < state.room;
+                const current = r === state.room;
+                return (
+                  <span
+                    key={r}
+                    className={`floor-dot${isShop ? ' shop' : ''}${isBoss ? ' boss' : ''}${done ? ' done' : ''}${current ? ' current' : ''}`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </div>
 
         <Enemy
           enemy={state.enemy}
@@ -173,33 +241,64 @@ export default function Game() {
           spriteRef={enemySpriteRef}
         />
 
+        <div className={`enemy-intent${state.enemy?.enraged ? ' enraged' : ''}`}>
+          {state.enemy
+            ? state.enemy.enraged
+              ? 'Lili got her period, all outgoing and incoming damage increased!'
+              : `${state.enemy.isBoss ? '👹 BOSS — ' : ''}${state.enemy.name} prepares to strike!`
+            : ''}
+        </div>
+
+        <div className="mid-zone">
+          {comboAnim && (
+            <div className={`combo-float combo-${comboAnim.type}`} key={comboAnim.key}>
+              <span className="combo-float-text">{comboAnim.text}</span>
+              {comboAnim.detail && (
+                <span className="combo-float-detail">{comboAnim.detail}</span>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="slot-machine-zone">
           <SlotMachine
             ref={slotRef}
             state={state}
             onResolve={handleResolve}
+            onSpinningChange={setSpinning}
             disabled={spinDisabled}
           />
         </div>
 
         <div className="bottom-zone">
-          <div className="player-stats">
-            <div className="gold-section">
-              <div className="gold-display">💰 {state.gold}</div>
-              <div className="interest-preview">
-                {interest > 0 ? `+${interest} at shop` : ''}
+          <div className="bottom-panel">
+            <div className="player-hp-section">
+              <span className="player-hp-label">Your HP</span>
+              <div className="player-hp-row">
+                <span className="heart-icon">❤️</span>
+                <HpBar
+                  ref={playerHpRef}
+                  current={state.playerHp}
+                  max={state.playerMaxHp}
+                  type="player"
+                  shaking={playerHpShake}
+                  block={state.block}
+                />
               </div>
             </div>
-            <HpBar
-              ref={playerHpRef}
-              current={state.playerHp}
-              max={state.playerMaxHp}
-              type="player"
-              shaking={playerHpShake}
-              block={state.block}
-            />
+
+            <div className="stats-row">
+              <div className="stat-item">
+                <span className="stat-icon">🔄</span>
+                <span className="stat-value">{state.spinsLeft} spins</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-icon">🛡️</span>
+                <span className="stat-value">{state.block}</span>
+              </div>
+            </div>
           </div>
-          <div className="spins-left">{state.spinsLeft} spins left</div>
+
           <button
             className="spin-btn"
             onClick={handleSpin}
@@ -214,14 +313,23 @@ export default function Game() {
         <Overlay>
           <h2>⚔️ Enemy Defeated!</h2>
           <p>+{state.lastGoldEarned} gold</p>
-          <button onClick={handleNextFloor}>Continue</button>
+          <button onClick={handleNextRoom}>Continue</button>
+        </Overlay>
+      )}
+
+      {state.phase === 'floorComplete' && (
+        <Overlay>
+          <h2>👑 Floor {state.floor} Complete!</h2>
+          <p>You defeated the boss!</p>
+          <p>+{state.lastGoldEarned} gold</p>
+          <button onClick={handleStartRun}>Play Again</button>
         </Overlay>
       )}
 
       {state.phase === 'gameOver' && (
         <Overlay>
           <h2>💀 Game Over</h2>
-          <p>Reached Floor {state.floor}</p>
+          <p>Floor {state.floor} — Room {state.room}</p>
           <p>Gold earned: {state.gold}</p>
           <button onClick={handleStartRun}>Try Again</button>
         </Overlay>

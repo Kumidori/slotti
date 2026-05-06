@@ -1,16 +1,10 @@
 import { ensureAudio, sfx } from '../audio';
 import '../styles/Shop.css';
 
-export default function ShopItem({ item, locked, sold, gold, onBuy, onToggleLock }) {
-  const handleBuy = () => {
+export default function ShopItem({ item, locked, sold, selected, gold, onSelect, onToggleLock }) {
+  const handleTap = () => {
     if (sold) return;
-    ensureAudio();
-    if (gold < item.cost) {
-      sfx.cantBuy();
-      return;
-    }
-    sfx.buy();
-    onBuy(item);
+    onSelect(item);
   };
 
   const handleLock = (e) => {
@@ -21,8 +15,13 @@ export default function ShopItem({ item, locked, sold, gold, onBuy, onToggleLock
     onToggleLock(item);
   };
 
+  const cantAfford = gold < item.cost;
+
   return (
-    <div className={`shop-item ${sold ? 'sold' : ''}`} onClick={handleBuy}>
+    <div
+      className={`shop-item ${sold ? 'sold' : ''} ${selected ? 'selected' : ''} ${cantAfford && !sold ? 'cant-afford' : ''}`}
+      onClick={handleTap}
+    >
       <div className="item-icon">{item.icon}</div>
       <div className="shop-item-info">
         <div className="item-name">{item.name}</div>
