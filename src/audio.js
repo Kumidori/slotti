@@ -133,3 +133,51 @@ export const sfx = {
     playTone(660, 0.15, 'triangle', 0.06, 0.16);
   },
 };
+
+
+// --- Text-to-speech for combo announcements ---
+
+let voicesCache = null;
+function refreshVoices() {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  voicesCache = window.speechSynthesis.getVoices();
+}
+if (typeof window !== "undefined" && window.speechSynthesis) {
+  refreshVoices();
+  window.speechSynthesis.addEventListener("voiceschanged", refreshVoices);
+}
+
+function pickVoice(lang) {
+  if (!voicesCache || voicesCache.length === 0) return null;
+  const prefix = lang === "de" ? "de" : lang === "bg" ? "bg" : "en";
+  return voicesCache.find(v => v.lang.toLowerCase().startsWith(prefix))
+      || voicesCache.find(v => v.default)
+      || voicesCache[0];
+}
+
+// Strip emojis and other pictographs so the TTS engine doesnt say
+// "skull and crossbones" out loud.
+function stripEmojis(text) {
+  return text
+    .replace(/[\u{1F300}-\u{1FAFF}]/gu, "")
+    .replace(/[\u{2600}-\u{27BF}]/gu, "")
+    .replace(/[\u{1F000}-\u{1F02F}]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function speak(text, lang = "en") {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  const clean = stripEmojis(text || "");
+  if (!clean) return;
+  const utterance = new SpeechSynthesisUtterance(clean);
+  const voice = pickVoice(lang);
+  if (voice) utterance.voice = voice;
+  utterance.lang = voice ? voice.lang : (lang === "de" ? "de-DE" : lang === "bg" ? "bg-BG" : "en-US");
+  utterance.rate = 1.05;
+  utterance.pitch = 1.0;
+  utterance.volume = 0.9;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
