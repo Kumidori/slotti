@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import ShopItem from './ShopItem';
 import { SHOP_ITEMS, calcInterest } from '../gameData';
 import { sfx, ensureAudio } from '../audio';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/Shop.css';
 
 export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {

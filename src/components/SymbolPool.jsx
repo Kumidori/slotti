@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SYMBOLS } from '../gameData';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/SymbolPool.css';
 
 export default function SymbolPool({ pool }) {

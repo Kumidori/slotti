@@ -11,7 +11,7 @@ import SymbolPool from './SymbolPool';
 import LangToggle from './LangToggle';
 import { ensureAudio, sfx } from '../audio';
 import { calcInterest } from '../gameData';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/Game.css';
 
 function comboKeyFromText(text) {

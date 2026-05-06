@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect, useImperativeHandle, forwardR
 import Reel from './Reel';
 import { pickFromPool, SYMBOLS } from '../gameData';
 import { ensureAudio, sfx } from '../audio';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/SlotMachine.css';
 
 const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinningChange, disabled }, ref) {

@@ -1,4 +1,4 @@
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/LangToggle.css';
 
 export default function LangToggle() {

@@ -1,5 +1,5 @@
 import { ensureAudio, sfx } from '../audio';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/Shop.css';
 
 export default function ShopItem({ item, locked, sold, selected, gold, onSelect, onToggleLock }) {

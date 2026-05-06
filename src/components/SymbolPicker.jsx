@@ -3,7 +3,7 @@ import Reel from './Reel';
 import { getSymbol } from '../gameData';
 import { rerollCost } from '../hooks/useGameState';
 import { sfx } from '../audio';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/SymbolPicker.css';
 
 const STOP_DELAYS = [600, 900, 1200];
