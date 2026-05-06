@@ -1,4 +1,5 @@
 import { useTranslation } from '../i18n/useTranslation.jsx';
+import { SUPPORTED_LANGS } from '../i18n/translations';
 import '../styles/LangToggle.css';
 
 function FlagGB() {
@@ -24,15 +25,29 @@ function FlagDE() {
   );
 }
 
+function FlagBG() {
+  return (
+    <svg viewBox="0 0 5 3" className="flag-svg" aria-hidden="true">
+      <rect width="5" height="3" fill="#fff" />
+      <rect width="5" height="2" y="1" fill="#00966E" />
+      <rect width="5" height="1" y="2" fill="#D62612" />
+    </svg>
+  );
+}
+
+const FLAGS = { en: FlagGB, de: FlagDE, bg: FlagBG };
+const TITLES = { en: 'Switch language', de: 'Sprache wechseln', bg: 'Смени езика' };
+
 export default function LangToggle() {
   const { lang, setLang } = useTranslation();
+  const Flag = FLAGS[lang] || FlagGB;
+  const cycle = () => {
+    const i = SUPPORTED_LANGS.indexOf(lang);
+    setLang(SUPPORTED_LANGS[(i + 1) % SUPPORTED_LANGS.length]);
+  };
   return (
-    <button
-      className="lang-toggle"
-      onClick={() => setLang(lang === 'en' ? 'de' : 'en')}
-      title={lang === 'en' ? 'Auf Deutsch wechseln' : 'Switch to English'}
-    >
-      {lang === 'de' ? <FlagDE /> : <FlagGB />}
+    <button className="lang-toggle" onClick={cycle} title={TITLES[lang]}>
+      <Flag />
     </button>
   );
 }

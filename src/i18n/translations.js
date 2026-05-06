@@ -1,4 +1,4 @@
-export const SUPPORTED_LANGS = ['en', 'de'];
+export const SUPPORTED_LANGS = ['en', 'de', 'bg'];
 export const DEFAULT_LANG = 'en';
 
 const en = {
@@ -183,7 +183,98 @@ const de = {
   'overlay.playAgain': 'Nochmal spielen',
 };
 
-export const TRANSLATIONS = { en, de };
+const bg = {
+  // Top bar
+  'ui.floor': 'Етаж {floor}',
+  'ui.spins': '{count} завъртания',
+
+  // Slot machine
+  'slot.lockHint': '💡 Докоснете барабан, за да го заключите за следващото завъртане',
+  'slot.locked': '🔒 Заключено — ще остане при следващото завъртане',
+
+  // Combo names
+  'combo.tripleSkull': '☠️ ТРОЕН ЧЕРЕП!',
+  'combo.tripleSlash': '⚔️ ТРОЕН УДАР!',
+  'combo.arcaneBurst': '✨ МАГИЧЕСКИ ИЗБУХ!',
+  'combo.fortress': '🛡️ КРЕПОСТ!',
+  'combo.fullRestore': '🧪 ПЪЛНО ВЪЗСТАНОВЯВАНЕ!',
+  'combo.doubleStrike': '⚔️ Двоен удар',
+  'combo.spellCast': '✨ Заклинание',
+  'combo.shieldWall': '🛡️ Стена от щитове',
+  'combo.quickHeal': '🧪 Бързо лечение',
+  'combo.cursed': '💀 Прокълнат!',
+  'combo.weakHit': 'Слаб удар',
+
+  // Combo detail parts
+  'combo.detail.damage': '{amount} щета',
+  'combo.detail.heal': '+{amount} HP',
+  'combo.detail.block': '+{amount} 🛡️',
+  'combo.detail.selfDamage': '{amount} щета на себе си',
+
+  // Enemy intent / attacks
+  'enemy.intent.prepares': '{name} се готви да удари!',
+  'enemy.intent.bossPrepares': '👹 БОС — {name} се готви да удари!',
+  'enemy.intent.enraged.lili': 'Лили има цикъл — нанесените и получените щети са увеличени!',
+  'enemy.intent.frenzyIncoming': '🐕 {name} ръмжи... ЯРОСТТА идва!',
+  'enemy.intent.frenzyCountdown': '🐕 {name} се подготвя... {count} атаки до ЯРОСТ',
+  'enemy.attack': '{name} атакува!',
+  'enemy.frenzy': '🐕 {name} ЯРОСТ!',
+  'enemy.attack.detail.damage': '{amount} щета',
+  'enemy.attack.detail.blocked': '{amount} блокирани',
+  'enemy.attack.detail.fullyBlocked': 'напълно блокирано!',
+  'enemy.attack.detail.bites': '{count} ухапвания',
+  'enemy.attack.detail.noDamage': 'без щети',
+
+  // Symbol picker
+  'picker.victory': '⚔️ Победа!',
+  'picker.goldEarned': '+{amount} злато',
+  'picker.subtitle': 'Добави символ към своя пул — или пропусни.',
+  'picker.choose': 'Избери',
+  'picker.skip': 'Пропусни',
+  'picker.reroll': '🎲 Прехвърли',
+
+  // Symbol pool viewer
+  'pool.title': 'Пул от символи ({count})',
+  'pool.subtitle': 'Шансът на всеки символ е броят му разделен на общия брой.',
+  'pool.close': 'Затвори',
+  'pool.tapToView': 'Виж пула от символи',
+
+  // Shop
+  'shop.title': '🏪 Магазин',
+  'shop.interestEarned': '+{interest} лихва! ({next} следваща)',
+  'shop.interestPrompt': 'Запази 10+ злато за лихва (макс. +5)',
+  'shop.choose': 'Купи',
+  'shop.leave': 'Напусни магазина →',
+
+  // Shop items
+  'item.extraSpin.name': 'Допълнително завъртане',
+  'item.extraSpin.desc': '+1 завъртане на бой',
+  'item.healPotion.name': 'Лечебна отвара',
+  'item.healPotion.desc': 'Възстановява 20 HP',
+  'item.maxHpUp.name': 'Макс. HP +',
+  'item.maxHpUp.desc': '+10 максимални HP',
+  'item.sharpBlade.name': 'Остро острие',
+  'item.sharpBlade.desc': '+2 щета на меч',
+  'item.magicTome.name': 'Магическа книга',
+  'item.magicTome.desc': '+3 щета на магия',
+  'item.luckyCharm.name': 'Талисман',
+  'item.luckyCharm.desc': 'По-евтини прехвърляния',
+
+  // Overlays
+  'overlay.gameOver': '💀 Край на играта',
+  'overlay.position': 'Етаж {floor} — Стая {room}',
+  'overlay.goldEarned': 'Спечелено злато: {gold}',
+  'overlay.tryAgain': 'Опитай пак',
+  'overlay.floorComplete': '👑 Етаж {floor} е завършен!',
+  'overlay.bossDefeated': 'Победи боса!',
+  'overlay.continueToFloor': 'Към етаж {floor}',
+  'overlay.runComplete': '🏆 Преминат път!',
+  'overlay.allBossesDefeated': 'Победи всички босове!',
+  'overlay.totalGold': 'Общо злато: {gold}',
+  'overlay.playAgain': 'Играй пак',
+};
+
+export const TRANSLATIONS = { en, de, bg };
 
 export function detectBrowserLang() {
   const stored = typeof localStorage !== 'undefined' && localStorage.getItem('lang');
