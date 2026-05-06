@@ -308,7 +308,6 @@ export default function Game() {
         <div className="bottom-zone">
           <div className="bottom-panel">
             <div className="player-hp-section">
-              <span className="player-hp-label">Your HP</span>
               <div className="player-hp-row">
                 <span className="heart-icon">❤️</span>
                 <HpBar
