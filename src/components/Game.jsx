@@ -29,7 +29,7 @@ export default function Game() {
     state, startRun, resolveCombo, enemyAttack,
     enemyDefeated, triggerGameOver,
     buyItem, setLockedItems, closeShop, setSpinning,
-    nextFloor, debugSkipToRuby,
+    nextFloor, debugKillEnemy,
     pickSymbol, skipSymbol, rerollPicks,
   } = useGameState();
 
@@ -39,10 +39,10 @@ export default function Game() {
   }, [nextFloor]);
 
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'b' || e.key === 'B') debugSkipToRuby(); };
+    const onKey = (e) => { if (e.key === 'b' || e.key === 'B') debugKillEnemy(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [debugSkipToRuby]);
+  }, [debugKillEnemy]);
 
   const [screenShake, setScreenShake] = useState(false);
   const [screenFlash, setScreenFlash] = useState(null);

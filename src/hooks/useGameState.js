@@ -289,12 +289,20 @@ function reducer(state, action) {
       };
     }
 
-    case 'DEBUG_SKIP_TO_RUBY': {
+    case 'DEBUG_KILL_ENEMY': {
+      if (!state.enemy || state.phase !== 'combat') return state;
+      const gold = state.enemy.gold;
+      const isBoss = state.enemy.isBoss;
+      const isFinalBoss = isBoss && state.floor >= BOSSES.length;
       return {
-        ...INITIAL_STATE,
-        floor: 2,
-        room: 5,
-        enemy: spawnForRoom(2, 5),
+        ...state,
+        enemy: { ...state.enemy, hp: 0 },
+        gold: state.gold + gold,
+        phase: isBoss ? (isFinalBoss ? 'runComplete' : 'floorComplete') : 'victory',
+        lastGoldEarned: gold,
+        symbolPicks: isBoss ? null : rollSymbolPicks(3),
+        pickRerollCount: 0,
+        pickRerollKey: 0,
       };
     }
 
@@ -320,7 +328,7 @@ export default function useGameState() {
   const nextFloor = useCallback(() => dispatch({ type: 'NEXT_FLOOR' }), []);
   const setSpinning = useCallback((value) => dispatch({ type: 'SET_SPINNING', value }), []);
   const setReelResults = useCallback((results) => dispatch({ type: 'SET_REEL_RESULTS', results }), []);
-  const debugSkipToRuby = useCallback(() => dispatch({ type: 'DEBUG_SKIP_TO_RUBY' }), []);
+  const debugKillEnemy = useCallback(() => dispatch({ type: 'DEBUG_KILL_ENEMY' }), []);
   const pickSymbol = useCallback((symbolId) => dispatch({ type: 'PICK_SYMBOL', symbolId }), []);
   const skipSymbol = useCallback(() => dispatch({ type: 'SKIP_SYMBOL' }), []);
   const rerollPicks = useCallback(() => dispatch({ type: 'REROLL_PICKS' }), []);
@@ -339,7 +347,7 @@ export default function useGameState() {
     nextFloor,
     setSpinning,
     setReelResults,
-    debugSkipToRuby,
+    debugKillEnemy,
     pickSymbol,
     skipSymbol,
     rerollPicks,
