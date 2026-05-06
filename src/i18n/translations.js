@@ -78,6 +78,18 @@ const en = {
   'item.luckyCharm.name': 'Lucky Charm',
   'item.luckyCharm.desc': 'Cheaper symbol rerolls',
 
+  // Relics
+  'relic.vampiricCharm.name': 'Vampiric Charm',
+  'relic.vampiricCharm.desc': 'Heal for 20% of damage you deal',
+  'relic.cursedCoin.name': 'Cursed Coin',
+  'relic.cursedCoin.desc': 'Skulls heal you instead of damaging',
+  'relic.glassCannon.name': 'Glass Cannon',
+  'relic.glassCannon.desc': 'Triple combos deal 2× damage',
+  'relic.ironWill.name': 'Iron Will',
+  'relic.ironWill.desc': 'Block carries over to next turn',
+  'relic.magnet.name': 'Magnet',
+  'relic.magnet.desc': '+50% gold from enemies',
+
   // Overlays
   'overlay.gameOver': '💀 Game Over',
   'overlay.position': 'Floor {floor} — Room {room}',
@@ -169,6 +181,18 @@ const de = {
   'item.luckyCharm.name': 'Glücksbringer',
   'item.luckyCharm.desc': 'Günstigere Symbol-Rerolls',
 
+  // Relics
+  'relic.vampiricCharm.name': 'Vampir-Amulett',
+  'relic.vampiricCharm.desc': 'Heile für 20% des verursachten Schadens',
+  'relic.cursedCoin.name': 'Verfluchte Münze',
+  'relic.cursedCoin.desc': 'Schädel heilen dich, statt Schaden zu machen',
+  'relic.glassCannon.name': 'Glaskanone',
+  'relic.glassCannon.desc': 'Dreifach-Combos machen 2× Schaden',
+  'relic.ironWill.name': 'Eiserner Wille',
+  'relic.ironWill.desc': 'Block überträgt sich auf den nächsten Zug',
+  'relic.magnet.name': 'Magnet',
+  'relic.magnet.desc': '+50% Gold von Gegnern',
+
   // Overlays
   'overlay.gameOver': '💀 Spiel vorbei',
   'overlay.position': 'Etage {floor} — Raum {room}',
@@ -259,6 +283,18 @@ const bg = {
   'item.magicTome.desc': '+3 щета на магия',
   'item.luckyCharm.name': 'Талисман',
   'item.luckyCharm.desc': 'По-евтини прехвърляния',
+
+  // Relics
+  'relic.vampiricCharm.name': 'Вампирски амулет',
+  'relic.vampiricCharm.desc': 'Лекуваш се за 20% от нанесените щети',
+  'relic.cursedCoin.name': 'Прокълната монета',
+  'relic.cursedCoin.desc': 'Черепите те лекуват, вместо да нанасят щети',
+  'relic.glassCannon.name': 'Стъклено оръдие',
+  'relic.glassCannon.desc': 'Тройните комбота нанасят 2× щети',
+  'relic.ironWill.name': 'Желязна воля',
+  'relic.ironWill.desc': 'Блокът се пренася в следващия ход',
+  'relic.magnet.name': 'Магнит',
+  'relic.magnet.desc': '+50% злато от враговете',
 
   // Overlays
   'overlay.gameOver': '💀 Край на играта',

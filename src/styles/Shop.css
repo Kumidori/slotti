@@ -61,8 +61,25 @@
   text-align: left;
 }
 
-.shop-item .item-name { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+.shop-item .item-name { font-size: 14px; font-weight: bold; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
 .shop-item .item-desc { font-size: 11px; color: #aaa; }
+
+.shop-item.is-relic {
+  border-color: #c9a84b;
+  background: linear-gradient(180deg, #1f1834, #16213e);
+}
+
+.shop-item.is-relic .item-name { color: #f1c40f; }
+
+.relic-tag {
+  font-size: 10px;
+  background: rgba(241, 196, 15, 0.2);
+  color: #f1c40f;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
 .shop-item .item-cost { color: #f1c40f; font-size: 14px; font-weight: bold; flex-shrink: 0; }
 
 .lock-btn {

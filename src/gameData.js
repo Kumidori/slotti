@@ -50,13 +50,23 @@ export const BOSSES = [
 ];
 
 export const SHOP_ITEMS = [
-  { name: 'Extra Spin',    icon: '🎰', desc: '+1 spin per fight',    cost: 15, effectKey: 'extraSpin' },
-  { name: 'Heal Potion',   icon: '❤️', desc: 'Restore 20 HP',        cost: 10, effectKey: 'healPotion' },
-  { name: 'Max HP Up',     icon: '💪', desc: '+10 max HP',            cost: 12, effectKey: 'maxHpUp' },
-  { name: 'Sharp Blade',   icon: '🗡️', desc: '+2 sword damage',      cost: 18, effectKey: 'sharpBlade' },
-  { name: 'Magic Tome',    icon: '📖', desc: '+3 magic damage',       cost: 20, effectKey: 'magicTome' },
-  { name: 'Lucky Charm',   icon: '🍀', desc: 'Cheaper symbol rerolls', cost: 18, effectKey: 'luckyCharm' },
+  // Stat boosts / consumables (instant effect on purchase)
+  { id: 'extraSpin',  type: 'stat', icon: '🎰',  cost: 25 },
+  { id: 'healPotion', type: 'stat', icon: '❤️', cost: 12 },
+  { id: 'maxHpUp',    type: 'stat', icon: '💪', cost: 15 },
+  { id: 'sharpBlade', type: 'stat', icon: '🗡️', cost: 18 },
+  { id: 'magicTome',  type: 'stat', icon: '📖', cost: 20 },
+  { id: 'luckyCharm', type: 'stat', icon: '🍀', cost: 15 },
+
+  // Relics (permanent rule modifiers)
+  { id: 'vampiricCharm', type: 'relic', icon: '🧛', cost: 35 },
+  { id: 'cursedCoin',    type: 'relic', icon: '☠️', cost: 30 },
+  { id: 'glassCannon',   type: 'relic', icon: '💎', cost: 40 },
+  { id: 'ironWill',      type: 'relic', icon: '🛡️', cost: 28 },
+  { id: 'magnet',        type: 'relic', icon: '🧲', cost: 30 },
 ];
+
+export const RELIC_IDS = SHOP_ITEMS.filter(i => i.type === 'relic').map(i => i.id);
 
 export function applyItemEffect(state, effectKey) {
   switch (effectKey) {
@@ -75,6 +85,10 @@ export function applyItemEffect(state, effectKey) {
     default:
       return state;
   }
+}
+
+export function hasRelic(state, id) {
+  return state.relics?.includes(id);
 }
 
 export function spawnEnemy(floor, room) {

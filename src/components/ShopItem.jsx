@@ -18,16 +18,20 @@ export default function ShopItem({ item, locked, sold, selected, gold, onSelect,
   };
 
   const cantAfford = gold < item.cost;
+  const prefix = item.type === 'relic' ? 'relic' : 'item';
 
   return (
     <div
-      className={`shop-item ${sold ? 'sold' : ''} ${selected ? 'selected' : ''} ${cantAfford && !sold ? 'cant-afford' : ''}`}
+      className={`shop-item ${sold ? 'sold' : ''} ${selected ? 'selected' : ''} ${cantAfford && !sold ? 'cant-afford' : ''} ${item.type === 'relic' ? 'is-relic' : ''}`}
       onClick={handleTap}
     >
       <div className="item-icon">{item.icon}</div>
       <div className="shop-item-info">
-        <div className="item-name">{t(`item.${item.effectKey}.name`)}</div>
-        <div className="item-desc">{t(`item.${item.effectKey}.desc`)}</div>
+        <div className="item-name">
+          {t(`${prefix}.${item.id}.name`)}
+          {item.type === 'relic' && <span className="relic-tag">✨</span>}
+        </div>
+        <div className="item-desc">{t(`${prefix}.${item.id}.desc`)}</div>
       </div>
       <div className="item-cost">💰 {item.cost}</div>
       <button

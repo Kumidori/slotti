@@ -8,6 +8,7 @@ import Overlay from './Overlay';
 import FloatNumber from './FloatNumber';
 import SymbolPicker from './SymbolPicker';
 import SymbolPool from './SymbolPool';
+import RelicTray from './RelicTray';
 import LangToggle from './LangToggle';
 import { ensureAudio, sfx } from '../audio';
 import { calcInterest } from '../gameData';
@@ -266,6 +267,7 @@ export default function Game() {
           <div className="top-left">
             <div className="gold-badge">💰 {state.gold}</div>
             <LangToggle />
+            <RelicTray relics={state.relics} />
           </div>
           <div className="floor-progress">
             <span className="floor-label">{t('ui.floor', { floor: state.floor })}</span>

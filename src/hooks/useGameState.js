@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from 'react';
-import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, DEFAULT_POOL, BOSSES } from '../gameData';
+import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, hasRelic, DEFAULT_POOL, BOSSES } from '../gameData';
 
 // Reroll cost: 5g first, +5g each subsequent reroll within the same picker.
 // Lucky Charm reduces cost by 1g per stack (min 1g).
@@ -68,6 +68,7 @@ const INITIAL_STATE = {
   symbolPicks: null,
   pickRerollCount: 0,
   pickRerollKey: 0,
+  relics: [],
 };
 
 function reducer(state, action) {
@@ -94,10 +95,16 @@ function reducer(state, action) {
       let comboText = '', comboType = 'normal';
 
       if (counts.skull === 3) {
-        const selfDmg = 15;
-        s.playerHp -= selfDmg;
-        comboText = '☠️ TRIPLE SKULL!';
-        comboType = 'skull-triple';
+        if (hasRelic(s, 'cursedCoin')) {
+          heal = 20;
+          comboText = '☠️ TRIPLE SKULL!';
+          comboType = 'triple';
+        } else {
+          const selfDmg = 15;
+          s.playerHp -= selfDmg;
+          comboText = '☠️ TRIPLE SKULL!';
+          comboType = 'skull-triple';
+        }
       } else if (counts.sword === 3) {
         dmg = 18 + s.swordBonus * 3;
         comboText = '⚔️ TRIPLE SLASH!';
@@ -132,16 +139,25 @@ function reducer(state, action) {
         comboText = '🧪 Quick Heal';
         comboType = 'double';
       } else if (counts.skull >= 1) {
-        const selfDmg = counts.skull * 5;
-        s.playerHp -= selfDmg;
-        comboText = '💀 Cursed!';
-        comboType = 'skull';
+        if (hasRelic(s, 'cursedCoin')) {
+          heal = counts.skull * 5;
+          comboText = '💀 Cursed!';
+          comboType = 'double';
+        } else {
+          const selfDmg = counts.skull * 5;
+          s.playerHp -= selfDmg;
+          comboText = '💀 Cursed!';
+          comboType = 'skull';
+        }
       } else {
         dmg = 3;
         comboText = 'Weak hit';
         comboType = 'weak';
       }
 
+      if (dmg > 0 && hasRelic(s, 'glassCannon') && comboType === 'triple') {
+        dmg = Math.round(dmg * 2);
+      }
       if (dmg > 0 && s.enemy.enraged) {
         dmg = Math.round(dmg * 1.5);
       }
@@ -152,6 +168,9 @@ function reducer(state, action) {
             s.enemy.hp > 0 && s.enemy.hp <= s.enemy.maxHp * s.enemy.enrageAt) {
           s.enemy = { ...s.enemy, atk: s.enemy.enrageAtk, enraged: true };
           s.justEnraged = true;
+        }
+        if (hasRelic(s, 'vampiricCharm')) {
+          heal += Math.ceil(dmg * 0.2);
         }
       }
       if (heal > 0) {
@@ -182,7 +201,7 @@ function reducer(state, action) {
       if (s.block > 0) {
         blocked = Math.min(incomingDmg, s.block);
         incomingDmg = Math.max(0, incomingDmg - s.block);
-        s.block = 0;
+        s.block = hasRelic(s, 'ironWill') ? Math.max(0, s.block - blocked) : 0;
       }
 
       s.playerHp -= incomingDmg;
@@ -205,7 +224,8 @@ function reducer(state, action) {
     }
 
     case 'ENEMY_DEFEATED': {
-      const gold = state.enemy.gold;
+      let gold = state.enemy.gold;
+      if (hasRelic(state, 'magnet')) gold = Math.round(gold * 1.5);
       const isBoss = state.enemy.isBoss;
       const isFinalBoss = isBoss && state.floor >= BOSSES.length;
       return {
@@ -264,8 +284,12 @@ function reducer(state, action) {
 
     case 'BUY_ITEM': {
       const { item } = action;
-      let s = applyItemEffect(state, item.effectKey);
-      s = { ...s, gold: s.gold - item.cost };
+      let s = { ...state, gold: state.gold - item.cost };
+      if (item.type === 'relic') {
+        s.relics = [...state.relics, item.id];
+      } else {
+        s = applyItemEffect(s, item.id);
+      }
       return s;
     }
 
@@ -291,7 +315,8 @@ function reducer(state, action) {
 
     case 'DEBUG_KILL_ENEMY': {
       if (!state.enemy || state.phase !== 'combat') return state;
-      const gold = state.enemy.gold;
+      let gold = state.enemy.gold;
+      if (hasRelic(state, 'magnet')) gold = Math.round(gold * 1.5);
       const isBoss = state.enemy.isBoss;
       const isFinalBoss = isBoss && state.floor >= BOSSES.length;
       return {
