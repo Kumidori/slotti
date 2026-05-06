@@ -303,7 +303,7 @@ export default function Game() {
           spriteRef={enemySpriteRef}
         />
 
-        <div className={`enemy-intent${state.enemy?.enraged ? ' enraged' : ''}${comboAnim ? ' hidden' : ''}`}>
+        <div className={`enemy-intent${state.enemy?.enraged ? ' enraged' : ''}`}>
           {state.enemy
             ? state.enemy.enraged
               ? t('enemy.intent.enraged.lili')
