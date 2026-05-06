@@ -99,6 +99,9 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
 
   useImperativeHandle(ref, () => ({ spin }), [spin]);
 
+  const canLockNow = !isSpinning.current && !disabled && state.spinsLeft >= 1;
+  const anyLocked = lockedReels.some(Boolean);
+
   return (
     <div className="slot-area">
       <div className="reels">
@@ -112,9 +115,12 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
             highlight={highlights[i]}
             locked={lockedReels[i]}
             onToggleLock={() => toggleLock(i)}
-            canLock={!isSpinning.current && !disabled && state.spinsLeft >= 1}
+            canLock={canLockNow}
           />
         ))}
+      </div>
+      <div className={`lock-hint ${canLockNow ? 'visible' : ''} ${anyLocked ? 'active' : ''}`}>
+        {anyLocked ? '🔒 Locked — will keep on next spin' : '💡 Tap a reel to lock it for the next spin'}
       </div>
     </div>
   );

@@ -18,3 +18,23 @@
   gap: 10px;
 }
 
+.lock-hint {
+  font-size: 11px;
+  color: #888;
+  letter-spacing: 0.3px;
+  min-height: 14px;
+  opacity: 0;
+  transition: opacity 0.25s, color 0.25s;
+  text-align: center;
+  margin-top: 2px;
+}
+
+.lock-hint.visible {
+  opacity: 0.8;
+}
+
+.lock-hint.active {
+  color: #f1c40f;
+  opacity: 1;
+}
+
