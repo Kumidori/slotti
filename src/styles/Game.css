@@ -37,6 +37,13 @@
   margin-bottom: 4px;
 }
 
+.top-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .gold-badge {
   font-size: 14px;
   font-weight: bold;

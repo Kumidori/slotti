@@ -263,7 +263,10 @@ export default function Game() {
         <SymbolPool pool={state.symbolPool} />
 
         <div className="top-bar">
-          <div className="gold-badge">💰 {state.gold}</div>
+          <div className="top-left">
+            <div className="gold-badge">💰 {state.gold}</div>
+            <LangToggle />
+          </div>
           <div className="floor-progress">
             <span className="floor-label">{t('ui.floor', { floor: state.floor })}</span>
             {[1, 2, 3, 4, 5].map(r => {
@@ -419,8 +422,6 @@ export default function Game() {
       {floats.map(f => (
         <FloatNumber key={f.id} text={f.text} type={f.type} targetRef={f.ref} />
       ))}
-
-      <LangToggle />
     </>
   );
 }

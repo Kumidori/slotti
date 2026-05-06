@@ -63,8 +63,8 @@
 }
 
 .enemy-section .hp-bar-container {
-  width: 80%;
-  max-width: 300px;
+  width: 60%;
+  max-width: 220px;
 }
 
 @keyframes enemyShake {
