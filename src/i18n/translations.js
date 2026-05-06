@@ -46,6 +46,16 @@ const en = {
   'enemy.attack.detail.bites': '{count} bites',
   'enemy.attack.detail.noDamage': 'no damage',
 
+  // Sacrifice room
+  'sacrifice.title': '🪦 Sacrifice',
+  'sacrifice.subtitle': 'Choose one symbol to sacrifice — a random new one takes its place.',
+  'sacrifice.resultSub': 'The exchange is complete.',
+  'sacrifice.choose': 'Sacrifice',
+  'sacrifice.skip': 'Leave',
+  'sacrifice.gave': 'Sacrificed',
+  'sacrifice.got': 'Received',
+  'sacrifice.continue': 'Continue',
+
   // Symbol picker
   'picker.victory': '⚔️ Victory!',
   'picker.goldEarned': '+{amount} gold',
@@ -152,6 +162,16 @@ const de = {
   'enemy.attack.detail.bites': '{count} Bisse',
   'enemy.attack.detail.noDamage': 'kein Schaden',
 
+  // Sacrifice room
+  'sacrifice.title': '🪦 Opfer',
+  'sacrifice.subtitle': 'Wähle ein Symbol zum Opfern — ein zufälliges neues nimmt seinen Platz ein.',
+  'sacrifice.resultSub': 'Der Tausch ist abgeschlossen.',
+  'sacrifice.choose': 'Opfern',
+  'sacrifice.skip': 'Verlassen',
+  'sacrifice.gave': 'Geopfert',
+  'sacrifice.got': 'Erhalten',
+  'sacrifice.continue': 'Weiter',
+
   // Symbol picker
   'picker.victory': '⚔️ Sieg!',
   'picker.goldEarned': '+{amount} Gold',
@@ -257,6 +277,16 @@ const bg = {
   'enemy.attack.detail.fullyBlocked': 'напълно блокирано!',
   'enemy.attack.detail.bites': '{count} ухапвания',
   'enemy.attack.detail.noDamage': 'без щети',
+
+  // Sacrifice room
+  'sacrifice.title': '🪦 Жертва',
+  'sacrifice.subtitle': 'Избери символ, който да пожертваш — случаен нов го заменя.',
+  'sacrifice.resultSub': 'Размяната е завършена.',
+  'sacrifice.choose': 'Пожертвай',
+  'sacrifice.skip': 'Излез',
+  'sacrifice.gave': 'Пожертвано',
+  'sacrifice.got': 'Получено',
+  'sacrifice.continue': 'Напред',
 
   // Symbol picker
   'picker.victory': '⚔️ Победа!',

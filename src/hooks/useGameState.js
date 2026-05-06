@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from 'react';
-import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, hasRelic, DEFAULT_POOL, BOSSES } from '../gameData';
+import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, hasRelic, DEFAULT_POOL, BOSSES } from '../gameData';
 
 // Reroll cost: 5g first, +5g each subsequent reroll within the same picker.
 // Lucky Charm reduces cost by 1g per stack (min 1g).
@@ -7,19 +7,30 @@ export function rerollCost(rerollCount, luckBonus = 0) {
   return Math.max(1, 5 * (rerollCount + 1) - luckBonus);
 }
 
-// Rooms: 1=fight, 2=shop, 3=fight, 4=shop, 5=boss
-function isShopRoom(room) { return room === 2 || room === 4; }
-function isBossRoom(room) { return room === 5; }
-function isFightRoom(room) { return room === 1 || room === 3 || room === 5; }
+// Rooms 2 and 4 are randomly shop or sacrifice per floor; 1 & 3 are fights, 5 is boss.
+function generateFloorRoomTypes() {
+  return [
+    'fight',
+    Math.random() < 0.5 ? 'shop' : 'sacrifice',
+    'fight',
+    Math.random() < 0.5 ? 'shop' : 'sacrifice',
+    'boss',
+  ];
+}
+
+function roomType(state, room) {
+  return (state.floorRoomTypes && state.floorRoomTypes[room - 1]) || 'fight';
+}
 
 function spawnForRoom(floor, room) {
-  if (isBossRoom(room)) return spawnBoss(floor);
+  if (room === 5) return spawnBoss(floor);
   return spawnEnemy(floor, room);
 }
 
 function advanceToNextRoom(state) {
   const nextRoom = state.room + 1;
-  if (isShopRoom(nextRoom)) {
+  const type = roomType(state, nextRoom);
+  if (type === 'shop') {
     const interest = calcInterest(state.gold);
     return {
       ...state,
@@ -27,6 +38,15 @@ function advanceToNextRoom(state) {
       gold: state.gold + interest,
       lastInterest: interest,
       phase: 'shop',
+    };
+  }
+  if (type === 'sacrifice') {
+    return {
+      ...state,
+      room: nextRoom,
+      phase: 'sacrifice',
+      sacrificeChosen: null,
+      sacrificeReward: null,
     };
   }
   const enemy = spawnForRoom(state.floor, nextRoom);
@@ -72,13 +92,16 @@ const INITIAL_STATE = {
   relics: [],
   locksLeft: 3,
   maxLocks: 3,
+  floorRoomTypes: generateFloorRoomTypes(),
+  sacrificeChosen: null,
+  sacrificeReward: null,
 };
 
 function reducer(state, action) {
   switch (action.type) {
     case 'START_RUN': {
       const enemy = spawnForRoom(1, 1);
-      return { ...INITIAL_STATE, enemy };
+      return { ...INITIAL_STATE, enemy, floorRoomTypes: generateFloorRoomTypes() };
     }
 
     case 'SET_SPINNING':
@@ -97,7 +120,40 @@ function reducer(state, action) {
       let dmg = 0, heal = 0, block = 0;
       let comboText = '', comboType = 'normal';
 
-      if (counts.skull === 3) {
+      const wilds = counts.wild || 0;
+      const mults = counts.mult || 0;
+      const coins = counts.coin || 0;
+      const skulls = counts.skull || 0;
+      const priority = ['magic', 'sword', 'potion', 'shield'];
+
+      // Determine best combo. Wilds substitute for any non-skull symbol but
+      // cannot trigger a combo by themselves unless 3 wilds (jackpot).
+      let combo = null;
+      if (skulls === 3) {
+        combo = { type: 'skull-triple' };
+      } else if (wilds === 3) {
+        combo = { type: 'triple', symbol: 'magic' };
+      } else {
+        for (const t of priority) {
+          if ((counts[t] || 0) >= 1 && (counts[t] || 0) + wilds >= 3) {
+            combo = { type: 'triple', symbol: t };
+            break;
+          }
+        }
+        if (!combo) {
+          for (const t of priority) {
+            if ((counts[t] || 0) >= 1 && (counts[t] || 0) + wilds >= 2) {
+              combo = { type: 'double', symbol: t };
+              break;
+            }
+          }
+        }
+        if (!combo && wilds === 2) combo = { type: 'double', symbol: 'magic' };
+        if (!combo && skulls >= 1) combo = { type: 'skull', skullCount: skulls };
+        if (!combo) combo = { type: 'weak' };
+      }
+
+      if (combo.type === 'skull-triple') {
         if (hasRelic(s, 'cursedCoin')) {
           heal = 20;
           comboText = '☠️ TRIPLE SKULL!';
@@ -108,46 +164,27 @@ function reducer(state, action) {
           comboText = '☠️ TRIPLE SKULL!';
           comboType = 'skull-triple';
         }
-      } else if (counts.sword === 3) {
-        dmg = 18 + s.swordBonus * 3;
-        comboText = '⚔️ TRIPLE SLASH!';
+      } else if (combo.type === 'triple') {
+        const t = combo.symbol;
+        if (t === 'sword')  { dmg = 18 + s.swordBonus * 3; comboText = '⚔️ TRIPLE SLASH!'; }
+        else if (t === 'magic')  { dmg = 22 + s.magicBonus * 3; comboText = '✨ ARCANE BURST!'; }
+        else if (t === 'shield') { block = 99; heal = 5; comboText = '🛡️ FORTRESS!'; }
+        else if (t === 'potion') { heal = 20; comboText = '🧪 FULL RESTORE!'; }
         comboType = 'triple';
-      } else if (counts.magic === 3) {
-        dmg = 22 + s.magicBonus * 3;
-        comboText = '✨ ARCANE BURST!';
-        comboType = 'triple';
-      } else if (counts.shield === 3) {
-        block = 99;
-        heal = 5;
-        comboText = '🛡️ FORTRESS!';
-        comboType = 'triple';
-      } else if (counts.potion === 3) {
-        heal = 20;
-        comboText = '🧪 FULL RESTORE!';
-        comboType = 'triple';
-      } else if (counts.sword === 2) {
-        dmg = 8 + s.swordBonus;
-        comboText = '⚔️ Double Strike';
+      } else if (combo.type === 'double') {
+        const t = combo.symbol;
+        if (t === 'sword')  { dmg = 8 + s.swordBonus; comboText = '⚔️ Double Strike'; }
+        else if (t === 'magic')  { dmg = 10 + s.magicBonus; comboText = '✨ Spell Cast'; }
+        else if (t === 'shield') { block = 8; comboText = '🛡️ Shield Wall'; }
+        else if (t === 'potion') { heal = 10; comboText = '🧪 Quick Heal'; }
         comboType = 'double';
-      } else if (counts.magic === 2) {
-        dmg = 10 + s.magicBonus;
-        comboText = '✨ Spell Cast';
-        comboType = 'double';
-      } else if (counts.shield === 2) {
-        block = 8;
-        comboText = '🛡️ Shield Wall';
-        comboType = 'double';
-      } else if (counts.potion === 2) {
-        heal = 10;
-        comboText = '🧪 Quick Heal';
-        comboType = 'double';
-      } else if (counts.skull >= 1) {
+      } else if (combo.type === 'skull') {
         if (hasRelic(s, 'cursedCoin')) {
-          heal = counts.skull * 5;
+          heal = combo.skullCount * 5;
           comboText = '💀 Cursed!';
           comboType = 'double';
         } else {
-          const selfDmg = counts.skull * 5;
+          const selfDmg = combo.skullCount * 5;
           s.playerHp -= selfDmg;
           comboText = '💀 Cursed!';
           comboType = 'skull';
@@ -157,6 +194,19 @@ function reducer(state, action) {
         comboText = 'Weak hit';
         comboType = 'weak';
       }
+
+      // Multipliers double dmg/heal/block per multiplier, but never self-damage
+      if (mults > 0) {
+        const factor = Math.pow(2, mults);
+        dmg = dmg * factor;
+        heal = heal * factor;
+        block = block * factor;
+      }
+
+      // Coins give gold each
+      const coinGold = coins * 2;
+      if (coinGold > 0) s.gold += coinGold;
+      s.coinGold = coinGold;
 
       if (dmg > 0 && hasRelic(s, 'glassCannon') && comboType === 'triple') {
         dmg = Math.round(dmg * 2);
@@ -277,12 +327,33 @@ function reducer(state, action) {
         comboType: null,
         reelResults: null,
         locksLeft: state.maxLocks,
+        floorRoomTypes: generateFloorRoomTypes(),
       };
     }
 
     case 'USE_LOCK_TOKENS': {
       return { ...state, locksLeft: Math.max(0, state.locksLeft - action.count) };
     }
+
+    case 'SACRIFICE_SYMBOL': {
+      // Remove first occurrence of chosen symbol, add a freshly rolled reward
+      const idx = state.symbolPool.indexOf(action.symbolId);
+      if (idx === -1) return state;
+      const newPool = [...state.symbolPool];
+      newPool.splice(idx, 1);
+      const reward = rollSacrificeReward();
+      newPool.push(reward);
+      return {
+        ...state,
+        symbolPool: newPool,
+        sacrificeChosen: action.symbolId,
+        sacrificeReward: reward,
+      };
+    }
+
+    case 'SKIP_SACRIFICE':
+    case 'FINISH_SACRIFICE':
+      return advanceToNextRoom({ ...state, sacrificeChosen: null, sacrificeReward: null });
 
     case 'GAME_OVER':
       return { ...state, phase: 'gameOver' };
@@ -364,6 +435,9 @@ export default function useGameState() {
   const setReelResults = useCallback((results) => dispatch({ type: 'SET_REEL_RESULTS', results }), []);
   const debugKillEnemy = useCallback(() => dispatch({ type: 'DEBUG_KILL_ENEMY' }), []);
   const useLockTokens = useCallback((count) => dispatch({ type: 'USE_LOCK_TOKENS', count }), []);
+  const sacrificeSymbol = useCallback((symbolId) => dispatch({ type: 'SACRIFICE_SYMBOL', symbolId }), []);
+  const skipSacrifice = useCallback(() => dispatch({ type: 'SKIP_SACRIFICE' }), []);
+  const finishSacrifice = useCallback(() => dispatch({ type: 'FINISH_SACRIFICE' }), []);
   const pickSymbol = useCallback((symbolId) => dispatch({ type: 'PICK_SYMBOL', symbolId }), []);
   const skipSymbol = useCallback(() => dispatch({ type: 'SKIP_SYMBOL' }), []);
   const rerollPicks = useCallback(() => dispatch({ type: 'REROLL_PICKS' }), []);
@@ -384,6 +458,9 @@ export default function useGameState() {
     setReelResults,
     debugKillEnemy,
     useLockTokens,
+    sacrificeSymbol,
+    skipSacrifice,
+    finishSacrifice,
     pickSymbol,
     skipSymbol,
     rerollPicks,

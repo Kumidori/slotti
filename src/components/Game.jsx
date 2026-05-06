@@ -7,6 +7,7 @@ import Shop from './Shop';
 import Overlay from './Overlay';
 import FloatNumber from './FloatNumber';
 import SymbolPicker from './SymbolPicker';
+import SacrificeRoom from './SacrificeRoom';
 import SymbolPool from './SymbolPool';
 import RelicTray from './RelicTray';
 import LangToggle from './LangToggle';
@@ -53,6 +54,7 @@ export default function Game() {
     buyItem, setLockedItems, closeShop, setSpinning,
     nextFloor, debugKillEnemy, useLockTokens,
     pickSymbol, skipSymbol, rerollPicks,
+    sacrificeSymbol, skipSacrifice, finishSacrifice,
   } = useGameState();
 
   const handleNextFloor = useCallback(() => {
@@ -272,16 +274,16 @@ export default function Game() {
           <div className="floor-progress">
             <span className="floor-label">{t('ui.floor', { floor: state.floor })}</span>
             {[1, 2, 3, 4, 5].map(r => {
-              const isShop = r === 2 || r === 4;
-              const isBoss = r === 5;
+              const type = state.floorRoomTypes?.[r - 1] || 'fight';
               const done = r < state.room;
               const current = r === state.room;
+              const icon = type === 'shop' ? '💰' : type === 'sacrifice' ? '🪦' : type === 'boss' ? '💀' : '';
               return (
                 <span
                   key={r}
-                  className={`floor-dot${isShop ? ' shop' : ''}${isBoss ? ' boss' : ''}${done ? ' done' : ''}${current ? ' current' : ''}`}
+                  className={`floor-dot ${type}${done ? ' done' : ''}${current ? ' current' : ''}`}
                 >
-                  {isShop ? '💰' : isBoss ? '💀' : ''}
+                  {icon}
                 </span>
               );
             })}
@@ -415,6 +417,17 @@ export default function Game() {
           <p>{t('overlay.goldEarned', { gold: state.gold })}</p>
           <button onClick={handleStartRun}>{t('overlay.tryAgain')}</button>
         </Overlay>
+      )}
+
+      {state.phase === 'sacrifice' && (
+        <SacrificeRoom
+          pool={state.symbolPool}
+          sacrificeChosen={state.sacrificeChosen}
+          sacrificeReward={state.sacrificeReward}
+          onSacrifice={sacrificeSymbol}
+          onSkip={skipSacrifice}
+          onFinish={finishSacrifice}
+        />
       )}
 
       {state.phase === 'shop' && (

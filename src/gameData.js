@@ -4,6 +4,9 @@ export const SYMBOLS = [
   { id: 'potion', icon: '🧪' },
   { id: 'magic',  icon: '✨' },
   { id: 'skull',  icon: '💀' },
+  { id: 'wild',   icon: '⭐' },
+  { id: 'mult',   icon: '✖️' },
+  { id: 'coin',   icon: '💵' },
 ];
 
 // Starting symbol pool — each entry is one "card" in the pool.
@@ -16,8 +19,28 @@ export const DEFAULT_POOL = [
   'skull', 'skull',
 ];
 
-// Symbols offered as post-fight rewards (no skulls — nobody picks those willingly).
-export const PICKABLE_SYMBOLS = ['sword', 'shield', 'potion', 'magic'];
+// Weights for symbols offered as post-fight rewards.
+// Specials are rarer than basic combat symbols. Skulls are never offered.
+const PICK_WEIGHTS = {
+  sword: 25, shield: 25, potion: 25, magic: 25,
+  wild: 6, mult: 5, coin: 4,
+};
+
+// Sacrifice rooms have a richer table — specials more likely.
+const SACRIFICE_WEIGHTS = {
+  sword: 18, shield: 18, potion: 18, magic: 18,
+  wild: 12, mult: 8, coin: 8,
+};
+
+function weightedPick(weights) {
+  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (const [id, w] of Object.entries(weights)) {
+    r -= w;
+    if (r <= 0) return id;
+  }
+  return Object.keys(weights)[0];
+}
 
 export function getSymbol(id) {
   return SYMBOLS.find(s => s.id === id);
@@ -29,9 +52,11 @@ export function pickFromPool(pool) {
 }
 
 export function rollSymbolPicks(count = 3) {
-  return Array.from({ length: count }, () =>
-    PICKABLE_SYMBOLS[Math.floor(Math.random() * PICKABLE_SYMBOLS.length)]
-  );
+  return Array.from({ length: count }, () => weightedPick(PICK_WEIGHTS));
+}
+
+export function rollSacrificeReward() {
+  return weightedPick(SACRIFICE_WEIGHTS);
 }
 
 export const ENEMIES = [
