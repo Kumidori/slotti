@@ -13,33 +13,33 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
   useEffect(() => {
     sfx.shopOpen();
 
-    const lockedNames = new Set(state.lockedItems.map(i => i.name));
+    const lockedIds = new Set(state.lockedItems.map(i => i.id));
     const locked = [...state.lockedItems];
-    const unlocked = SHOP_ITEMS.filter(i => !lockedNames.has(i.name));
+    const unlocked = SHOP_ITEMS.filter(i => !lockedIds.has(i.id));
     const freshPicks = [...unlocked].sort(() => Math.random() - 0.5).slice(0, 3 - locked.length);
     const offering = [...locked, ...freshPicks];
 
     setEntries(offering.map(item => ({
       item,
-      locked: lockedNames.has(item.name),
+      locked: lockedIds.has(item.id),
       sold: false,
     })));
   }, []);
 
   const handleSelect = (item) => {
     ensureAudio();
-    if (selectedName === item.name) {
+    if (selectedName === item.id) {
       setSelectedName(null);
       sfx.buttonClick();
     } else {
-      setSelectedName(item.name);
+      setSelectedName(item.id);
       sfx.buttonClick();
     }
   };
 
   const handleChoose = () => {
     if (!selectedName) return;
-    const entry = entries.find(e => e.item.name === selectedName);
+    const entry = entries.find(e => e.item.id === selectedName);
     if (!entry || entry.sold) return;
 
     ensureAudio();
@@ -50,7 +50,7 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
 
     sfx.buy();
     setEntries(prev => prev.map(e =>
-      e.item.name === selectedName ? { ...e, sold: true, locked: false } : e
+      e.item.id === selectedName ? { ...e, sold: true, locked: false } : e
     ));
     onBuy(entry.item);
     setSelectedName(null);
@@ -65,13 +65,13 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
 
   const handleToggleLock = (item) => {
     setEntries(prev => prev.map(e =>
-      e.item.name === item.name ? { ...e, locked: !e.locked } : e
+      e.item.id === item.id ? { ...e, locked: !e.locked } : e
     ));
   };
 
   const nextInterest = calcInterest(state.gold);
   const canAfford = selectedName
-    ? state.gold >= (entries.find(e => e.item.name === selectedName)?.item.cost ?? Infinity)
+    ? state.gold >= (entries.find(e => e.item.id === selectedName)?.item.cost ?? Infinity)
     : true;
 
   return (
@@ -87,11 +87,11 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
       <div className="shop-items">
         {entries.map((entry) => (
           <ShopItem
-            key={entry.item.name}
+            key={entry.item.id}
             item={entry.item}
             locked={entry.locked}
             sold={entry.sold}
-            selected={entry.item.name === selectedName}
+            selected={entry.item.id === selectedName}
             gold={state.gold}
             onSelect={handleSelect}
             onToggleLock={handleToggleLock}
