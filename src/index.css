@@ -10,7 +10,8 @@ html, body, #root {
 }
 
 body {
-  background: #1a1a2e;
+  background:
+    radial-gradient(ellipse at top, #2a1f4a 0%, #1a1a2e 40%, #0f0f1d 100%);
   color: #eee;
   font-family: 'Segoe UI', system-ui, sans-serif;
   display: flex;
