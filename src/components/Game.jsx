@@ -11,7 +11,7 @@ import SacrificeRoom from './SacrificeRoom';
 import SymbolPool from './SymbolPool';
 import RelicTray from './RelicTray';
 import LangToggle from './LangToggle';
-import { ensureAudio, sfx, speak } from '../audio';
+import { ensureAudio, sfx, playComboVoice } from '../audio';
 import { calcInterest } from '../gameData';
 import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/Game.css';
@@ -48,7 +48,7 @@ function buildComboDetail(state, t) {
 }
 
 export default function Game() {
-  const { t, lang } = useTranslation();
+  const { t } = useTranslation();
   const {
     state, startRun, resolveCombo, enemyAttack,
     enemyDefeated, triggerGameOver,
@@ -123,12 +123,13 @@ export default function Game() {
       const key = comboKeyFromText(state.comboText);
       const text = key ? t(key) : state.comboText;
       setComboAnim({ text, type: state.comboType, detail, key: Date.now() });
-      // Speak the combo name on triples (and skull-triple).
+      // Play prerecorded combo voice on triples (and skull-triple).
       if (state.comboType === 'triple' || state.comboType === 'skull-triple') {
-        speak(text, lang);
+        const audioKey = key?.replace('combo.', '');
+        if (audioKey) playComboVoice(audioKey);
       }
     }
-  }, [state.comboText, state.spinsLeft, t, lang]);
+  }, [state.comboText, state.spinsLeft, t]);
 
   useEffect(() => {
     if (state.spinning) setComboAnim(null);

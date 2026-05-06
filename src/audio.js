@@ -1,3 +1,10 @@
+import tripleSlashUrl from './assets/audio/tripleSlash.mp3';
+import arcaneBurstUrl from './assets/audio/arcaneBurst.mp3';
+import fortressUrl from './assets/audio/fortress.mp3';
+import fullRestoreUrl from './assets/audio/fullRestore.mp3';
+import rainbowUrl from './assets/audio/rainbow.mp3';
+import tripleSkullUrl from './assets/audio/tripleSkull.mp3';
+
 let audioCtx = null;
 let unlocked = false;
 
@@ -135,49 +142,37 @@ export const sfx = {
 };
 
 
-// --- Text-to-speech for combo announcements ---
+// --- Combo announcer (prerecorded English voice clips) ---
 
-let voicesCache = null;
-function refreshVoices() {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  voicesCache = window.speechSynthesis.getVoices();
-}
-if (typeof window !== "undefined" && window.speechSynthesis) {
-  refreshVoices();
-  window.speechSynthesis.addEventListener("voiceschanged", refreshVoices);
-}
+const COMBO_AUDIO = {
+  tripleSlash: tripleSlashUrl,
+  arcaneBurst: arcaneBurstUrl,
+  fortress: fortressUrl,
+  fullRestore: fullRestoreUrl,
+  rainbow: rainbowUrl,
+  tripleSkull: tripleSkullUrl,
+};
 
-function pickVoice(lang) {
-  if (!voicesCache || voicesCache.length === 0) return null;
-  const prefix = lang === "de" ? "de" : lang === "bg" ? "bg" : "en";
-  return voicesCache.find(v => v.lang.toLowerCase().startsWith(prefix))
-      || voicesCache.find(v => v.default)
-      || voicesCache[0];
-}
-
-// Strip emojis and other pictographs so the TTS engine doesnt say
-// "skull and crossbones" out loud.
-function stripEmojis(text) {
-  return text
-    .replace(/[\u{1F300}-\u{1FAFF}]/gu, "")
-    .replace(/[\u{2600}-\u{27BF}]/gu, "")
-    .replace(/[\u{1F000}-\u{1F02F}]/gu, "")
-    .replace(/\s+/g, " ")
-    .trim();
+const audioCache = {};
+function getComboAudio(key) {
+  if (!COMBO_AUDIO[key]) return null;
+  if (!audioCache[key]) {
+    audioCache[key] = new Audio(COMBO_AUDIO[key]);
+    audioCache[key].volume = 0.9;
+  }
+  return audioCache[key];
 }
 
-export function speak(text, lang = "en") {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  const clean = stripEmojis(text || "");
-  if (!clean) return;
-  const utterance = new SpeechSynthesisUtterance(clean);
-  const voice = pickVoice(lang);
-  if (voice) utterance.voice = voice;
-  utterance.lang = voice ? voice.lang : (lang === "de" ? "de-DE" : lang === "bg" ? "bg-BG" : "en-US");
-  utterance.rate = 1.05;
-  utterance.pitch = 1.0;
-  utterance.volume = 0.9;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
+let currentClip = null;
+export function playComboVoice(comboKey) {
+  const audio = getComboAudio(comboKey);
+  if (!audio) return;
+  if (currentClip && !currentClip.paused) {
+    currentClip.pause();
+    currentClip.currentTime = 0;
+  }
+  currentClip = audio;
+  audio.currentTime = 0;
+  audio.play().catch(() => { /* autoplay may be blocked until first interaction */ });
 }
 
