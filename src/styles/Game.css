@@ -117,6 +117,12 @@
   min-height: 18px;
   flex-shrink: 0;
   margin-top: 2px;
+  transition: opacity 0.2s;
+  padding: 0 12px;
+}
+
+.enemy-intent.hidden {
+  opacity: 0;
 }
 
 .enemy-intent.enraged {

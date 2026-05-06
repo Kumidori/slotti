@@ -269,7 +269,7 @@ export default function Game() {
           spriteRef={enemySpriteRef}
         />
 
-        <div className={`enemy-intent${state.enemy?.enraged ? ' enraged' : ''}`}>
+        <div className={`enemy-intent${state.enemy?.enraged ? ' enraged' : ''}${comboAnim ? ' hidden' : ''}`}>
           {state.enemy
             ? state.enemy.enraged
               ? 'Lili got her period, all outgoing and incoming damage increased!'
