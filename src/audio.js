@@ -25,6 +25,30 @@ export function ensureAudio() {
     src.connect(ctx.destination);
     src.start(0);
     unlocked = true;
+    primeComboAudio();
+  }
+}
+
+let comboPrimed = false;
+function primeComboAudio() {
+  if (comboPrimed) return;
+  comboPrimed = true;
+  // Mobile requires each <audio> element to be unlocked by a user gesture.
+  // Silently play/pause each clip so later programmatic plays succeed.
+  for (const key of Object.keys(COMBO_AUDIO)) {
+    const audio = getComboAudio(key);
+    if (!audio) continue;
+    const original = audio.volume;
+    audio.volume = 0;
+    audio.play()
+      .then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = original;
+      })
+      .catch(() => {
+        audio.volume = original;
+      });
   }
 }
 
