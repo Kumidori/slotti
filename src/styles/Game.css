@@ -101,13 +101,13 @@
 
 /* --- Mid zone (between enemy and slot machine) --- */
 .mid-zone {
-  flex: 1;
+  flex: 0 0 auto;
+  height: 70px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 0;
   position: relative;
 }
 
@@ -208,12 +208,12 @@
 
 /* --- Slot machine zone --- */
 .slot-machine-zone {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 0;
+  margin-bottom: 10px;
 }
 
 /* --- Bottom zone --- */

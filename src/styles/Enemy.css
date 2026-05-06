@@ -2,8 +2,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex-shrink: 0;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-height: 0;
   gap: 4px;
+  width: 100%;
 }
 
 .enemy-name {
@@ -29,8 +32,8 @@
 }
 
 .enemy-img {
-  width: 110px;
-  height: 110px;
+  width: clamp(80px, 22vh, 130px);
+  height: clamp(80px, 22vh, 130px);
   object-fit: cover;
   border-radius: 12px;
 }
