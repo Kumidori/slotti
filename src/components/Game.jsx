@@ -27,7 +27,14 @@ export default function Game() {
     state, startRun, resolveCombo, enemyAttack,
     enemyDefeated, triggerGameOver, nextRoom,
     buyItem, setLockedItems, closeShop, setSpinning,
+    debugSkipToRuby,
   } = useGameState();
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'b' || e.key === 'B') debugSkipToRuby(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [debugSkipToRuby]);
 
   const [screenShake, setScreenShake] = useState(false);
   const [screenFlash, setScreenFlash] = useState(null);

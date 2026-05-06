@@ -237,6 +237,15 @@ function reducer(state, action) {
       };
     }
 
+    case 'DEBUG_SKIP_TO_RUBY': {
+      return {
+        ...INITIAL_STATE,
+        floor: 2,
+        room: 5,
+        enemy: spawnForRoom(2, 5),
+      };
+    }
+
     default:
       return state;
   }
@@ -258,6 +267,7 @@ export default function useGameState() {
   const closeShop = useCallback(() => dispatch({ type: 'CLOSE_SHOP' }), []);
   const setSpinning = useCallback((value) => dispatch({ type: 'SET_SPINNING', value }), []);
   const setReelResults = useCallback((results) => dispatch({ type: 'SET_REEL_RESULTS', results }), []);
+  const debugSkipToRuby = useCallback(() => dispatch({ type: 'DEBUG_SKIP_TO_RUBY' }), []);
 
   return {
     state,
@@ -272,5 +282,6 @@ export default function useGameState() {
     closeShop,
     setSpinning,
     setReelResults,
+    debugSkipToRuby,
   };
 }
