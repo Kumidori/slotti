@@ -1,18 +1,36 @@
 import { useState, useRef, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react';
 import Reel from './Reel';
-import { getWeightedSymbol } from '../gameData';
+import { getWeightedSymbol, SYMBOLS } from '../gameData';
 import { ensureAudio, sfx } from '../audio';
 import '../styles/SlotMachine.css';
 
 const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinningChange, disabled }, ref) {
   const [displayIcons, setDisplayIcons] = useState(['⚔️', '🛡️', '⚔️']);
+  const [displaySymbolIds, setDisplaySymbolIds] = useState(['sword', 'shield', 'sword']);
   const [spinningReels, setSpinningReels] = useState([false, false, false]);
   const [highlights, setHighlights] = useState([null, null, null]);
+  const [lockedReels, setLockedReels] = useState([false, false, false]);
   const [spinKey, setSpinKey] = useState(0);
   const tickRef = useRef(null);
   const isSpinning = useRef(false);
 
   const stopDelays = [700, 1050, 1400];
+
+  // Reset locks when fight changes or no spins remain
+  useEffect(() => {
+    if (state.spinsLeft <= 0 || !state.enemy) {
+      setLockedReels([false, false, false]);
+    }
+  }, [state.spinsLeft, state.enemy?.name, state.room]);
+
+  const toggleLock = useCallback((i) => {
+    if (isSpinning.current || disabled || state.spinsLeft <= 0) return;
+    setLockedReels(prev => {
+      const next = [...prev];
+      next[i] = !next[i];
+      return next;
+    });
+  }, [disabled, state.spinsLeft]);
 
   const spin = useCallback(() => {
     if (disabled || isSpinning.current || state.spinsLeft <= 0) return;
@@ -21,15 +39,19 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
     ensureAudio();
     sfx.spinStart();
 
-    const results = [
-      getWeightedSymbol(state.luckBonus),
-      getWeightedSymbol(state.luckBonus),
-      getWeightedSymbol(state.luckBonus),
-    ];
+    const results = [0, 1, 2].map(i => {
+      if (lockedReels[i]) {
+        const kept = SYMBOLS.find(s => s.id === displaySymbolIds[i]);
+        if (kept) return kept;
+      }
+      return getWeightedSymbol(state.luckBonus);
+    });
 
     setDisplayIcons(results.map(r => r.icon));
+    setDisplaySymbolIds(results.map(r => r.id));
+    setLockedReels([false, false, false]);
     setSpinKey(k => k + 1);
-    setSpinningReels([true, true, true]);
+    setSpinningReels(lockedReels.map(l => !l));
     setHighlights([null, null, null]);
 
     tickRef.current = setInterval(() => sfx.reelTick(), 80);
@@ -72,7 +94,7 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
 
       onResolve(results);
     }, stopDelays[2] + 100);
-  }, [disabled, state.spinsLeft, state.luckBonus, onResolve, onSpinningChange]);
+  }, [disabled, state.spinsLeft, state.luckBonus, onResolve, onSpinningChange, lockedReels, displaySymbolIds]);
 
   useImperativeHandle(ref, () => ({ spin }), [spin]);
 
@@ -87,6 +109,9 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
             spinDuration={stopDelays[i]}
             spinKey={spinKey}
             highlight={highlights[i]}
+            locked={lockedReels[i]}
+            onToggleLock={() => toggleLock(i)}
+            canLock={!isSpinning.current && !disabled && state.spinsLeft >= 1}
           />
         ))}
       </div>

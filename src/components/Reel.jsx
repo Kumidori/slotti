@@ -4,7 +4,7 @@ import '../styles/Reel.css';
 
 const FILLERS = 18;
 
-export default function Reel({ icon, spinning, spinDuration = 1000, spinKey, highlight }) {
+export default function Reel({ icon, spinning, spinDuration = 1000, spinKey, highlight, locked, canLock, onToggleLock }) {
   const strip = useMemo(() => {
     if (!spinning) return [icon];
     const fillers = Array.from({ length: FILLERS }, () =>
@@ -15,29 +15,32 @@ export default function Reel({ icon, spinning, spinDuration = 1000, spinKey, hig
 
   const classes = ['reel'];
   if (highlight) classes.push(highlight);
+  if (locked) classes.push('locked');
+  if (canLock && !spinning) classes.push('clickable');
 
-  if (!spinning) {
-    return (
-      <div className={classes.join(' ')}>
-        <div className="reel-item">{icon}</div>
-      </div>
-    );
-  }
+  const handleClick = () => {
+    if (canLock && !spinning) onToggleLock?.();
+  };
 
   return (
-    <div className={classes.join(' ')}>
-      <div
-        key={spinKey}
-        className="reel-strip"
-        style={{
-          '--strip-count': strip.length,
-          animationDuration: `${spinDuration}ms`,
-        }}
-      >
-        {strip.map((s, i) => (
-          <div key={i} className="reel-item">{s}</div>
-        ))}
-      </div>
+    <div className={classes.join(' ')} onClick={handleClick}>
+      {locked && <span className="reel-lock-badge">🔒</span>}
+      {!spinning ? (
+        <div className="reel-item">{icon}</div>
+      ) : (
+        <div
+          key={spinKey}
+          className="reel-strip"
+          style={{
+            '--strip-count': strip.length,
+            animationDuration: `${spinDuration}ms`,
+          }}
+        >
+          {strip.map((s, i) => (
+            <div key={i} className="reel-item">{s}</div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
