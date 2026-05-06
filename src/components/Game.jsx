@@ -235,11 +235,10 @@ export default function Game() {
       <div className={`screen-flash ${screenFlash ? `flash-${screenFlash}` : ''}`} />
       <div className={`game ${screenShake ? 'screen-shake' : ''}`}>
 
+        <SymbolPool pool={state.symbolPool} />
+
         <div className="top-bar">
-          <div className="top-left">
-            <div className="gold-badge">💰 {state.gold}</div>
-            <SymbolPool pool={state.symbolPool} />
-          </div>
+          <div className="gold-badge">💰 {state.gold}</div>
           <div className="floor-badge">
             <span>Floor {state.floor}</span>
             <div className="floor-progress">
