@@ -210,12 +210,14 @@ function reducer(state, action) {
       }
 
       // Multipliers double dmg/heal/block per multiplier, but never self-damage
+      const multFactor = mults > 0 ? Math.pow(2, mults) : 1;
       if (mults > 0) {
-        const factor = Math.pow(2, mults);
-        dmg = dmg * factor;
-        heal = heal * factor;
-        block = block * factor;
+        dmg = dmg * multFactor;
+        heal = heal * multFactor;
+        block = block * multFactor;
       }
+      s.multCount = mults;
+      s.multFactor = multFactor;
 
       // Coins give gold each
       const coinGold = coins * 2;

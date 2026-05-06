@@ -37,6 +37,7 @@ function comboKeyFromText(text) {
 
 function buildComboDetail(state, t) {
   const parts = [];
+  if (state.multFactor > 1) parts.push(`✖️${state.multFactor}`);
   if (state.dmg > 0) parts.push(t('combo.detail.damage', { amount: state.dmg }));
   if (state.heal > 0) parts.push(t('combo.detail.heal', { amount: state.heal }));
   if (state.blockGained > 0) parts.push(t('combo.detail.block', { amount: state.blockGained }));
