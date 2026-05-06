@@ -3,6 +3,8 @@ import { CHARACTERS } from '../characters';
 import { SYMBOLS } from '../gameData';
 import { useTranslation } from '../i18n/useTranslation.jsx';
 import { sfx, ensureAudio } from '../audio';
+import LangToggle from './LangToggle';
+import MusicToggle from './MusicToggle';
 import liliImg from '../assets/lili.webp';
 import rubyImg from '../assets/ruby.png';
 import furzkopfImg from '../assets/furzkopf.webp';
@@ -29,6 +31,10 @@ export default function CharacterSelect({ unlockedChars, onStart }) {
 
   return (
     <div className="char-select">
+      <div className="char-select-toolbar">
+        <LangToggle />
+        <MusicToggle />
+      </div>
       <div className="char-select-inner">
         <h2>{t('charSelect.title')}</h2>
         <p className="char-select-sub">{t('charSelect.subtitle')}</p>
