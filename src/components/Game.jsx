@@ -251,7 +251,9 @@ export default function Game() {
                   <span
                     key={r}
                     className={`floor-dot${isShop ? ' shop' : ''}${isBoss ? ' boss' : ''}${done ? ' done' : ''}${current ? ' current' : ''}`}
-                  />
+                  >
+                    {isShop ? '🛒' : isBoss ? '💀' : ''}
+                  </span>
                 );
               })}
             </div>
