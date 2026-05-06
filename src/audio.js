@@ -219,6 +219,50 @@ const BOSS_PATTERNS = [
   [2, 2, null, 0, 2, 2, null, 3],            // syncopation
 ];
 
+// --- Per-boss themes ---
+
+// Lili: harmonic-minor brood (Am - F - E - Am with E major as dark V)
+const LILI_CHORDS = [
+  { root: 110, notes: [220, 262, 330, 440] }, // Am
+  { root: 87,  notes: [175, 220, 262, 349] }, // F
+  { root: 82,  notes: [165, 208, 247, 330] }, // E (with G# = 208)
+  { root: 110, notes: [220, 262, 330, 440] }, // Am
+];
+const LILI_PATTERNS = [
+  [0, null, 1, 2, 3, 2, 1, null],
+  [3, 2, null, 1, 2, null, 3, 2],
+  [null, 2, 1, 2, 0, 2, 1, 0],
+  [0, 2, 3, 2, 0, 2, 3, null],
+];
+
+// Ruby: driving 4-on-the-floor punk in D minor pentatonic
+const RUBY_CHORDS = [
+  { root: 73,  notes: [147, 175, 220, 294] }, // Dm
+  { root: 110, notes: [220, 262, 330, 440] }, // Am
+  { root: 87,  notes: [175, 220, 262, 349] }, // F
+  { root: 73,  notes: [147, 175, 220, 294] }, // Dm
+];
+const RUBY_PATTERNS = [
+  [0, 2, 3, 2, 0, 2, 3, 2],
+  [3, 2, 1, 2, 3, 2, 1, 0],
+  [0, 0, 2, 2, 3, 3, 1, 1],
+  [2, 3, 0, 3, 2, 3, 0, 1],
+];
+
+// Furzkopf: low, sickly, sparse — Em with detuned bass for wobble
+const FURZ_CHORDS = [
+  { root: 82,  notes: [165, 196, 247, 330] }, // Em
+  { root: 65,  notes: [131, 175, 196, 262] }, // C
+  { root: 98,  notes: [196, 247, 294, 392] }, // G
+  { root: 73,  notes: [147, 185, 220, 294] }, // D
+];
+const FURZ_PATTERNS = [
+  [0, null, null, 1, null, 2, null, null],
+  [null, 1, null, 0, null, null, 2, null],
+  [3, null, 2, null, 1, null, 0, null],
+  [null, null, 1, 2, null, 0, null, 1],
+];
+
 const PROFILES = {
   calm: {
     chords: CALM_CHORDS,
@@ -228,7 +272,8 @@ const PROFILES = {
     bassVol: 0.05,
     melodyVol: 0.024,
     drumVol: 0.05,
-    drumDensity: 0.5,  // probability of a hat
+    drumDensity: 0.5,
+    kickSteps: [0, 4],
   },
   boss: {
     chords: BOSS_CHORDS,
@@ -239,6 +284,43 @@ const PROFILES = {
     melodyVol: 0.034,
     drumVol: 0.07,
     drumDensity: 0.85,
+    kickSteps: [0, 4],
+  },
+  lili: {
+    chords: LILI_CHORDS,
+    patterns: LILI_PATTERNS,
+    bassType: 'square',
+    melodyType: 'triangle',
+    bassVol: 0.06,
+    melodyVol: 0.032,
+    drumVol: 0.06,
+    drumDensity: 0.7,
+    kickSteps: [0, 4],
+    snareSteps: [4],
+  },
+  ruby: {
+    chords: RUBY_CHORDS,
+    patterns: RUBY_PATTERNS,
+    bassType: 'square',
+    melodyType: 'square',
+    bassVol: 0.07,
+    melodyVol: 0.038,
+    drumVol: 0.09,
+    drumDensity: 1.0,
+    kickSteps: [0, 2, 4, 6], // 4-on-the-floor
+    snareSteps: [2, 6],
+  },
+  furzkopf: {
+    chords: FURZ_CHORDS,
+    patterns: FURZ_PATTERNS,
+    bassType: 'sawtooth',
+    melodyType: 'triangle',
+    bassVol: 0.06,
+    melodyVol: 0.028,
+    drumVol: 0.05,
+    drumDensity: 0.35,
+    kickSteps: [0, 4],
+    bassDetune: 9, // cents wobble for sickliness
   },
 };
 
@@ -294,6 +376,29 @@ function scheduleKick(time, volume) {
   osc.stop(time + 0.16);
 }
 
+function scheduleSnare(time, volume) {
+  const ctx = getCtx();
+  const dest = getMasterGain();
+  // Noise burst + body tone for snare
+  const bufferSize = Math.floor(ctx.sampleRate * 0.1);
+  const buf = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.7;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 1800;
+  filter.Q.value = 0.8;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(volume, time);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.12);
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(dest);
+  src.start(time);
+}
+
 function scheduleHat(time, volume) {
   const ctx = getCtx();
   const dest = getMasterGain();
@@ -330,7 +435,11 @@ function tick() {
     // Bass: root on every beat (every other eighth) — root on downbeats, octave up on offbeats
     if (stepInBar % 2 === 0) {
       const useOctave = stepInBar !== 0 && Math.random() < 0.25;
-      const f = useOctave ? chord.root * 2 : chord.root;
+      let f = useOctave ? chord.root * 2 : chord.root;
+      // Optional detune wobble (Furzkopf)
+      if (profile.bassDetune) {
+        f *= Math.pow(2, ((Math.random() * 2 - 1) * profile.bassDetune) / 1200);
+      }
       scheduleNote(time, f, STEP * 1.7, profile.bassType, profile.bassVol);
     }
 
@@ -341,9 +450,13 @@ function tick() {
       scheduleNote(time, f, STEP * 0.55, profile.melodyType, profile.melodyVol);
     }
 
-    // Light percussion: kick on beat 1 and 3, hi-hat on offbeats
-    if (stepInBar === 0 || stepInBar === 4) {
+    // Drums: kick / snare on configured steps
+    const kickSteps = profile.kickSteps || [0, 4];
+    if (kickSteps.includes(stepInBar)) {
       scheduleKick(time, profile.drumVol);
+    }
+    if (profile.snareSteps && profile.snareSteps.includes(stepInBar)) {
+      scheduleSnare(time, profile.drumVol * 0.7);
     }
     if (stepInBar % 2 === 1 && Math.random() < profile.drumDensity) {
       scheduleHat(time, profile.drumVol * 0.5);

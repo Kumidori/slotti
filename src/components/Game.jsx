@@ -272,11 +272,15 @@ export default function Game() {
     startRun();
   }, [startRun]);
 
-  // Switch BGM intensity for boss fights
+  // Switch BGM intensity for boss fights — each boss has its own theme
   useEffect(() => {
     const inBossFight = state.phase === 'combat' && state.enemy?.isBoss;
-    setMusicIntensity(inBossFight ? 'boss' : 'calm');
-  }, [state.phase, state.enemy?.isBoss]);
+    if (inBossFight) {
+      setMusicIntensity(state.enemy.sprite || 'boss');
+    } else {
+      setMusicIntensity('calm');
+    }
+  }, [state.phase, state.enemy?.isBoss, state.enemy?.sprite]);
 
   // Stop music on game over / run complete
   useEffect(() => {
