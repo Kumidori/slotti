@@ -4,6 +4,7 @@ import fortressUrl from './assets/audio/fortress.mp3';
 import fullRestoreUrl from './assets/audio/fullRestore.mp3';
 import rainbowUrl from './assets/audio/rainbow.mp3';
 import tripleSkullUrl from './assets/audio/tripleSkull.mp3';
+import fartUrl from './assets/audio/fart.mp3';
 
 let audioCtx = null;
 let unlocked = false;
@@ -34,9 +35,8 @@ function primeComboAudio() {
   if (comboPrimed) return;
   comboPrimed = true;
   // Mobile requires each <audio> element to be unlocked by a user gesture.
-  // Silently play/pause each clip so later programmatic plays succeed.
-  for (const key of Object.keys(COMBO_AUDIO)) {
-    const audio = getComboAudio(key);
+  const allClips = [...Object.keys(COMBO_AUDIO).map(getComboAudio), getFartAudio()];
+  for (const audio of allClips) {
     if (!audio) continue;
     const original = audio.volume;
     audio.volume = 0;
@@ -50,6 +50,22 @@ function primeComboAudio() {
         audio.volume = original;
       });
   }
+}
+
+let fartAudio = null;
+function getFartAudio() {
+  if (!fartAudio) {
+    fartAudio = new Audio(fartUrl);
+    fartAudio.volume = 0.85;
+  }
+  return fartAudio;
+}
+
+function playFart() {
+  const a = getFartAudio();
+  if (!a) return;
+  a.currentTime = 0;
+  a.play().catch(() => {});
 }
 
 function playTone(freq, duration, type = 'square', volume = 0.15, delay = 0) {
@@ -116,21 +132,7 @@ export const sfx = {
     playTone(80, 0.15, 'sawtooth', 0.08, 0.1);
   },
   fart() {
-    // Procedural pbthhh — descending sawtooth + low noise rumble
-    const ctx = getCtx();
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(180, now);
-    osc.frequency.exponentialRampToValueAtTime(70, now + 0.4);
-    gain.gain.setValueAtTime(0.15, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.5);
-    playNoise(0.45, 0.08);
+    playFart();
   },
   heal() {
     playTone(440, 0.15, 'sine', 0.1);
