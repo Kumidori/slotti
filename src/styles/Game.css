@@ -50,9 +50,15 @@
 
 .floor-progress {
   display: flex;
-  gap: 3px;
+  gap: 4px;
   align-items: center;
   flex-shrink: 0;
+}
+
+.floor-label {
+  font-size: 12px;
+  color: #aaa;
+  margin-right: 4px;
 }
 
 .floor-dot {

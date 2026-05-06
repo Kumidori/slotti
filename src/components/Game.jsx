@@ -240,6 +240,7 @@ export default function Game() {
         <div className="top-bar">
           <div className="gold-badge">💰 {state.gold}</div>
           <div className="floor-progress">
+            <span className="floor-label">Floor {state.floor}</span>
             {[1, 2, 3, 4, 5].map(r => {
               const isShop = r === 2 || r === 4;
               const isBoss = r === 5;
