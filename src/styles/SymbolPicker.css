@@ -66,16 +66,58 @@
 }
 
 .picker-reel-btn.pickable:hover {
-  transform: scale(1.08);
-  filter: drop-shadow(0 0 12px rgba(241, 196, 15, 0.6));
+  transform: scale(1.05);
+  filter: drop-shadow(0 0 8px rgba(241, 196, 15, 0.4));
 }
 
 .picker-reel-btn.pickable:active {
   transform: scale(0.96);
 }
 
+.picker-reel-btn.selected {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 14px rgba(241, 196, 15, 0.8));
+}
+
+.picker-reel-btn.selected .reel {
+  border-color: #f1c40f;
+  box-shadow: 0 0 16px rgba(241, 196, 15, 0.5);
+}
+
 .picker-reel-btn:disabled {
   opacity: 0.85;
+}
+
+.picker-choose {
+  width: 100%;
+  max-width: 340px;
+  padding: 14px 0;
+  border: none;
+  border-radius: 12px;
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #e94560, #c0324d);
+  color: #fff;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s, opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 14px rgba(233, 69, 96, 0.35);
+}
+
+.picker-choose:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.picker-choose:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.picker-choose:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .picker-actions {

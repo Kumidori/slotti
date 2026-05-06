@@ -11,12 +11,14 @@ export default function SymbolPicker({ picks, gold, lastGoldEarned, rerollCount,
   const [spinningReels, setSpinningReels] = useState([true, true, true]);
   const [revealed, setRevealed] = useState(false);
   const [spinKey, setSpinKey] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(null);
   const tickRef = useRef(null);
 
   // Trigger spin animation on mount and whenever picks change (e.g. reroll)
   useEffect(() => {
     if (!picks) return;
     setRevealed(false);
+    setSelectedIndex(null);
     setSpinningReels([true, true, true]);
     setSpinKey(k => k + 1);
     sfx.spinStart();
@@ -60,12 +62,13 @@ export default function SymbolPicker({ picks, gold, lastGoldEarned, rerollCount,
           {[0, 1, 2].map(i => {
             const sym = getSymbol(picks[i]);
             const canPick = revealed;
+            const isSelected = selectedIndex === i;
             return (
               <button
                 key={i}
-                className={`picker-reel-btn ${canPick ? 'pickable' : ''}`}
+                className={`picker-reel-btn ${canPick ? 'pickable' : ''} ${isSelected ? 'selected' : ''}`}
                 disabled={!canPick}
-                onClick={() => { sfx.buttonClick(); onPick(picks[i]); }}
+                onClick={() => { sfx.buttonClick(); setSelectedIndex(i); }}
               >
                 <Reel
                   icon={sym.icon}
@@ -77,6 +80,14 @@ export default function SymbolPicker({ picks, gold, lastGoldEarned, rerollCount,
             );
           })}
         </div>
+
+        <button
+          className="picker-choose"
+          onClick={() => { sfx.buttonClick(); onPick(picks[selectedIndex]); }}
+          disabled={!revealed || selectedIndex === null}
+        >
+          Choose
+        </button>
 
         <div className="picker-actions">
           <button className="picker-skip" onClick={onSkip} disabled={!revealed}>
