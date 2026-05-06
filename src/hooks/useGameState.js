@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from 'react';
-import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest } from '../gameData';
+import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, BOSSES } from '../gameData';
 
 // Rooms: 1=fight, 2=fight, 3=shop, 4=fight, 5=boss
 function isShopRoom(room) { return room === 3; }
@@ -171,11 +171,28 @@ function reducer(state, action) {
     case 'ENEMY_DEFEATED': {
       const gold = state.enemy.gold;
       const isBoss = state.enemy.isBoss;
+      const isFinalBoss = isBoss && state.floor >= BOSSES.length;
       return {
         ...state,
         gold: state.gold + gold,
-        phase: isBoss ? 'floorComplete' : 'victory',
+        phase: isBoss ? (isFinalBoss ? 'runComplete' : 'floorComplete') : 'victory',
         lastGoldEarned: gold,
+      };
+    }
+
+    case 'NEXT_FLOOR': {
+      const nextFloor = state.floor + 1;
+      return {
+        ...state,
+        floor: nextFloor,
+        room: 1,
+        enemy: spawnForRoom(nextFloor, 1),
+        spinsLeft: state.maxSpins,
+        block: 0,
+        phase: 'combat',
+        comboText: '',
+        comboType: null,
+        reelResults: null,
       };
     }
 
@@ -265,6 +282,7 @@ export default function useGameState() {
   const buyItem = useCallback((item) => dispatch({ type: 'BUY_ITEM', item }), []);
   const setLockedItems = useCallback((items) => dispatch({ type: 'SET_LOCKED_ITEMS', items }), []);
   const closeShop = useCallback(() => dispatch({ type: 'CLOSE_SHOP' }), []);
+  const nextFloor = useCallback(() => dispatch({ type: 'NEXT_FLOOR' }), []);
   const setSpinning = useCallback((value) => dispatch({ type: 'SET_SPINNING', value }), []);
   const setReelResults = useCallback((results) => dispatch({ type: 'SET_REEL_RESULTS', results }), []);
   const debugSkipToRuby = useCallback(() => dispatch({ type: 'DEBUG_SKIP_TO_RUBY' }), []);
@@ -280,6 +298,7 @@ export default function useGameState() {
     buyItem,
     setLockedItems,
     closeShop,
+    nextFloor,
     setSpinning,
     setReelResults,
     debugSkipToRuby,

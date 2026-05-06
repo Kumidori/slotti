@@ -27,8 +27,13 @@ export default function Game() {
     state, startRun, resolveCombo, enemyAttack,
     enemyDefeated, triggerGameOver, nextRoom,
     buyItem, setLockedItems, closeShop, setSpinning,
-    debugSkipToRuby,
+    nextFloor, debugSkipToRuby,
   } = useGameState();
+
+  const handleNextFloor = useCallback(() => {
+    sfx.buttonClick();
+    nextFloor();
+  }, [nextFloor]);
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'b' || e.key === 'B') debugSkipToRuby(); };
@@ -349,6 +354,15 @@ export default function Game() {
           <h2>👑 Floor {state.floor} Complete!</h2>
           <p>You defeated the boss!</p>
           <p>+{state.lastGoldEarned} gold</p>
+          <button onClick={handleNextFloor}>Continue to Floor {state.floor + 1}</button>
+        </Overlay>
+      )}
+
+      {state.phase === 'runComplete' && (
+        <Overlay>
+          <h2>🏆 Run Complete!</h2>
+          <p>You defeated all bosses!</p>
+          <p>Total gold: {state.gold}</p>
           <button onClick={handleStartRun}>Play Again</button>
         </Overlay>
       )}
