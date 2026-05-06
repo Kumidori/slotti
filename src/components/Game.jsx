@@ -51,7 +51,7 @@ export default function Game() {
     state, startRun, resolveCombo, enemyAttack,
     enemyDefeated, triggerGameOver,
     buyItem, setLockedItems, closeShop, setSpinning,
-    nextFloor, debugKillEnemy,
+    nextFloor, debugKillEnemy, useLockTokens,
     pickSymbol, skipSymbol, rerollPicks,
   } = useGameState();
 
@@ -330,6 +330,7 @@ export default function Game() {
             state={state}
             onResolve={handleResolve}
             onSpinningChange={setSpinning}
+            onUseLockTokens={useLockTokens}
             disabled={spinDisabled}
           />
         </div>
@@ -353,7 +354,11 @@ export default function Game() {
             <div className="stats-row">
               <div className="stat-item">
                 <span className="stat-icon">🔄</span>
-                <span className="stat-value">{t('ui.spins', { count: state.spinsLeft })}</span>
+                <span className="stat-value">{state.spinsLeft}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-icon">🔒</span>
+                <span className="stat-value">{state.locksLeft}</span>
               </div>
               <div className="stat-item">
                 <span className="stat-icon">🛡️</span>

@@ -9,6 +9,9 @@ const en = {
   // Slot machine
   'slot.lockHint': '💡 Tap a reel to lock it for the next spin',
   'slot.locked': '🔒 Locked — will keep on next spin',
+  'slot.lockHintWithCount': '💡 Tap a reel to lock — {count} locks left',
+  'slot.lockedWithCount': '🔒 Locked — {count} more available',
+  'slot.noLocks': '🔒 No locks left this fight',
 
   // Combo names
   'combo.tripleSkull': '☠️ TRIPLE SKULL!',
@@ -112,6 +115,9 @@ const de = {
   // Slot machine
   'slot.lockHint': '💡 Tippe eine Walze zum Sperren für den nächsten Dreh',
   'slot.locked': '🔒 Gesperrt — bleibt beim nächsten Dreh',
+  'slot.lockHintWithCount': '💡 Tippe zum Sperren — {count} Sperren übrig',
+  'slot.lockedWithCount': '🔒 Gesperrt — noch {count} verfügbar',
+  'slot.noLocks': '🔒 Keine Sperren mehr in diesem Kampf',
 
   // Combo names
   'combo.tripleSkull': '☠️ DREIFACH-SCHÄDEL!',
@@ -215,6 +221,9 @@ const bg = {
   // Slot machine
   'slot.lockHint': '💡 Докоснете барабан, за да го заключите за следващото завъртане',
   'slot.locked': '🔒 Заключено — ще остане при следващото завъртане',
+  'slot.lockHintWithCount': '💡 Докоснете за заключване — {count} заключвания',
+  'slot.lockedWithCount': '🔒 Заключено — още {count}',
+  'slot.noLocks': '🔒 Няма повече заключвания в този бой',
 
   // Combo names
   'combo.tripleSkull': '☠️ ТРОЕН ЧЕРЕП!',

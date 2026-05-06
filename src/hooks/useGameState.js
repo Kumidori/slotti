@@ -40,6 +40,7 @@ function advanceToNextRoom(state) {
     comboText: '',
     comboType: null,
     reelResults: null,
+    locksLeft: state.maxLocks,
   };
 }
 
@@ -69,6 +70,8 @@ const INITIAL_STATE = {
   pickRerollCount: 0,
   pickRerollKey: 0,
   relics: [],
+  locksLeft: 3,
+  maxLocks: 3,
 };
 
 function reducer(state, action) {
@@ -273,7 +276,12 @@ function reducer(state, action) {
         comboText: '',
         comboType: null,
         reelResults: null,
+        locksLeft: state.maxLocks,
       };
+    }
+
+    case 'USE_LOCK_TOKENS': {
+      return { ...state, locksLeft: Math.max(0, state.locksLeft - action.count) };
     }
 
     case 'GAME_OVER':
@@ -354,6 +362,7 @@ export default function useGameState() {
   const setSpinning = useCallback((value) => dispatch({ type: 'SET_SPINNING', value }), []);
   const setReelResults = useCallback((results) => dispatch({ type: 'SET_REEL_RESULTS', results }), []);
   const debugKillEnemy = useCallback(() => dispatch({ type: 'DEBUG_KILL_ENEMY' }), []);
+  const useLockTokens = useCallback((count) => dispatch({ type: 'USE_LOCK_TOKENS', count }), []);
   const pickSymbol = useCallback((symbolId) => dispatch({ type: 'PICK_SYMBOL', symbolId }), []);
   const skipSymbol = useCallback(() => dispatch({ type: 'SKIP_SYMBOL' }), []);
   const rerollPicks = useCallback(() => dispatch({ type: 'REROLL_PICKS' }), []);
@@ -373,6 +382,7 @@ export default function useGameState() {
     setSpinning,
     setReelResults,
     debugKillEnemy,
+    useLockTokens,
     pickSymbol,
     skipSymbol,
     rerollPicks,

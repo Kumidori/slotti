@@ -5,7 +5,7 @@ import { ensureAudio, sfx } from '../audio';
 import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/SlotMachine.css';
 
-const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinningChange, disabled }, ref) {
+const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinningChange, onUseLockTokens, disabled }, ref) {
   const { t } = useTranslation();
   const [displayIcons, setDisplayIcons] = useState(['⚔️', '🛡️', '⚔️']);
   const [displaySymbolIds, setDisplaySymbolIds] = useState(['sword', 'shield', 'sword']);
@@ -28,12 +28,17 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
   const toggleLock = useCallback((i) => {
     if (isSpinning.current || disabled || state.spinsLeft <= 0) return;
     setLockedReels(prev => {
-      // Only one lock allowed at a time — tapping another reel moves the lock
-      const next = [false, false, false];
-      next[i] = !prev[i];
+      const next = [...prev];
+      if (next[i]) {
+        next[i] = false;
+      } else {
+        const currentLocked = prev.filter(Boolean).length;
+        if (currentLocked >= state.locksLeft) return prev;
+        next[i] = true;
+      }
       return next;
     });
-  }, [disabled, state.spinsLeft]);
+  }, [disabled, state.spinsLeft, state.locksLeft]);
 
   const spin = useCallback(() => {
     if (disabled || isSpinning.current || state.spinsLeft <= 0) return;
@@ -49,6 +54,9 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
       }
       return pickFromPool(state.symbolPool);
     });
+
+    const lockedCount = lockedReels.filter(Boolean).length;
+    if (lockedCount > 0) onUseLockTokens?.(lockedCount);
 
     setDisplayIcons(results.map(r => r.icon));
     setDisplaySymbolIds(results.map(r => r.id));
@@ -97,12 +105,14 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
 
       onResolve(results);
     }, stopDelays[2] + 100);
-  }, [disabled, state.spinsLeft, state.symbolPool, onResolve, onSpinningChange, lockedReels, displaySymbolIds]);
+  }, [disabled, state.spinsLeft, state.symbolPool, onResolve, onSpinningChange, onUseLockTokens, lockedReels, displaySymbolIds]);
 
   useImperativeHandle(ref, () => ({ spin }), [spin]);
 
-  const canLockNow = !isSpinning.current && !disabled && state.spinsLeft >= 1;
-  const anyLocked = lockedReels.some(Boolean);
+  const canLockNow = !isSpinning.current && !disabled && state.spinsLeft >= 1 && state.locksLeft > 0;
+  const lockedCount = lockedReels.filter(Boolean).length;
+  const anyLocked = lockedCount > 0;
+  const remainingTokens = state.locksLeft - lockedCount;
 
   return (
     <div className="slot-area">
@@ -117,12 +127,16 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
             highlight={highlights[i]}
             locked={lockedReels[i]}
             onToggleLock={() => toggleLock(i)}
-            canLock={canLockNow}
+            canLock={canLockNow && (lockedReels[i] || remainingTokens > 0)}
           />
         ))}
       </div>
-      <div className={`lock-hint ${canLockNow ? 'visible' : ''} ${anyLocked ? 'active' : ''}`}>
-        {anyLocked ? t('slot.locked') : t('slot.lockHint')}
+      <div className={`lock-hint ${state.spinsLeft >= 1 ? 'visible' : ''} ${anyLocked ? 'active' : ''}`}>
+        {state.locksLeft <= 0 && lockedCount === 0
+          ? t('slot.noLocks')
+          : anyLocked
+            ? t('slot.lockedWithCount', { count: state.locksLeft - lockedCount })
+            : t('slot.lockHintWithCount', { count: state.locksLeft })}
       </div>
     </div>
   );
