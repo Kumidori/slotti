@@ -72,6 +72,7 @@ export const ENEMIES = [
 export const BOSSES = [
   { name: 'Lili', sprite: 'lili', hp: 80, atk: 6, gold: 30, enrageAt: 0.3, enrageAtk: 12 },
   { name: 'Ruby', sprite: 'ruby', hp: 110, atk: 5, gold: 45, frenzyEvery: 3, frenzyHits: 3, frenzyMult: 0.6 },
+  { name: 'Furzkopf', sprite: 'furzkopf', hp: 140, atk: 7, gold: 60, poisonOnHit: { dmg: 2, ticks: 3 } },
 ];
 
 export const SHOP_ITEMS = [
@@ -151,6 +152,12 @@ export function spawnBoss(floor) {
     boss.frenzyHits = template.frenzyHits;
     boss.frenzyMult = template.frenzyMult;
     boss.attackCount = 0;
+  }
+  if (template.poisonOnHit) {
+    boss.poisonOnHit = {
+      dmg: Math.max(1, Math.round(template.poisonOnHit.dmg * scale)),
+      ticks: template.poisonOnHit.ticks,
+    };
   }
   return boss;
 }

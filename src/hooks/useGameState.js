@@ -61,6 +61,7 @@ function advanceToNextRoom(state) {
     comboType: null,
     reelResults: null,
     locksLeft: state.maxLocks,
+    poisonStacks: [],
   };
 }
 
@@ -95,6 +96,7 @@ const INITIAL_STATE = {
   floorRoomTypes: generateFloorRoomTypes(),
   sacrificeChosen: null,
   sacrificeReward: null,
+  poisonStacks: [],
 };
 
 function reducer(state, action) {
@@ -224,6 +226,26 @@ function reducer(state, action) {
       if (coinGold > 0) s.gold += coinGold;
       s.coinGold = coinGold;
 
+      // Tick poison stacks: each stack hits, then loses one tick
+      let poisonDmg = 0;
+      if (s.poisonStacks.length > 0) {
+        const newStacks = [];
+        for (const p of s.poisonStacks) {
+          poisonDmg += p.dmg;
+          if (p.ticksLeft - 1 > 0) {
+            newStacks.push({ ...p, ticksLeft: p.ticksLeft - 1 });
+          }
+        }
+        s.poisonStacks = newStacks;
+        if (poisonDmg > 0) s.playerHp = Math.max(0, s.playerHp - poisonDmg);
+      }
+      s.poisonDmg = poisonDmg;
+
+      if (s.playerHp <= 0) {
+        s.playerHp = 0;
+        s.phase = 'gameOver';
+      }
+
       if (dmg > 0 && hasRelic(s, 'glassCannon') && comboType === 'triple') {
         dmg = Math.round(dmg * 2);
       }
@@ -282,6 +304,12 @@ function reducer(state, action) {
       s.lastFrenzy = isFrenzy;
       if (s.enemy.frenzyEvery) {
         s.enemy = { ...s.enemy, attackCount: nextCount };
+      }
+      if (s.enemy.poisonOnHit) {
+        s.poisonStacks = [
+          ...s.poisonStacks,
+          { dmg: s.enemy.poisonOnHit.dmg, ticksLeft: s.enemy.poisonOnHit.ticks },
+        ];
       }
 
       if (s.playerHp <= 0) {
@@ -344,6 +372,7 @@ function reducer(state, action) {
         reelResults: null,
         locksLeft: state.maxLocks,
         floorRoomTypes: generateFloorRoomTypes(),
+        poisonStacks: [],
       };
     }
 

@@ -2,9 +2,10 @@ import { forwardRef } from 'react';
 import HpBar from './HpBar';
 import liliImg from '../assets/lili.webp';
 import rubyImg from '../assets/ruby.png';
+import furzkopfImg from '../assets/furzkopf.webp';
 import '../styles/Enemy.css';
 
-const SPRITE_IMAGES = { lili: liliImg, ruby: rubyImg };
+const SPRITE_IMAGES = { lili: liliImg, ruby: rubyImg, furzkopf: furzkopfImg };
 
 const Enemy = forwardRef(function Enemy({ enemy, spriteAnim, hpShaking, hpBarRef, spriteRef }, ref) {
   if (!enemy) return null;

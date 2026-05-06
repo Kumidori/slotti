@@ -115,6 +115,23 @@ export const sfx = {
     playTone(100, 0.2, 'sawtooth', 0.12);
     playTone(80, 0.15, 'sawtooth', 0.08, 0.1);
   },
+  fart() {
+    // Procedural pbthhh — descending sawtooth + low noise rumble
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(70, now + 0.4);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.5);
+    playNoise(0.45, 0.08);
+  },
   heal() {
     playTone(440, 0.15, 'sine', 0.1);
     playTone(660, 0.15, 'sine', 0.1, 0.1);

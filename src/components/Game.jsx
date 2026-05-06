@@ -172,6 +172,11 @@ export default function Game() {
       if (ct !== 'double' && ct !== 'triple') sfx.shield();
     }
 
+    if (state.poisonDmg > 0) {
+      addFloat(playerHpRef, `🌫️-${state.poisonDmg}`, 'poison');
+      triggerBarShake('player');
+    }
+
     if (state.justEnraged) {
       setTimeout(() => {
         setComboAnim({
@@ -217,7 +222,8 @@ export default function Game() {
         addFloat(playerHpRef, `🛡️-${blocked}`, 'shield-block');
       }
       if (incoming > 0) {
-        sfx.playerHit();
+        if (state.enemy.poisonOnHit) sfx.fart();
+        else sfx.playerHit();
         triggerShake();
         triggerFlash('red');
         triggerBarShake('player');
@@ -342,9 +348,13 @@ export default function Game() {
                       ? t('enemy.intent.frenzyIncoming', { name: state.enemy.name })
                       : t('enemy.intent.frenzyCountdown', { name: state.enemy.name, count: next });
                   })()
-                : state.enemy.isBoss
-                  ? t('enemy.intent.bossPrepares', { name: state.enemy.name })
-                  : t('enemy.intent.prepares', { name: state.enemy.name })
+                : state.enemy.poisonOnHit
+                  ? state.poisonStacks.length > 0
+                    ? t('enemy.intent.poisonActive', { name: state.enemy.name, dmg: state.poisonStacks.reduce((a, b) => a + b.dmg, 0) })
+                    : t('enemy.intent.poisonous', { name: state.enemy.name })
+                  : state.enemy.isBoss
+                    ? t('enemy.intent.bossPrepares', { name: state.enemy.name })
+                    : t('enemy.intent.prepares', { name: state.enemy.name })
             : ''}
         </div>
 
