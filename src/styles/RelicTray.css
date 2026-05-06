@@ -1,43 +1,54 @@
 .relic-tray {
+  position: absolute;
+  top: 50px;
+  right: 14px;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 4px;
-  align-items: center;
+  align-items: stretch;
+  z-index: 10;
+  background: rgba(241, 196, 15, 0.06);
+  border: 1px solid rgba(241, 196, 15, 0.25);
+  border-radius: 8px;
+  padding: 5px 5px;
+}
+
+.relic-tray:empty {
+  display: none;
 }
 
 .relic-chip {
   position: relative;
-  background: rgba(241, 196, 15, 0.08);
-  border: 1px solid rgba(241, 196, 15, 0.35);
-  border-radius: 6px;
-  padding: 2px 5px;
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, transform 0.1s;
+  transition: transform 0.1s, background 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 26px;
-  flex-shrink: 0;
+  border-radius: 5px;
 }
 
 .relic-chip:hover {
-  background: rgba(241, 196, 15, 0.16);
+  background: rgba(241, 196, 15, 0.12);
 }
 
 .relic-chip:active {
-  transform: scale(0.95);
+  transform: scale(0.92);
 }
 
 .relic-chip-icon {
-  font-size: 15px;
+  font-size: 18px;
   line-height: 1;
 }
 
 .relic-popover {
   position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
+  top: 50%;
+  right: calc(100% + 8px);
+  transform: translateY(-50%);
   background: #1f1638;
   border: 1px solid #533483;
   border-radius: 8px;

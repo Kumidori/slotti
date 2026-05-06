@@ -269,12 +269,12 @@ export default function Game() {
       <div className={`game ${screenShake ? 'screen-shake' : ''}`}>
 
         <SymbolPool pool={state.symbolPool} />
+        <RelicTray relics={state.relics} />
 
         <div className="top-bar">
           <div className="top-left">
             <div className="gold-badge">💰 {state.gold}</div>
             <LangToggle />
-            <RelicTray relics={state.relics} />
           </div>
           <div className="floor-progress">
             <span className="floor-label">{t('ui.floor', { floor: state.floor })}</span>
