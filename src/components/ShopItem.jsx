@@ -1,7 +1,9 @@
 import { ensureAudio, sfx } from '../audio';
+import { useTranslation } from '../i18n/useTranslation';
 import '../styles/Shop.css';
 
 export default function ShopItem({ item, locked, sold, selected, gold, onSelect, onToggleLock }) {
+  const { t } = useTranslation();
   const handleTap = () => {
     if (sold) return;
     onSelect(item);
@@ -24,8 +26,8 @@ export default function ShopItem({ item, locked, sold, selected, gold, onSelect,
     >
       <div className="item-icon">{item.icon}</div>
       <div className="shop-item-info">
-        <div className="item-name">{item.name}</div>
-        <div className="item-desc">{item.desc}</div>
+        <div className="item-name">{t(`item.${item.effectKey}.name`)}</div>
+        <div className="item-desc">{t(`item.${item.effectKey}.desc`)}</div>
       </div>
       <div className="item-cost">💰 {item.cost}</div>
       <button

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { SYMBOLS } from '../gameData';
+import { useTranslation } from '../i18n/useTranslation';
 import '../styles/SymbolPool.css';
 
 export default function SymbolPool({ pool }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const counts = {};
@@ -10,7 +12,7 @@ export default function SymbolPool({ pool }) {
 
   return (
     <>
-      <button className="pool-badge" onClick={() => setOpen(true)} title="View symbol pool">
+      <button className="pool-badge" onClick={() => setOpen(true)} title={t('pool.tapToView')}>
         {SYMBOLS.map(s => counts[s.id] ? (
           <span key={s.id} className="pool-badge-item">
             <span className="pool-badge-icon">{s.icon}</span>
@@ -22,8 +24,8 @@ export default function SymbolPool({ pool }) {
       {open && (
         <div className="pool-modal-backdrop" onClick={() => setOpen(false)}>
           <div className="pool-modal" onClick={e => e.stopPropagation()}>
-            <h3>Symbol Pool ({pool.length})</h3>
-            <p className="pool-sub">Each symbol's chance is its count divided by the total.</p>
+            <h3>{t('pool.title', { count: pool.length })}</h3>
+            <p className="pool-sub">{t('pool.subtitle')}</p>
             <div className="pool-list">
               {SYMBOLS.map(s => {
                 const c = counts[s.id] || 0;
@@ -39,7 +41,7 @@ export default function SymbolPool({ pool }) {
                 );
               })}
             </div>
-            <button className="pool-close" onClick={() => setOpen(false)}>Close</button>
+            <button className="pool-close" onClick={() => setOpen(false)}>{t('pool.close')}</button>
           </div>
         </div>
       )}

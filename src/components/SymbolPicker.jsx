@@ -3,11 +3,13 @@ import Reel from './Reel';
 import { getSymbol } from '../gameData';
 import { rerollCost } from '../hooks/useGameState';
 import { sfx } from '../audio';
+import { useTranslation } from '../i18n/useTranslation';
 import '../styles/SymbolPicker.css';
 
 const STOP_DELAYS = [600, 900, 1200];
 
 export default function SymbolPicker({ picks, gold, lastGoldEarned, rerollCount, luckBonus, onPick, onSkip, onReroll }) {
+  const { t } = useTranslation();
   const [spinningReels, setSpinningReels] = useState([true, true, true]);
   const [revealed, setRevealed] = useState(false);
   const [spinKey, setSpinKey] = useState(0);
@@ -54,9 +56,9 @@ export default function SymbolPicker({ picks, gold, lastGoldEarned, rerollCount,
   return (
     <div className="symbol-picker">
       <div className="symbol-picker-inner">
-        <h2>⚔️ Victory!</h2>
-        {lastGoldEarned > 0 && <p className="picker-gold">+{lastGoldEarned} gold</p>}
-        <p className="picker-sub">Add a symbol to your pool — or skip.</p>
+        <h2>{t('picker.victory')}</h2>
+        {lastGoldEarned > 0 && <p className="picker-gold">{t('picker.goldEarned', { amount: lastGoldEarned })}</p>}
+        <p className="picker-sub">{t('picker.subtitle')}</p>
 
         <div className="picker-reels">
           {[0, 1, 2].map(i => {
@@ -86,20 +88,19 @@ export default function SymbolPicker({ picks, gold, lastGoldEarned, rerollCount,
           onClick={() => { sfx.buttonClick(); onPick(picks[selectedIndex]); }}
           disabled={!revealed || selectedIndex === null}
         >
-          Choose
+          {t('picker.choose')}
         </button>
 
         <div className="picker-actions">
           <button className="picker-skip" onClick={onSkip} disabled={!revealed}>
-            Skip
+            {t('picker.skip')}
           </button>
           <button
             className="picker-reroll"
             onClick={onReroll}
             disabled={!revealed || !canReroll}
-            title={canReroll ? `Reroll for ${cost}g` : `Need ${cost}g`}
           >
-            🎲 Reroll <span className="reroll-cost">{cost}g</span>
+            {t('picker.reroll')} <span className="reroll-cost">{cost}g</span>
           </button>
         </div>
       </div>

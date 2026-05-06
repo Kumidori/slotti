@@ -8,23 +8,44 @@ import Overlay from './Overlay';
 import FloatNumber from './FloatNumber';
 import SymbolPicker from './SymbolPicker';
 import SymbolPool from './SymbolPool';
+import LangToggle from './LangToggle';
 import { ensureAudio, sfx } from '../audio';
 import { calcInterest } from '../gameData';
+import { useTranslation } from '../i18n/useTranslation';
 import '../styles/Game.css';
 
-function buildComboDetail(state) {
+function comboKeyFromText(text) {
+  // Map fixed English combo strings (set in reducer) to translation keys.
+  switch (text) {
+    case '☠️ TRIPLE SKULL!': return 'combo.tripleSkull';
+    case '⚔️ TRIPLE SLASH!': return 'combo.tripleSlash';
+    case '✨ ARCANE BURST!': return 'combo.arcaneBurst';
+    case '🛡️ FORTRESS!': return 'combo.fortress';
+    case '🧪 FULL RESTORE!': return 'combo.fullRestore';
+    case '⚔️ Double Strike': return 'combo.doubleStrike';
+    case '✨ Spell Cast': return 'combo.spellCast';
+    case '🛡️ Shield Wall': return 'combo.shieldWall';
+    case '🧪 Quick Heal': return 'combo.quickHeal';
+    case '💀 Cursed!': return 'combo.cursed';
+    case 'Weak hit': return 'combo.weakHit';
+    default: return null;
+  }
+}
+
+function buildComboDetail(state, t) {
   const parts = [];
-  if (state.dmg > 0) parts.push(`${state.dmg} damage`);
-  if (state.heal > 0) parts.push(`+${state.heal} HP`);
-  if (state.blockGained > 0) parts.push(`+${state.blockGained} 🛡️`);
+  if (state.dmg > 0) parts.push(t('combo.detail.damage', { amount: state.dmg }));
+  if (state.heal > 0) parts.push(t('combo.detail.heal', { amount: state.heal }));
+  if (state.blockGained > 0) parts.push(t('combo.detail.block', { amount: state.blockGained }));
   if (state.comboType === 'skull' || state.comboType === 'skull-triple') {
     const selfDmg = state.comboType === 'skull-triple' ? 15 : 5;
-    parts.push(`${selfDmg} self damage`);
+    parts.push(t('combo.detail.selfDamage', { amount: selfDmg }));
   }
   return parts.join(' · ') || null;
 }
 
 export default function Game() {
+  const { t } = useTranslation();
   const {
     state, startRun, resolveCombo, enemyAttack,
     enemyDefeated, triggerGameOver,
@@ -94,10 +115,12 @@ export default function Game() {
 
   useEffect(() => {
     if (state.comboText) {
-      const detail = buildComboDetail(state);
-      setComboAnim({ text: state.comboText, type: state.comboType, detail, key: Date.now() });
+      const detail = buildComboDetail(state, t);
+      const key = comboKeyFromText(state.comboText);
+      const text = key ? t(key) : state.comboText;
+      setComboAnim({ text, type: state.comboType, detail, key: Date.now() });
     }
-  }, [state.comboText, state.spinsLeft]);
+  }, [state.comboText, state.spinsLeft, t]);
 
   useEffect(() => {
     if (state.spinning) setComboAnim(null);
@@ -141,9 +164,9 @@ export default function Game() {
     if (state.justEnraged) {
       setTimeout(() => {
         setComboAnim({
-          text: 'Lili got her period!',
+          text: t('enemy.intent.enraged.lili').split(',')[0] + '!',
           type: 'enrage',
-          detail: 'All outgoing and incoming damage increased!',
+          detail: t('enemy.intent.enraged.lili').split(',').slice(1).join(',').trim(),
           key: Date.now() + 1,
         });
         triggerShake();
@@ -197,21 +220,23 @@ export default function Game() {
       }
 
       const parts = [];
-      if (incoming > 0) parts.push(`${incoming} damage`);
-      if (blocked > 0) parts.push(`${blocked} blocked`);
-      if (incoming === 0 && blocked > 0) parts.unshift('fully blocked!');
+      if (incoming > 0) parts.push(t('enemy.attack.detail.damage', { amount: incoming }));
+      if (blocked > 0) parts.push(t('enemy.attack.detail.blocked', { amount: blocked }));
+      if (incoming === 0 && blocked > 0) parts.unshift(t('enemy.attack.detail.fullyBlocked'));
       setComboAnim({
-        text: isFrenzy ? `🐕 ${state.enemy.name} FRENZY!` : `${state.enemy.name} attacks!`,
+        text: isFrenzy
+          ? t('enemy.frenzy', { name: state.enemy.name })
+          : t('enemy.attack', { name: state.enemy.name }),
         type: isFrenzy ? 'enrage' : 'enemy-attack',
         detail: isFrenzy
-          ? `${hits} bites · ${parts.join(' · ') || 'no damage'}`
+          ? `${t('enemy.attack.detail.bites', { count: hits })} · ${parts.join(' · ') || t('enemy.attack.detail.noDamage')}`
           : parts.join(' · ') || null,
         key: Date.now(),
       });
 
       enemyAttack();
     }, 350);
-  }, [state.enemy, state.block, enemyAttack, triggerShake, triggerFlash, triggerBarShake, addFloat]);
+  }, [state.enemy, state.block, enemyAttack, triggerShake, triggerFlash, triggerBarShake, addFloat, t]);
 
   const handleBuy = useCallback((item) => {
     buyItem(item);
@@ -240,7 +265,7 @@ export default function Game() {
         <div className="top-bar">
           <div className="gold-badge">💰 {state.gold}</div>
           <div className="floor-progress">
-            <span className="floor-label">Floor {state.floor}</span>
+            <span className="floor-label">{t('ui.floor', { floor: state.floor })}</span>
             {[1, 2, 3, 4, 5].map(r => {
               const isShop = r === 2 || r === 4;
               const isBoss = r === 5;
@@ -269,15 +294,17 @@ export default function Game() {
         <div className={`enemy-intent${state.enemy?.enraged ? ' enraged' : ''}${comboAnim ? ' hidden' : ''}`}>
           {state.enemy
             ? state.enemy.enraged
-              ? 'Lili got her period, all outgoing and incoming damage increased!'
+              ? t('enemy.intent.enraged.lili')
               : state.enemy.frenzyEvery
                 ? (() => {
                     const next = state.enemy.frenzyEvery - ((state.enemy.attackCount || 0) % state.enemy.frenzyEvery);
                     return next === 1
-                      ? `🐕 ${state.enemy.name} growls... FRENZY incoming!`
-                      : `🐕 ${state.enemy.name} winds up... ${next} attacks until FRENZY`;
+                      ? t('enemy.intent.frenzyIncoming', { name: state.enemy.name })
+                      : t('enemy.intent.frenzyCountdown', { name: state.enemy.name, count: next });
                   })()
-                : `${state.enemy.isBoss ? '👹 BOSS — ' : ''}${state.enemy.name} prepares to strike!`
+                : state.enemy.isBoss
+                  ? t('enemy.intent.bossPrepares', { name: state.enemy.name })
+                  : t('enemy.intent.prepares', { name: state.enemy.name })
             : ''}
         </div>
 
@@ -321,7 +348,7 @@ export default function Game() {
             <div className="stats-row">
               <div className="stat-item">
                 <span className="stat-icon">🔄</span>
-                <span className="stat-value">{state.spinsLeft} spins</span>
+                <span className="stat-value">{t('ui.spins', { count: state.spinsLeft })}</span>
               </div>
               <div className="stat-item">
                 <span className="stat-icon">🛡️</span>
@@ -355,28 +382,28 @@ export default function Game() {
 
       {state.phase === 'floorComplete' && (
         <Overlay>
-          <h2>👑 Floor {state.floor} Complete!</h2>
-          <p>You defeated the boss!</p>
-          <p>+{state.lastGoldEarned} gold</p>
-          <button onClick={handleNextFloor}>Continue to Floor {state.floor + 1}</button>
+          <h2>{t('overlay.floorComplete', { floor: state.floor })}</h2>
+          <p>{t('overlay.bossDefeated')}</p>
+          <p>{t('picker.goldEarned', { amount: state.lastGoldEarned })}</p>
+          <button onClick={handleNextFloor}>{t('overlay.continueToFloor', { floor: state.floor + 1 })}</button>
         </Overlay>
       )}
 
       {state.phase === 'runComplete' && (
         <Overlay>
-          <h2>🏆 Run Complete!</h2>
-          <p>You defeated all bosses!</p>
-          <p>Total gold: {state.gold}</p>
-          <button onClick={handleStartRun}>Play Again</button>
+          <h2>{t('overlay.runComplete')}</h2>
+          <p>{t('overlay.allBossesDefeated')}</p>
+          <p>{t('overlay.totalGold', { gold: state.gold })}</p>
+          <button onClick={handleStartRun}>{t('overlay.playAgain')}</button>
         </Overlay>
       )}
 
       {state.phase === 'gameOver' && (
         <Overlay>
-          <h2>💀 Game Over</h2>
-          <p>Floor {state.floor} — Room {state.room}</p>
-          <p>Gold earned: {state.gold}</p>
-          <button onClick={handleStartRun}>Try Again</button>
+          <h2>{t('overlay.gameOver')}</h2>
+          <p>{t('overlay.position', { floor: state.floor, room: state.room })}</p>
+          <p>{t('overlay.goldEarned', { gold: state.gold })}</p>
+          <button onClick={handleStartRun}>{t('overlay.tryAgain')}</button>
         </Overlay>
       )}
 
@@ -392,6 +419,8 @@ export default function Game() {
       {floats.map(f => (
         <FloatNumber key={f.id} text={f.text} type={f.type} targetRef={f.ref} />
       ))}
+
+      <LangToggle />
     </>
   );
 }

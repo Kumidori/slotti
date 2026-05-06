@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import ShopItem from './ShopItem';
 import { SHOP_ITEMS, calcInterest } from '../gameData';
 import { sfx, ensureAudio } from '../audio';
+import { useTranslation } from '../i18n/useTranslation';
 import '../styles/Shop.css';
 
 export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
+  const { t } = useTranslation();
   const [entries, setEntries] = useState([]);
   const [selectedName, setSelectedName] = useState(null);
 
@@ -74,12 +76,12 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
 
   return (
     <div className="shop-overlay">
-      <h2>🏪 Shop</h2>
+      <h2>{t('shop.title')}</h2>
       <div className="shop-gold">💰 {state.gold}</div>
       <div className="shop-interest">
         {state.lastInterest > 0
-          ? `+${state.lastInterest} interest earned! (${nextInterest} next)`
-          : `Save 10+ gold to earn interest (max +5)`
+          ? t('shop.interestEarned', { interest: state.lastInterest, next: nextInterest })
+          : t('shop.interestPrompt')
         }
       </div>
       <div className="shop-items">
@@ -101,10 +103,10 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
         onClick={handleChoose}
         disabled={!selectedName || !canAfford}
       >
-        Choose
+        {t('shop.choose')}
       </button>
       <button className="shop-skip-btn" onClick={handleSkip}>
-        Leave Shop →
+        {t('shop.leave')}
       </button>
     </div>
   );

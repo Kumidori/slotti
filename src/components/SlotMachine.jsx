@@ -2,9 +2,11 @@ import { useState, useRef, useCallback, useEffect, useImperativeHandle, forwardR
 import Reel from './Reel';
 import { pickFromPool, SYMBOLS } from '../gameData';
 import { ensureAudio, sfx } from '../audio';
+import { useTranslation } from '../i18n/useTranslation';
 import '../styles/SlotMachine.css';
 
 const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinningChange, disabled }, ref) {
+  const { t } = useTranslation();
   const [displayIcons, setDisplayIcons] = useState(['⚔️', '🛡️', '⚔️']);
   const [displaySymbolIds, setDisplaySymbolIds] = useState(['sword', 'shield', 'sword']);
   const [spinningReels, setSpinningReels] = useState([false, false, false]);
@@ -120,7 +122,7 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
         ))}
       </div>
       <div className={`lock-hint ${canLockNow ? 'visible' : ''} ${anyLocked ? 'active' : ''}`}>
-        {anyLocked ? '🔒 Locked — will keep on next spin' : '💡 Tap a reel to lock it for the next spin'}
+        {anyLocked ? t('slot.locked') : t('slot.lockHint')}
       </div>
     </div>
   );
