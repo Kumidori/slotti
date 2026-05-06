@@ -252,7 +252,7 @@ export default function Game() {
                     key={r}
                     className={`floor-dot${isShop ? ' shop' : ''}${isBoss ? ' boss' : ''}${done ? ' done' : ''}${current ? ' current' : ''}`}
                   >
-                    {isShop ? '🛒' : isBoss ? '💀' : ''}
+                    {isShop ? '💰' : isBoss ? '💀' : ''}
                   </span>
                 );
               })}
