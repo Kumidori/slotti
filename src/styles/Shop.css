@@ -89,36 +89,64 @@
   color: #f1c40f;
 }
 
-/* Action button */
-.shop-action-btn {
-  background: #333;
-  color: #ccc;
+/* Choose / Skip buttons (matches symbol picker) */
+.shop-choose-btn {
+  width: 100%;
+  max-width: 340px;
+  padding: 14px 0;
   border: none;
-  padding: 14px 48px;
-  font-size: 18px;
-  font-weight: bold;
   border-radius: 12px;
-  cursor: pointer;
-  min-height: 52px;
-  min-width: 160px;
-  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.shop-action-btn:active { transform: scale(0.97); }
-
-.shop-action-btn.choose {
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
   background: linear-gradient(180deg, #e94560, #c0324d);
   color: #fff;
-  box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s, opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 14px rgba(233, 69, 96, 0.35);
+  margin-bottom: 10px;
 }
 
-.shop-action-btn.choose:active {
-  background: linear-gradient(180deg, #d63b55, #a82a42);
+.shop-choose-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
 }
 
-.shop-action-btn.choose.cant-afford {
+.shop-choose-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.shop-choose-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.shop-choose-btn.cant-afford:not(:disabled) {
   background: #555;
   box-shadow: none;
-  color: #999;
+  color: #ccc;
+}
+
+.shop-skip-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ccc;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 160px;
+}
+
+.shop-skip-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.shop-skip-btn:active {
+  transform: scale(0.97);
 }

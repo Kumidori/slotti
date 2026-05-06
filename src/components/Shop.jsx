@@ -36,14 +36,7 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
   };
 
   const handleChoose = () => {
-    if (!selectedName) {
-      const newLocked = entries.filter(e => e.locked && !e.sold).map(e => e.item);
-      onSetLockedItems(newLocked);
-      sfx.buttonClick();
-      onClose();
-      return;
-    }
-
+    if (!selectedName) return;
     const entry = entries.find(e => e.item.name === selectedName);
     if (!entry || entry.sold) return;
 
@@ -59,6 +52,13 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
     ));
     onBuy(entry.item);
     setSelectedName(null);
+  };
+
+  const handleSkip = () => {
+    const newLocked = entries.filter(e => e.locked && !e.sold).map(e => e.item);
+    onSetLockedItems(newLocked);
+    sfx.buttonClick();
+    onClose();
   };
 
   const handleToggleLock = (item) => {
@@ -97,10 +97,14 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
         ))}
       </div>
       <button
-        className={`shop-action-btn ${selectedName ? 'choose' : ''} ${selectedName && !canAfford ? 'cant-afford' : ''}`}
+        className={`shop-choose-btn ${!canAfford ? 'cant-afford' : ''}`}
         onClick={handleChoose}
+        disabled={!selectedName || !canAfford}
       >
-        {selectedName ? 'Choose' : 'Skip →'}
+        Choose
+      </button>
+      <button className="shop-skip-btn" onClick={handleSkip}>
+        Leave Shop →
       </button>
     </div>
   );
