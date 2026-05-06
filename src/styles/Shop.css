@@ -70,29 +70,43 @@
 
 .shop-item.is-relic .item-name { color: #f1c40f; }
 
-/* Rarity glows on shop items */
+/* Rarity glows on shop items — full background tint + inner/outer glow */
 .shop-item.rarity-rare {
   border-color: #5aa0ff;
-  box-shadow: 0 0 14px rgba(80, 160, 255, 0.45), inset 0 0 8px rgba(80, 160, 255, 0.15);
+  background: linear-gradient(180deg, rgba(80, 160, 255, 0.35), rgba(40, 90, 180, 0.5));
+  box-shadow:
+    0 0 22px rgba(80, 160, 255, 0.7),
+    inset 0 0 28px rgba(80, 160, 255, 0.45);
 }
 
 .shop-item.rarity-epic {
   border-color: #b04fff;
-  box-shadow: 0 0 18px rgba(180, 80, 255, 0.55), inset 0 0 10px rgba(180, 80, 255, 0.2);
+  background: linear-gradient(180deg, rgba(180, 80, 255, 0.4), rgba(110, 40, 180, 0.55));
+  box-shadow:
+    0 0 26px rgba(180, 80, 255, 0.8),
+    inset 0 0 32px rgba(180, 80, 255, 0.5);
   animation: epicShimmer 2.4s ease-in-out infinite;
 }
 
 @keyframes epicShimmer {
-  0%, 100% { box-shadow: 0 0 18px rgba(180, 80, 255, 0.45), inset 0 0 10px rgba(180, 80, 255, 0.15); }
-  50%      { box-shadow: 0 0 28px rgba(180, 80, 255, 0.75), inset 0 0 14px rgba(180, 80, 255, 0.25); }
+  0%, 100% {
+    box-shadow:
+      0 0 22px rgba(180, 80, 255, 0.65),
+      inset 0 0 28px rgba(180, 80, 255, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 36px rgba(180, 80, 255, 1),
+      inset 0 0 40px rgba(180, 80, 255, 0.6);
+  }
 }
 
 .shop-item.rarity-rare .item-name {
-  color: #8ec3ff;
+  color: #d6e7ff;
 }
 
 .shop-item.rarity-epic .item-name {
-  color: #d29bff;
+  color: #f0dbff;
 }
 
 .relic-tag {

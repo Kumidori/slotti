@@ -97,18 +97,32 @@
 
 .reel.reel-rarity-rare {
   border-color: #5aa0ff;
-  box-shadow: 0 0 14px rgba(80, 160, 255, 0.55), inset 0 0 8px rgba(80, 160, 255, 0.2);
+  background: linear-gradient(180deg, #1f3f6e, #15294a);
+  box-shadow:
+    0 0 22px rgba(80, 160, 255, 0.75),
+    inset 0 0 28px rgba(80, 160, 255, 0.45);
 }
 
 .reel.reel-rarity-epic {
   border-color: #b04fff;
-  box-shadow: 0 0 18px rgba(180, 80, 255, 0.65), inset 0 0 10px rgba(180, 80, 255, 0.25);
+  background: linear-gradient(180deg, #3a1f5c, #261142);
+  box-shadow:
+    0 0 26px rgba(180, 80, 255, 0.85),
+    inset 0 0 32px rgba(180, 80, 255, 0.5);
   animation: epicReelShimmer 2.4s ease-in-out infinite;
 }
 
 @keyframes epicReelShimmer {
-  0%, 100% { box-shadow: 0 0 18px rgba(180, 80, 255, 0.5),  inset 0 0 10px rgba(180, 80, 255, 0.2); }
-  50%      { box-shadow: 0 0 28px rgba(180, 80, 255, 0.85), inset 0 0 14px rgba(180, 80, 255, 0.3); }
+  0%, 100% {
+    box-shadow:
+      0 0 22px rgba(180, 80, 255, 0.7),
+      inset 0 0 28px rgba(180, 80, 255, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 36px rgba(180, 80, 255, 1),
+      inset 0 0 42px rgba(180, 80, 255, 0.65);
+  }
 }
 
 .reel-lock-badge {
