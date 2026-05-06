@@ -26,8 +26,9 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
   const toggleLock = useCallback((i) => {
     if (isSpinning.current || disabled || state.spinsLeft <= 0) return;
     setLockedReels(prev => {
-      const next = [...prev];
-      next[i] = !next[i];
+      // Only one lock allowed at a time — tapping another reel moves the lock
+      const next = [false, false, false];
+      next[i] = !prev[i];
       return next;
     });
   }, [disabled, state.spinsLeft]);
