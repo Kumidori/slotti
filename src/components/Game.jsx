@@ -11,7 +11,8 @@ import SacrificeRoom from './SacrificeRoom';
 import SymbolPool from './SymbolPool';
 import RelicTray from './RelicTray';
 import LangToggle from './LangToggle';
-import { ensureAudio, sfx, playComboVoice } from '../audio';
+import MusicToggle from './MusicToggle';
+import { ensureAudio, sfx, playComboVoice, startMusic, setMusicIntensity, stopMusic } from '../audio';
 import { calcInterest } from '../gameData';
 import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/Game.css';
@@ -254,9 +255,33 @@ export default function Game() {
 
   const handleStartRun = useCallback(() => {
     ensureAudio();
+    startMusic('calm');
     sfx.buttonClick();
     startRun();
   }, [startRun]);
+
+  // Switch BGM intensity for boss fights
+  useEffect(() => {
+    const inBossFight = state.phase === 'combat' && state.enemy?.isBoss;
+    setMusicIntensity(inBossFight ? 'boss' : 'calm');
+  }, [state.phase, state.enemy?.isBoss]);
+
+  // Stop music on game over / run complete
+  useEffect(() => {
+    if (state.phase === 'gameOver' || state.phase === 'runComplete') {
+      stopMusic();
+    }
+  }, [state.phase]);
+
+  // Try to start music as soon as the player first interacts (any tap)
+  useEffect(() => {
+    const onFirstInteract = () => {
+      startMusic('calm');
+      window.removeEventListener('pointerdown', onFirstInteract);
+    };
+    window.addEventListener('pointerdown', onFirstInteract, { once: true });
+    return () => window.removeEventListener('pointerdown', onFirstInteract);
+  }, []);
 
   const slotRef = useRef(null);
   const interest = calcInterest(state.gold);
@@ -277,6 +302,7 @@ export default function Game() {
           <div className="top-left">
             <div className="gold-badge">💰 {state.gold}</div>
             <LangToggle />
+            <MusicToggle />
           </div>
           <div className="floor-progress">
             <span className="floor-label">{t('ui.floor', { floor: state.floor })}</span>

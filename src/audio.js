@@ -166,6 +166,121 @@ export const sfx = {
 };
 
 
+// --- Procedural background music ---
+
+const BPM = 96;
+const STEP = 60 / BPM / 2; // eighth notes
+
+// A natural minor: A C E with passing notes — calm & wistful
+const CALM = {
+  bass:   [110, 110, 87,  87,  98,  98,  110, 110], // A2 A2 F2 F2 G2 G2 A2 A2
+  melody: [440, 523, 659, 523, 440, 587, 523, 440], // arpeggio
+  bassType: 'triangle',
+  melodyType: 'sine',
+  bassVol: 0.05,
+  melodyVol: 0.025,
+};
+
+// Tighter, harder pattern for bosses
+const BOSS = {
+  bass:   [110, 165, 110, 196, 110, 165, 110, 220],
+  melody: [220, 330, 277, 330, 220, 415, 330, 277],
+  bassType: 'square',
+  melodyType: 'triangle',
+  bassVol: 0.06,
+  melodyVol: 0.035,
+};
+
+const musicState = {
+  playing: false,
+  intensity: 'calm',
+  muted: typeof localStorage !== 'undefined' && localStorage.getItem('mute_music') === '1',
+  scheduler: null,
+  nextNote: 0,
+  step: 0,
+  masterGain: null,
+};
+
+function getMasterGain() {
+  if (musicState.masterGain) return musicState.masterGain;
+  const ctx = getCtx();
+  const g = ctx.createGain();
+  g.gain.value = musicState.muted ? 0 : 1;
+  g.connect(ctx.destination);
+  musicState.masterGain = g;
+  return g;
+}
+
+function scheduleNote(time, freq, duration, type, volume) {
+  const ctx = getCtx();
+  const dest = getMasterGain();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, time);
+  gain.gain.linearRampToValueAtTime(volume, time + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+  osc.connect(gain);
+  gain.connect(dest);
+  osc.start(time);
+  osc.stop(time + duration + 0.05);
+}
+
+function tick() {
+  const ctx = getCtx();
+  const lookahead = 0.15;
+  const pattern = musicState.intensity === 'boss' ? BOSS : CALM;
+  while (musicState.nextNote < ctx.currentTime + lookahead) {
+    const idx = musicState.step % pattern.bass.length;
+    scheduleNote(musicState.nextNote, pattern.bass[idx], STEP * 0.9, pattern.bassType, pattern.bassVol);
+    if (musicState.step % 2 === 0) {
+      scheduleNote(musicState.nextNote, pattern.melody[idx], STEP * 0.55, pattern.melodyType, pattern.melodyVol);
+    }
+    musicState.nextNote += STEP;
+    musicState.step++;
+  }
+}
+
+export function startMusic(intensity = 'calm') {
+  if (typeof window === 'undefined') return;
+  ensureAudio();
+  musicState.intensity = intensity;
+  if (musicState.playing) return;
+  musicState.playing = true;
+  musicState.nextNote = getCtx().currentTime + 0.1;
+  musicState.step = 0;
+  musicState.scheduler = setInterval(tick, 40);
+}
+
+export function stopMusic() {
+  if (musicState.scheduler) {
+    clearInterval(musicState.scheduler);
+    musicState.scheduler = null;
+  }
+  musicState.playing = false;
+}
+
+export function setMusicIntensity(intensity) {
+  if (musicState.intensity === intensity) return;
+  musicState.intensity = intensity;
+  // Reset step so the new pattern starts on a downbeat
+  musicState.step = 0;
+}
+
+export function setMusicMuted(muted) {
+  musicState.muted = !!muted;
+  try { localStorage.setItem('mute_music', muted ? '1' : '0'); } catch { /* ignore */ }
+  const ctx = getCtx();
+  const g = getMasterGain();
+  g.gain.cancelScheduledValues(ctx.currentTime);
+  g.gain.linearRampToValueAtTime(muted ? 0 : 1, ctx.currentTime + 0.2);
+}
+
+export function isMusicMuted() {
+  return musicState.muted;
+}
+
 // --- Combo announcer (prerecorded English voice clips) ---
 
 const COMBO_AUDIO = {
