@@ -65,11 +65,35 @@
 .shop-item .item-desc { font-size: 11px; color: #aaa; }
 
 .shop-item.is-relic {
-  border-color: #c9a84b;
   background: linear-gradient(180deg, #1f1834, #16213e);
 }
 
 .shop-item.is-relic .item-name { color: #f1c40f; }
+
+/* Rarity glows on shop items */
+.shop-item.rarity-rare {
+  border-color: #5aa0ff;
+  box-shadow: 0 0 14px rgba(80, 160, 255, 0.45), inset 0 0 8px rgba(80, 160, 255, 0.15);
+}
+
+.shop-item.rarity-epic {
+  border-color: #b04fff;
+  box-shadow: 0 0 18px rgba(180, 80, 255, 0.55), inset 0 0 10px rgba(180, 80, 255, 0.2);
+  animation: epicShimmer 2.4s ease-in-out infinite;
+}
+
+@keyframes epicShimmer {
+  0%, 100% { box-shadow: 0 0 18px rgba(180, 80, 255, 0.45), inset 0 0 10px rgba(180, 80, 255, 0.15); }
+  50%      { box-shadow: 0 0 28px rgba(180, 80, 255, 0.75), inset 0 0 14px rgba(180, 80, 255, 0.25); }
+}
+
+.shop-item.rarity-rare .item-name {
+  color: #8ec3ff;
+}
+
+.shop-item.rarity-epic .item-name {
+  color: #d29bff;
+}
 
 .relic-tag {
   font-size: 10px;

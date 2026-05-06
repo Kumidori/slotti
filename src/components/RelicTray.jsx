@@ -21,7 +21,7 @@ export default function RelicTray({ relics }) {
         return (
           <button
             key={`${id}-${i}`}
-            className="relic-chip"
+            className={`relic-chip rarity-${def.rarity || 'common'}`}
             onClick={() => setOpen(open === i ? null : i)}
           >
             <span className="relic-chip-icon">{def.icon}</span>

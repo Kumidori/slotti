@@ -102,6 +102,7 @@ export default function SacrificeRoom({ pool, sacrificeChosen, sacrificeReward, 
                   spinning={spinning}
                   spinDuration={REVEAL_DURATION}
                   spinKey={spinKey}
+                  rarity={rewardSym?.rarity}
                 />
               </div>
             </div>

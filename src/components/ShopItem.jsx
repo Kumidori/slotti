@@ -19,10 +19,11 @@ export default function ShopItem({ item, locked, sold, selected, gold, onSelect,
 
   const cantAfford = gold < item.cost;
   const prefix = item.type === 'relic' ? 'relic' : 'item';
+  const rarity = item.rarity || 'common';
 
   return (
     <div
-      className={`shop-item ${sold ? 'sold' : ''} ${selected ? 'selected' : ''} ${cantAfford && !sold ? 'cant-afford' : ''} ${item.type === 'relic' ? 'is-relic' : ''}`}
+      className={`shop-item rarity-${rarity} ${sold ? 'sold' : ''} ${selected ? 'selected' : ''} ${cantAfford && !sold ? 'cant-afford' : ''} ${item.type === 'relic' ? 'is-relic' : ''}`}
       onClick={handleTap}
     >
       <div className="item-icon">{item.icon}</div>

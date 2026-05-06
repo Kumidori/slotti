@@ -4,7 +4,7 @@ import '../styles/Reel.css';
 
 const FILLERS = 18;
 
-export default function Reel({ icon, spinning, spinDuration = 1000, spinKey, highlight, locked, canLock, onToggleLock }) {
+export default function Reel({ icon, spinning, spinDuration = 1000, spinKey, highlight, locked, canLock, onToggleLock, rarity }) {
   const strip = useMemo(() => {
     if (!spinning) return [icon];
     const fillers = Array.from({ length: FILLERS }, () =>
@@ -17,6 +17,7 @@ export default function Reel({ icon, spinning, spinDuration = 1000, spinKey, hig
   if (highlight) classes.push(highlight);
   if (locked) classes.push('locked');
   if (canLock && !spinning) classes.push('clickable');
+  if (!spinning && rarity && rarity !== 'common') classes.push(`reel-rarity-${rarity}`);
 
   const handleClick = () => {
     if (canLock && !spinning) onToggleLock?.();

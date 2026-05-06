@@ -39,6 +39,20 @@
   transform: scale(0.92);
 }
 
+.relic-chip.rarity-rare {
+  box-shadow: 0 0 8px rgba(80, 160, 255, 0.6), inset 0 0 4px rgba(80, 160, 255, 0.25);
+}
+
+.relic-chip.rarity-epic {
+  box-shadow: 0 0 10px rgba(180, 80, 255, 0.7), inset 0 0 5px rgba(180, 80, 255, 0.3);
+  animation: epicChipShimmer 2.4s ease-in-out infinite;
+}
+
+@keyframes epicChipShimmer {
+  0%, 100% { box-shadow: 0 0 10px rgba(180, 80, 255, 0.55), inset 0 0 5px rgba(180, 80, 255, 0.25); }
+  50%      { box-shadow: 0 0 16px rgba(180, 80, 255, 0.85), inset 0 0 7px rgba(180, 80, 255, 0.4); }
+}
+
 .relic-chip-icon {
   font-size: 18px;
   line-height: 1;

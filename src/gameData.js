@@ -1,12 +1,18 @@
+export const RARITIES = {
+  common: { weight: 70, glow: 'rgba(255,255,255,0.0)',  border: 'rgba(255,255,255,0.15)', label: 'Common' },
+  rare:   { weight: 25, glow: 'rgba(80,160,255,0.55)',  border: '#5aa0ff',                 label: 'Rare' },
+  epic:   { weight: 5,  glow: 'rgba(180,80,255,0.7)',   border: '#b04fff',                 label: 'Epic' },
+};
+
 export const SYMBOLS = [
-  { id: 'sword',  icon: '⚔️' },
-  { id: 'shield', icon: '🛡️' },
-  { id: 'potion', icon: '🧪' },
-  { id: 'magic',  icon: '✨' },
-  { id: 'skull',  icon: '💀' },
-  { id: 'wild',   icon: '⭐' },
-  { id: 'mult',   icon: '✖️' },
-  { id: 'coin',   icon: '💵' },
+  { id: 'sword',  icon: '⚔️', rarity: 'common' },
+  { id: 'shield', icon: '🛡️', rarity: 'common' },
+  { id: 'potion', icon: '🧪', rarity: 'common' },
+  { id: 'magic',  icon: '✨', rarity: 'common' },
+  { id: 'skull',  icon: '💀', rarity: 'common' },
+  { id: 'wild',   icon: '⭐', rarity: 'epic' },
+  { id: 'mult',   icon: '✖️', rarity: 'rare' },
+  { id: 'coin',   icon: '💵', rarity: 'rare' },
 ];
 
 // Starting symbol pool — each entry is one "card" in the pool.
@@ -40,6 +46,24 @@ function weightedPick(weights) {
     if (r <= 0) return id;
   }
   return Object.keys(weights)[0];
+}
+
+// Pick N distinct items from a pool, weighted by rarity.
+export function pickByRarity(items, n) {
+  const out = [];
+  const pool = [...items];
+  while (out.length < n && pool.length > 0) {
+    const totalW = pool.reduce((s, x) => s + (RARITIES[x.rarity || 'common']?.weight || 1), 0);
+    let r = Math.random() * totalW;
+    let idx = 0;
+    for (let i = 0; i < pool.length; i++) {
+      r -= RARITIES[pool[i].rarity || 'common']?.weight || 1;
+      if (r <= 0) { idx = i; break; }
+    }
+    out.push(pool[idx]);
+    pool.splice(idx, 1);
+  }
+  return out;
 }
 
 export function getSymbol(id) {
@@ -77,19 +101,19 @@ export const BOSSES = [
 
 export const SHOP_ITEMS = [
   // Stat boosts / consumables (instant effect on purchase)
-  { id: 'extraSpin',  type: 'stat', icon: '🎰',  cost: 25 },
-  { id: 'healPotion', type: 'stat', icon: '❤️', cost: 12 },
-  { id: 'maxHpUp',    type: 'stat', icon: '💪', cost: 15 },
-  { id: 'sharpBlade', type: 'stat', icon: '🗡️', cost: 18 },
-  { id: 'magicTome',  type: 'stat', icon: '📖', cost: 20 },
-  { id: 'luckyCharm', type: 'stat', icon: '🍀', cost: 15 },
+  { id: 'extraSpin',  type: 'stat',  icon: '🎰',  cost: 25, rarity: 'common' },
+  { id: 'healPotion', type: 'stat',  icon: '❤️', cost: 12, rarity: 'common' },
+  { id: 'maxHpUp',    type: 'stat',  icon: '💪', cost: 15, rarity: 'common' },
+  { id: 'sharpBlade', type: 'stat',  icon: '🗡️', cost: 18, rarity: 'common' },
+  { id: 'magicTome',  type: 'stat',  icon: '📖', cost: 20, rarity: 'common' },
+  { id: 'luckyCharm', type: 'stat',  icon: '🍀', cost: 15, rarity: 'common' },
 
   // Relics (permanent rule modifiers)
-  { id: 'vampiricCharm', type: 'relic', icon: '🧛', cost: 35 },
-  { id: 'cursedCoin',    type: 'relic', icon: '☠️', cost: 30 },
-  { id: 'glassCannon',   type: 'relic', icon: '💎', cost: 40 },
-  { id: 'ironWill',      type: 'relic', icon: '🛡️', cost: 28 },
-  { id: 'magnet',        type: 'relic', icon: '🧲', cost: 30 },
+  { id: 'magnet',        type: 'relic', icon: '🧲', cost: 30, rarity: 'common' },
+  { id: 'ironWill',      type: 'relic', icon: '🛡️', cost: 35, rarity: 'rare' },
+  { id: 'vampiricCharm', type: 'relic', icon: '🧛', cost: 45, rarity: 'rare' },
+  { id: 'glassCannon',   type: 'relic', icon: '💎', cost: 60, rarity: 'epic' },
+  { id: 'cursedCoin',    type: 'relic', icon: '☠️', cost: 55, rarity: 'epic' },
 ];
 
 export const RELIC_IDS = SHOP_ITEMS.filter(i => i.type === 'relic').map(i => i.id);

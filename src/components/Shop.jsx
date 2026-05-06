@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import ShopItem from './ShopItem';
-import { SHOP_ITEMS, calcInterest } from '../gameData';
+import { SHOP_ITEMS, calcInterest, pickByRarity } from '../gameData';
 import { sfx, ensureAudio } from '../audio';
 import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/Shop.css';
@@ -16,7 +16,7 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
     const lockedIds = new Set(state.lockedItems.map(i => i.id));
     const locked = [...state.lockedItems];
     const unlocked = SHOP_ITEMS.filter(i => !lockedIds.has(i.id));
-    const freshPicks = [...unlocked].sort(() => Math.random() - 0.5).slice(0, 3 - locked.length);
+    const freshPicks = pickByRarity(unlocked, 3 - locked.length);
     const offering = [...locked, ...freshPicks];
 
     setEntries(offering.map(item => ({

@@ -77,6 +77,7 @@ export default function SymbolPicker({ picks, gold, lastGoldEarned, rerollCount,
                   spinning={spinningReels[i]}
                   spinDuration={STOP_DELAYS[i]}
                   spinKey={spinKey}
+                  rarity={sym.rarity}
                 />
               </button>
             );
