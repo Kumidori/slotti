@@ -309,6 +309,7 @@ const PROFILES = {
     drumDensity: 1.0,
     kickSteps: [0, 2, 4, 6], // 4-on-the-floor
     snareSteps: [2, 6],
+    stepScale: 1.7, // ~163 BPM feel
   },
   furzkopf: {
     chords: FURZ_CHORDS,
@@ -424,6 +425,7 @@ function tick() {
   const ctx = getCtx();
   const lookahead = 0.15;
   const profile = PROFILES[musicState.intensity] || PROFILES.calm;
+  const stepDur = STEP / (profile.stepScale || 1);
   while (musicState.nextNote < ctx.currentTime + lookahead) {
     const step = musicState.step;
     const stepInBar = step % BAR_STEPS;
@@ -440,14 +442,14 @@ function tick() {
       if (profile.bassDetune) {
         f *= Math.pow(2, ((Math.random() * 2 - 1) * profile.bassDetune) / 1200);
       }
-      scheduleNote(time, f, STEP * 1.7, profile.bassType, profile.bassVol);
+      scheduleNote(time, f, stepDur * 1.7, profile.bassType, profile.bassVol);
     }
 
     // Melody from current pattern, picking from chord tones
     const noteIdx = pattern[stepInBar];
     if (noteIdx !== null && noteIdx !== undefined) {
       const f = chord.notes[noteIdx % chord.notes.length];
-      scheduleNote(time, f, STEP * 0.55, profile.melodyType, profile.melodyVol);
+      scheduleNote(time, f, stepDur * 0.55, profile.melodyType, profile.melodyVol);
     }
 
     // Drums: kick / snare on configured steps
@@ -462,7 +464,7 @@ function tick() {
       scheduleHat(time, profile.drumVol * 0.5);
     }
 
-    musicState.nextNote += STEP;
+    musicState.nextNote += stepDur;
     musicState.step++;
   }
 }
