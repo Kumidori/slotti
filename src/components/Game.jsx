@@ -235,28 +235,24 @@ export default function Game() {
       <div className={`screen-flash ${screenFlash ? `flash-${screenFlash}` : ''}`} />
       <div className={`game ${screenShake ? 'screen-shake' : ''}`}>
 
-        <SymbolPool pool={state.symbolPool} />
-
         <div className="top-bar">
           <div className="gold-badge">💰 {state.gold}</div>
-          <div className="floor-badge">
-            <span>Floor {state.floor}</span>
-            <div className="floor-progress">
-              {[1, 2, 3, 4, 5].map(r => {
-                const isShop = r === 2 || r === 4;
-                const isBoss = r === 5;
-                const done = r < state.room;
-                const current = r === state.room;
-                return (
-                  <span
-                    key={r}
-                    className={`floor-dot${isShop ? ' shop' : ''}${isBoss ? ' boss' : ''}${done ? ' done' : ''}${current ? ' current' : ''}`}
-                  >
-                    {isShop ? '💰' : isBoss ? '💀' : ''}
-                  </span>
-                );
-              })}
-            </div>
+          <SymbolPool pool={state.symbolPool} />
+          <div className="floor-progress">
+            {[1, 2, 3, 4, 5].map(r => {
+              const isShop = r === 2 || r === 4;
+              const isBoss = r === 5;
+              const done = r < state.room;
+              const current = r === state.room;
+              return (
+                <span
+                  key={r}
+                  className={`floor-dot${isShop ? ' shop' : ''}${isBoss ? ' boss' : ''}${done ? ' done' : ''}${current ? ' current' : ''}`}
+                >
+                  {isShop ? '💰' : isBoss ? '💀' : ''}
+                </span>
+              );
+            })}
           </div>
         </div>
 

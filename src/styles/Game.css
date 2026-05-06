@@ -31,38 +31,28 @@
   width: 100%;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  gap: 8px;
   flex-shrink: 0;
   margin-bottom: 4px;
 }
 
 .gold-badge {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: bold;
   color: #f1c40f;
   background: rgba(241, 196, 15, 0.1);
   border: 1px solid rgba(241, 196, 15, 0.3);
   border-radius: 8px;
-  padding: 4px 10px;
-}
-
-.floor-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-  font-size: 13px;
-  color: #aaa;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 4px 10px;
+  padding: 4px 8px;
+  flex-shrink: 0;
 }
 
 .floor-progress {
   display: flex;
   gap: 3px;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .floor-dot {
