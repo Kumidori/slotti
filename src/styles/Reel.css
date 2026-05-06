@@ -1,27 +1,41 @@
 .reel {
-  width: clamp(80px, 26vw, 100px);
-  height: clamp(80px, 26vw, 100px);
+  --reel-h: clamp(80px, 26vw, 100px);
+  width: var(--reel-h);
+  height: var(--reel-h);
   background: #0f3460;
   border: 2px solid #533483;
   border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(44px, 14vw, 56px);
+  overflow: hidden;
+  position: relative;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
               border-color 0.3s,
               box-shadow 0.3s,
               background 0.3s;
 }
 
-.reel.spinning {
-  animation: reelSpin 0.1s infinite;
+.reel-item {
+  width: 100%;
+  height: var(--reel-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(44px, 14vw, 56px);
+  line-height: 1;
+  flex-shrink: 0;
 }
 
-@keyframes reelSpin {
-  0% { transform: translateY(-3px); }
-  50% { transform: translateY(3px); }
-  100% { transform: translateY(-3px); }
+.reel-strip {
+  display: flex;
+  flex-direction: column;
+  animation-name: reelScroll;
+  animation-timing-function: cubic-bezier(0.15, 0.7, 0.25, 1);
+  animation-fill-mode: forwards;
+  will-change: transform;
+}
+
+@keyframes reelScroll {
+  from { transform: translateY(0); }
+  to   { transform: translateY(calc(var(--reel-h) * (1 - var(--strip-count)))); }
 }
 
 .reel.active {

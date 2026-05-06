@@ -8,8 +8,11 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
   const [displayIcons, setDisplayIcons] = useState(['⚔️', '🛡️', '⚔️']);
   const [spinningReels, setSpinningReels] = useState([false, false, false]);
   const [highlights, setHighlights] = useState([null, null, null]);
+  const [spinKey, setSpinKey] = useState(0);
   const tickRef = useRef(null);
   const isSpinning = useRef(false);
+
+  const stopDelays = [700, 1050, 1400];
 
   const spin = useCallback(() => {
     if (disabled || isSpinning.current || state.spinsLeft <= 0) return;
@@ -24,22 +27,18 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
       getWeightedSymbol(state.luckBonus),
     ];
 
+    setDisplayIcons(results.map(r => r.icon));
+    setSpinKey(k => k + 1);
     setSpinningReels([true, true, true]);
     setHighlights([null, null, null]);
 
     tickRef.current = setInterval(() => sfx.reelTick(), 80);
 
-    const stopDelays = [400, 700, 1000];
-    results.forEach((sym, i) => {
+    results.forEach((_, i) => {
       setTimeout(() => {
         setSpinningReels(prev => {
           const next = [...prev];
           next[i] = false;
-          return next;
-        });
-        setDisplayIcons(prev => {
-          const next = [...prev];
-          next[i] = sym.icon;
           return next;
         });
         sfx.reelStop(i);
@@ -72,8 +71,8 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
       setTimeout(() => setHighlights([null, null, null]), 1800);
 
       onResolve(results);
-    }, 1100);
-  }, [disabled, state.spinsLeft, state.luckBonus, onResolve]);
+    }, stopDelays[2] + 100);
+  }, [disabled, state.spinsLeft, state.luckBonus, onResolve, onSpinningChange]);
 
   useImperativeHandle(ref, () => ({ spin }), [spin]);
 
@@ -85,6 +84,8 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
             key={i}
             icon={displayIcons[i]}
             spinning={spinningReels[i]}
+            spinDuration={stopDelays[i]}
+            spinKey={spinKey}
             highlight={highlights[i]}
           />
         ))}
