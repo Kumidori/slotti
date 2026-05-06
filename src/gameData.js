@@ -18,6 +18,7 @@ export const ENEMIES = [
 
 export const BOSSES = [
   { name: 'Lili', sprite: 'lili', hp: 80, atk: 6, gold: 30, enrageAt: 0.3, enrageAtk: 12 },
+  { name: 'Ruby', sprite: 'ruby', hp: 110, atk: 5, gold: 45, frenzyEvery: 3, frenzyHits: 3, frenzyMult: 0.6 },
 ];
 
 export const SHOP_ITEMS = [
@@ -91,6 +92,12 @@ export function spawnBoss(floor) {
   if (template.enrageAt) {
     boss.enrageAt = template.enrageAt;
     boss.enrageAtk = Math.round(template.enrageAtk * scale);
+  }
+  if (template.frenzyEvery) {
+    boss.frenzyEvery = template.frenzyEvery;
+    boss.frenzyHits = template.frenzyHits;
+    boss.frenzyMult = template.frenzyMult;
+    boss.attackCount = 0;
   }
   return boss;
 }

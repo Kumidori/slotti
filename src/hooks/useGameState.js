@@ -136,7 +136,11 @@ function reducer(state, action) {
 
     case 'ENEMY_ATTACK': {
       let s = { ...state };
-      let incomingDmg = s.enemy.atk;
+      const nextCount = (s.enemy.attackCount || 0) + 1;
+      const isFrenzy = s.enemy.frenzyEvery && nextCount % s.enemy.frenzyEvery === 0;
+      const hits = isFrenzy ? s.enemy.frenzyHits : 1;
+      const perHit = isFrenzy ? Math.ceil(s.enemy.atk * s.enemy.frenzyMult) : s.enemy.atk;
+      let incomingDmg = perHit * hits;
       let blocked = 0;
 
       if (s.block > 0) {
@@ -151,6 +155,10 @@ function reducer(state, action) {
       s.comboType = null;
       s.lastEnemyDmg = incomingDmg;
       s.lastBlocked = blocked;
+      s.lastFrenzy = isFrenzy;
+      if (s.enemy.frenzyEvery) {
+        s.enemy = { ...s.enemy, attackCount: nextCount };
+      }
 
       if (s.playerHp <= 0) {
         s.playerHp = 0;

@@ -155,8 +155,13 @@ export default function Game() {
     triggerEnemyAnim('attack');
 
     setTimeout(() => {
-      const blocked = Math.min(state.enemy.atk, state.block);
-      const incoming = Math.max(0, state.enemy.atk - state.block);
+      const isFrenzy = state.enemy.frenzyEvery &&
+        ((state.enemy.attackCount || 0) + 1) % state.enemy.frenzyEvery === 0;
+      const hits = isFrenzy ? state.enemy.frenzyHits : 1;
+      const perHit = isFrenzy ? Math.ceil(state.enemy.atk * state.enemy.frenzyMult) : state.enemy.atk;
+      const totalDmg = perHit * hits;
+      const blocked = Math.min(totalDmg, state.block);
+      const incoming = Math.max(0, totalDmg - state.block);
 
       if (blocked > 0) {
         sfx.shieldBreak();
@@ -167,7 +172,13 @@ export default function Game() {
         triggerShake();
         triggerFlash('red');
         triggerBarShake('player');
-        addFloat(playerHpRef, `-${incoming}`, 'damage');
+        if (isFrenzy) {
+          for (let i = 0; i < hits; i++) {
+            setTimeout(() => addFloat(playerHpRef, `-${perHit}`, 'damage'), i * 120);
+          }
+        } else {
+          addFloat(playerHpRef, `-${incoming}`, 'damage');
+        }
       }
 
       const parts = [];
@@ -175,9 +186,11 @@ export default function Game() {
       if (blocked > 0) parts.push(`${blocked} blocked`);
       if (incoming === 0 && blocked > 0) parts.unshift('fully blocked!');
       setComboAnim({
-        text: `${state.enemy.name} attacks!`,
-        type: 'enemy-attack',
-        detail: parts.join(' · ') || null,
+        text: isFrenzy ? `🐕 ${state.enemy.name} FRENZY!` : `${state.enemy.name} attacks!`,
+        type: isFrenzy ? 'enrage' : 'enemy-attack',
+        detail: isFrenzy
+          ? `${hits} bites · ${parts.join(' · ') || 'no damage'}`
+          : parts.join(' · ') || null,
         key: Date.now(),
       });
 
@@ -245,7 +258,14 @@ export default function Game() {
           {state.enemy
             ? state.enemy.enraged
               ? 'Lili got her period, all outgoing and incoming damage increased!'
-              : `${state.enemy.isBoss ? '👹 BOSS — ' : ''}${state.enemy.name} prepares to strike!`
+              : state.enemy.frenzyEvery
+                ? (() => {
+                    const next = state.enemy.frenzyEvery - ((state.enemy.attackCount || 0) % state.enemy.frenzyEvery);
+                    return next === 1
+                      ? `🐕 ${state.enemy.name} growls... FRENZY incoming!`
+                      : `🐕 ${state.enemy.name} winds up... ${next} attacks until FRENZY`;
+                  })()
+                : `${state.enemy.isBoss ? '👹 BOSS — ' : ''}${state.enemy.name} prepares to strike!`
             : ''}
         </div>
 
