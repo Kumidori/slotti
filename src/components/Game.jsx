@@ -83,6 +83,7 @@ export default function Game() {
   const enemySpriteRef = useRef(null);
   const enemyHpRef = useRef(null);
   const playerHpRef = useRef(null);
+  const goldBadgeRef = useRef(null);
 
   const addFloat = useCallback((ref, text, type) => {
     const id = ++floatId.current;
@@ -175,6 +176,11 @@ export default function Game() {
     if (state.poisonDmg > 0) {
       addFloat(playerHpRef, `🌫️-${state.poisonDmg}`, 'poison');
       triggerBarShake('player');
+    }
+
+    if (state.coinGold > 0) {
+      addFloat(goldBadgeRef, `+${state.coinGold}💰`, 'coin');
+      sfx.buy();
     }
 
     if (state.justEnraged) {
@@ -306,7 +312,7 @@ export default function Game() {
 
         <div className="top-bar">
           <div className="top-left">
-            <div className="gold-badge">💰 {state.gold}</div>
+            <div className="gold-badge" ref={goldBadgeRef}>💰 {state.gold}</div>
             <LangToggle />
             <MusicToggle />
           </div>
