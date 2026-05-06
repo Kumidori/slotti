@@ -12,6 +12,7 @@ import SymbolPool from './SymbolPool';
 import RelicTray from './RelicTray';
 import LangToggle from './LangToggle';
 import MusicToggle from './MusicToggle';
+import CharacterSelect from './CharacterSelect';
 import { ensureAudio, sfx, playComboVoice, startMusic, setMusicIntensity, stopMusic } from '../audio';
 import { calcInterest } from '../gameData';
 import { useTranslation } from '../i18n/useTranslation.jsx';
@@ -58,6 +59,7 @@ export default function Game() {
     nextFloor, debugKillEnemy, useLockTokens,
     pickSymbol, skipSymbol, rerollPicks,
     sacrificeSymbol, skipSacrifice, finishSacrifice,
+    goToMenu,
   } = useGameState();
 
   const handleNextFloor = useCallback(() => {
@@ -308,12 +310,17 @@ export default function Game() {
     buyItem(item);
   }, [buyItem]);
 
-  const handleStartRun = useCallback(() => {
+  const handleStartRun = useCallback((characterId) => {
     ensureAudio();
     startMusic('calm');
     sfx.buttonClick();
-    startRun();
+    startRun(characterId);
   }, [startRun]);
+
+  const handleBackToMenu = useCallback(() => {
+    sfx.buttonClick();
+    goToMenu();
+  }, [goToMenu]);
 
   // Switch BGM intensity for boss fights — each boss has its own theme
   useEffect(() => {
@@ -493,6 +500,9 @@ export default function Game() {
           <h2>{t('overlay.floorComplete', { floor: state.floor })}</h2>
           <p>{t('overlay.bossDefeated')}</p>
           <p>{t('picker.goldEarned', { amount: state.lastGoldEarned })}</p>
+          {state.justUnlocked && (
+            <p className="unlock-line">🎁 {t('overlay.unlocked', { name: t(`char.${state.justUnlocked}.name`) })}</p>
+          )}
           <button onClick={handleNextFloor}>{t('overlay.continueToFloor', { floor: state.floor + 1 })}</button>
         </Overlay>
       )}
@@ -502,7 +512,10 @@ export default function Game() {
           <h2>{t('overlay.runComplete')}</h2>
           <p>{t('overlay.allBossesDefeated')}</p>
           <p>{t('overlay.totalGold', { gold: state.gold })}</p>
-          <button onClick={handleStartRun}>{t('overlay.playAgain')}</button>
+          {state.justUnlocked && (
+            <p className="unlock-line">🎁 {t('overlay.unlocked', { name: t(`char.${state.justUnlocked}.name`) })}</p>
+          )}
+          <button onClick={handleBackToMenu}>{t('overlay.playAgain')}</button>
         </Overlay>
       )}
 
@@ -511,8 +524,15 @@ export default function Game() {
           <h2>{t('overlay.gameOver')}</h2>
           <p>{t('overlay.position', { floor: state.floor, room: state.room })}</p>
           <p>{t('overlay.goldEarned', { gold: state.gold })}</p>
-          <button onClick={handleStartRun}>{t('overlay.tryAgain')}</button>
+          <button onClick={handleBackToMenu}>{t('overlay.tryAgain')}</button>
         </Overlay>
+      )}
+
+      {state.phase === 'menu' && (
+        <CharacterSelect
+          unlockedChars={state.unlockedChars}
+          onStart={handleStartRun}
+        />
       )}
 
       {state.phase === 'sacrifice' && (

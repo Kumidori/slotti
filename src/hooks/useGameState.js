@@ -1,5 +1,6 @@
 import { useReducer, useCallback } from 'react';
 import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, hasRelic, DEFAULT_POOL, BOSSES } from '../gameData';
+import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars } from '../characters';
 
 // Reroll cost: 5g first, +5g each subsequent reroll within the same picker.
 // Lucky Charm reduces cost by 1g per stack (min 1g).
@@ -91,7 +92,10 @@ function advanceToNextRoom(state) {
 }
 
 const INITIAL_STATE = {
-  phase: 'combat',
+  phase: 'menu',
+  character: null,
+  unlockedChars: [],
+  justUnlocked: null,
   floor: 1,
   room: 1,
   playerHp: 50,
@@ -127,9 +131,32 @@ const INITIAL_STATE = {
 function reducer(state, action) {
   switch (action.type) {
     case 'START_RUN': {
+      const charId = action.characterId || 'knight';
+      const char = getCharacter(charId);
       const enemy = spawnForRoom(1, 1);
-      return { ...INITIAL_STATE, enemy, floorRoomTypes: generateFloorRoomTypes() };
+      return {
+        ...INITIAL_STATE,
+        phase: 'combat',
+        character: charId,
+        symbolPool: char?.pool || DEFAULT_POOL,
+        unlockedChars: state.unlockedChars,
+        enemy,
+        floorRoomTypes: generateFloorRoomTypes(),
+      };
     }
+
+    case 'GO_TO_MENU':
+      return { ...INITIAL_STATE, unlockedChars: state.unlockedChars };
+
+    case 'UNLOCK_CHARACTER': {
+      if (state.unlockedChars.includes(action.id)) return state;
+      const next = [...state.unlockedChars, action.id];
+      saveUnlockedChars(next);
+      return { ...state, unlockedChars: next, justUnlocked: action.id };
+    }
+
+    case 'CLEAR_JUST_UNLOCKED':
+      return { ...state, justUnlocked: null };
 
     case 'SET_SPINNING':
       return { ...state, spinning: action.value, comboText: '', comboType: null, reelResults: null, justEnraged: false };
@@ -251,6 +278,14 @@ function reducer(state, action) {
       if (coinGold > 0) s.gold += coinGold;
       s.coinGold = coinGold;
 
+      // Toxic Aura (Furzkopf): 2 passive damage to the enemy each spin
+      if (hasPassive(s, 'toxicAura') && s.enemy && s.enemy.hp > 0) {
+        s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - 2) };
+        s.toxicAuraDmg = 2;
+      } else {
+        s.toxicAuraDmg = 0;
+      }
+
       // Tick poison stacks: each stack hits, then loses one tick
       let poisonDmg = 0;
       if (s.poisonStacks.length > 0) {
@@ -280,6 +315,18 @@ function reducer(state, action) {
       // Twin Fang: sword combos hit 50% harder
       if (dmg > 0 && hasRelic(s, 'twinFang') && combo.symbol === 'sword') {
         dmg = Math.round(dmg * 1.5);
+      }
+      // Period Rage (Lili): below 30% HP, deal +50% damage
+      if (dmg > 0 && hasPassive(s, 'periodRage') && s.playerHp / s.playerMaxHp < 0.3) {
+        dmg = Math.round(dmg * 1.5);
+      }
+      // Pack Hunter (Ruby): every 4th spin in a fight crits 2x
+      const fightSpinNumber = (s.maxSpins - s.spinsLeft); // 1-based AFTER decrement above? we already did spinsLeft - 1
+      if (dmg > 0 && hasPassive(s, 'packHunter') && fightSpinNumber > 0 && fightSpinNumber % 4 === 0) {
+        dmg = dmg * 2;
+        s.packHunterTriggered = true;
+      } else {
+        s.packHunterTriggered = false;
       }
       if (dmg > 0 && s.enemy.enraged) {
         dmg = Math.round(dmg * 1.5);
@@ -320,6 +367,11 @@ function reducer(state, action) {
       const perHit = isFrenzy ? Math.ceil(s.enemy.atk * s.enemy.frenzyMult) : s.enemy.atk;
       let incomingDmg = perHit * hits;
       let blocked = 0;
+
+      // Period Rage: also +50% incoming when below 30% HP
+      if (hasPassive(s, 'periodRage') && s.playerHp / s.playerMaxHp < 0.3) {
+        incomingDmg = Math.round(incomingDmg * 1.5);
+      }
 
       if (s.block > 0) {
         blocked = Math.min(incomingDmg, s.block);
@@ -369,6 +421,17 @@ function reducer(state, action) {
       if (hasRelic(state, 'magnet')) gold = Math.round(gold * 1.5);
       const isBoss = state.enemy.isBoss;
       const isFinalBoss = isBoss && state.floor >= BOSSES.length;
+      // Unlock the matching character if we just beat a boss
+      let unlockedChars = state.unlockedChars;
+      let justUnlocked = null;
+      if (isBoss) {
+        const sprite = state.enemy.sprite;
+        if (sprite && !unlockedChars.includes(sprite)) {
+          unlockedChars = [...unlockedChars, sprite];
+          justUnlocked = sprite;
+          saveUnlockedChars(unlockedChars);
+        }
+      }
       return {
         ...state,
         gold: state.gold + gold,
@@ -377,6 +440,8 @@ function reducer(state, action) {
         symbolPicks: isBoss ? null : rollSymbolPicks(3),
         pickRerollCount: 0,
         pickRerollKey: 0,
+        unlockedChars,
+        justUnlocked,
       };
     }
 
@@ -520,10 +585,12 @@ function reducer(state, action) {
 
 export default function useGameState() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE, (init) => {
-    return { ...init, enemy: spawnForRoom(1, 1) };
+    return { ...init, unlockedChars: loadUnlockedChars() };
   });
 
-  const startRun = useCallback(() => dispatch({ type: 'START_RUN' }), []);
+  const startRun = useCallback((characterId) => dispatch({ type: 'START_RUN', characterId }), []);
+  const goToMenu = useCallback(() => dispatch({ type: 'GO_TO_MENU' }), []);
+  const clearJustUnlocked = useCallback(() => dispatch({ type: 'CLEAR_JUST_UNLOCKED' }), []);
   const resolveCombo = useCallback((results) => dispatch({ type: 'RESOLVE_COMBO', results }), []);
   const enemyAttack = useCallback(() => dispatch({ type: 'ENEMY_ATTACK' }), []);
   const enemyDefeated = useCallback(() => dispatch({ type: 'ENEMY_DEFEATED' }), []);
@@ -566,5 +633,7 @@ export default function useGameState() {
     pickSymbol,
     skipSymbol,
     rerollPicks,
+    goToMenu,
+    clearJustUnlocked,
   };
 }

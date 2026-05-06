@@ -37,3 +37,11 @@
 
 .overlay button:hover { background: #ff6b81; }
 .overlay button:active { background: #d63b55; transform: scale(0.97); }
+
+.unlock-line {
+  color: #f1c40f !important;
+  font-weight: bold;
+  font-size: 18px !important;
+  text-shadow: 0 0 12px rgba(241, 196, 15, 0.5);
+  margin-top: 8px !important;
+}
