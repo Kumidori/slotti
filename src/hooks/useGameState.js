@@ -129,6 +129,7 @@ function reducer(state, action) {
       // Determine best combo. Wilds substitute for any non-skull symbol but
       // cannot trigger a combo by themselves unless 3 wilds (jackpot).
       let combo = null;
+      const singlesPresent = priority.filter(t => (counts[t] || 0) >= 1);
       if (skulls === 3) {
         combo = { type: 'skull-triple' };
       } else if (wilds === 3) {
@@ -139,6 +140,10 @@ function reducer(state, action) {
             combo = { type: 'triple', symbol: t };
             break;
           }
+        }
+        // Rainbow: 1 wild + 2 distinct singles → double of each
+        if (!combo && wilds >= 1 && singlesPresent.length >= 2) {
+          combo = { type: 'rainbow', symbols: singlesPresent.slice(0, 2 + (wilds - 1)) };
         }
         if (!combo) {
           for (const t of priority) {
@@ -178,6 +183,15 @@ function reducer(state, action) {
         else if (t === 'shield') { block = 8; comboText = '🛡️ Shield Wall'; }
         else if (t === 'potion') { heal = 10; comboText = '🧪 Quick Heal'; }
         comboType = 'double';
+      } else if (combo.type === 'rainbow') {
+        for (const t of combo.symbols) {
+          if (t === 'sword')  dmg += 8 + s.swordBonus;
+          else if (t === 'magic')  dmg += 10 + s.magicBonus;
+          else if (t === 'shield') block += 8;
+          else if (t === 'potion') heal += 10;
+        }
+        comboText = '⭐ Rainbow Combo';
+        comboType = 'triple';
       } else if (combo.type === 'skull') {
         if (hasRelic(s, 'cursedCoin')) {
           heal = combo.skullCount * 5;

@@ -30,6 +30,7 @@ function comboKeyFromText(text) {
     case '🧪 Quick Heal': return 'combo.quickHeal';
     case '💀 Cursed!': return 'combo.cursed';
     case 'Weak hit': return 'combo.weakHit';
+    case '⭐ Rainbow Combo': return 'combo.rainbow';
     default: return null;
   }
 }

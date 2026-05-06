@@ -25,6 +25,7 @@ const en = {
   'combo.quickHeal': '🧪 Quick Heal',
   'combo.cursed': '💀 Cursed!',
   'combo.weakHit': 'Weak hit',
+  'combo.rainbow': '⭐ Rainbow Combo',
 
   // Combo detail parts
   'combo.detail.damage': '{amount} damage',
@@ -141,6 +142,7 @@ const de = {
   'combo.quickHeal': '🧪 Schnellheilung',
   'combo.cursed': '💀 Verflucht!',
   'combo.weakHit': 'Schwacher Treffer',
+  'combo.rainbow': '⭐ Regenbogen-Combo',
 
   // Combo detail parts
   'combo.detail.damage': '{amount} Schaden',
@@ -257,6 +259,7 @@ const bg = {
   'combo.quickHeal': '🧪 Бързо лечение',
   'combo.cursed': '💀 Прокълнат!',
   'combo.weakHit': 'Слаб удар',
+  'combo.rainbow': '⭐ Дъгово комбо',
 
   // Combo detail parts
   'combo.detail.damage': '{amount} щета',
