@@ -34,8 +34,8 @@
 }
 
 @keyframes reelScroll {
-  from { transform: translateY(0); }
-  to   { transform: translateY(calc(var(--reel-h) * (1 - var(--strip-count)))); }
+  from { transform: translateY(calc(var(--reel-h) * (1 - var(--strip-count)))); }
+  to   { transform: translateY(0); }
 }
 
 .reel.active {

@@ -10,7 +10,7 @@ export default function Reel({ icon, spinning, spinDuration = 1000, spinKey, hig
     const fillers = Array.from({ length: FILLERS }, () =>
       SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].icon
     );
-    return [...fillers, icon];
+    return [icon, ...fillers];
   }, [spinKey, spinning, icon]);
 
   const classes = ['reel'];
