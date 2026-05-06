@@ -50,7 +50,7 @@ export default function SymbolPicker({ picks, gold, lastGoldEarned, rerollCount,
   const canReroll = gold >= cost;
 
   return (
-    <div className="overlay symbol-picker">
+    <div className="symbol-picker">
       <div className="symbol-picker-inner">
         <h2>⚔️ Victory!</h2>
         {lastGoldEarned > 0 && <p className="picker-gold">+{lastGoldEarned} gold</p>}
