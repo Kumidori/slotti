@@ -1,0 +1,75 @@
+.hp-bar-container {
+  width: 100%;
+  height: 20px;
+  background: #333;
+  border-radius: 10px;
+  margin: 0 auto;
+  overflow: visible;
+  position: relative;
+}
+
+.hp-bar-container.shake {
+  animation: barShake 0.4s;
+}
+
+@keyframes barShake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-5px); }
+  30% { transform: translateX(5px); }
+  45% { transform: translateX(-4px); }
+  60% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+}
+
+.hp-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.4s ease;
+  position: relative;
+}
+
+.hp-bar-fill.enemy { background: linear-gradient(180deg, #e74c3c, #c0392b); }
+.hp-bar-fill.player { background: linear-gradient(180deg, #2ecc71, #27ae60); }
+
+.hp-text {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  z-index: 2;
+}
+
+.shield-bar {
+  position: absolute;
+  top: -3px; left: -3px; right: -3px; bottom: -3px;
+  border: 3px solid #3498db;
+  border-radius: 13px;
+  pointer-events: none;
+  z-index: 3;
+  display: none;
+  box-shadow: 0 0 12px rgba(52, 152, 219, 0.5), inset 0 0 8px rgba(52, 152, 219, 0.2);
+  animation: shieldPulse 1.5s ease-in-out infinite;
+}
+
+.shield-bar.active { display: block; }
+
+.shield-value {
+  position: absolute;
+  top: -20px;
+  right: 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: #3498db;
+  text-shadow: 0 0 6px rgba(52, 152, 219, 0.5);
+  z-index: 4;
+}
+
+@keyframes shieldPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(52, 152, 219, 0.5), inset 0 0 8px rgba(52, 152, 219, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(52, 152, 219, 0.8), inset 0 0 12px rgba(52, 152, 219, 0.3); }
+}

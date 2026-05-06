@@ -1,0 +1,53 @@
+.enemy-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.enemy-name {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.enemy-sprite {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 6px;
+  display: inline-block;
+  transition: transform 0.15s;
+}
+
+.enemy-sprite.shake {
+  animation: enemyShake 0.4s;
+}
+
+.enemy-sprite.attack {
+  animation: enemyAttack 0.5s;
+}
+
+.enemy-section .hp-bar-container {
+  width: 70vw;
+  max-width: 260px;
+}
+
+@keyframes enemyShake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-8px) rotate(-3deg); }
+  20% { transform: translateX(8px) rotate(3deg); }
+  30% { transform: translateX(-6px) rotate(-2deg); }
+  40% { transform: translateX(6px) rotate(2deg); }
+  50% { transform: translateX(-4px); }
+  60% { transform: translateX(4px); }
+  70% { transform: translateX(-2px); }
+}
+
+@keyframes enemyAttack {
+  0% { transform: translateY(0) scale(1); }
+  20% { transform: translateY(-15px) scale(1.15); }
+  50% { transform: translateY(40px) scale(1.2); }
+  65% { transform: translateY(40px) scale(1.2); }
+  100% { transform: translateY(0) scale(1); }
+}

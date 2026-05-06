@@ -1,0 +1,22 @@
+.float-number {
+  position: fixed;
+  font-weight: 900;
+  font-size: 28px;
+  pointer-events: none;
+  z-index: 50;
+  animation: floatUp 1s ease-out forwards;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 10px currentColor;
+  white-space: nowrap;
+}
+
+.float-number.damage { color: #e74c3c; }
+.float-number.heal { color: #2ecc71; }
+.float-number.shield-block { color: #3498db; }
+.float-number.self-damage { color: #e67e22; }
+
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(0.5); }
+  20% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+  40% { opacity: 1; transform: translateY(-20px) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+}
