@@ -1,16 +1,17 @@
 .pool-badge {
+  position: absolute;
+  top: 50px;
+  left: 14px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  padding: 4px 8px;
+  padding: 5px 7px;
   display: flex;
-  flex-direction: row;
-  gap: 8px;
-  align-items: center;
+  flex-direction: column;
+  gap: 3px;
+  align-items: stretch;
   cursor: pointer;
-  flex: 1 1 auto;
-  min-width: 0;
-  justify-content: center;
+  z-index: 10;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s, border-color 0.15s;
 }
@@ -23,7 +24,8 @@
 .pool-badge-item {
   display: flex;
   align-items: center;
-  gap: 2px;
+  justify-content: space-between;
+  gap: 6px;
   font-size: 11px;
   color: #bbb;
   line-height: 1;

@@ -235,9 +235,10 @@ export default function Game() {
       <div className={`screen-flash ${screenFlash ? `flash-${screenFlash}` : ''}`} />
       <div className={`game ${screenShake ? 'screen-shake' : ''}`}>
 
+        <SymbolPool pool={state.symbolPool} />
+
         <div className="top-bar">
           <div className="gold-badge">💰 {state.gold}</div>
-          <SymbolPool pool={state.symbolPool} />
           <div className="floor-progress">
             {[1, 2, 3, 4, 5].map(r => {
               const isShop = r === 2 || r === 4;
