@@ -318,6 +318,7 @@ function reducer(state, action) {
         comboType: null,
         reelResults: null,
         shopItems: null,
+        locksLeft: state.maxLocks,
       };
     }
 
