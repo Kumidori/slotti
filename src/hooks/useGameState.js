@@ -1,5 +1,11 @@
 import { useReducer, useCallback } from 'react';
-import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, BOSSES } from '../gameData';
+import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, DEFAULT_POOL, BOSSES } from '../gameData';
+
+// Reroll cost: 5g first, +5g each subsequent reroll within the same picker.
+// Lucky Charm reduces cost by 1g per stack (min 1g).
+export function rerollCost(rerollCount, luckBonus = 0) {
+  return Math.max(1, 5 * (rerollCount + 1) - luckBonus);
+}
 
 // Rooms: 1=fight, 2=shop, 3=fight, 4=shop, 5=boss
 function isShopRoom(room) { return room === 2 || room === 4; }
@@ -9,6 +15,32 @@ function isFightRoom(room) { return room === 1 || room === 3 || room === 5; }
 function spawnForRoom(floor, room) {
   if (isBossRoom(room)) return spawnBoss(floor);
   return spawnEnemy(floor, room);
+}
+
+function advanceToNextRoom(state) {
+  const nextRoom = state.room + 1;
+  if (isShopRoom(nextRoom)) {
+    const interest = calcInterest(state.gold);
+    return {
+      ...state,
+      room: nextRoom,
+      gold: state.gold + interest,
+      lastInterest: interest,
+      phase: 'shop',
+    };
+  }
+  const enemy = spawnForRoom(state.floor, nextRoom);
+  return {
+    ...state,
+    room: nextRoom,
+    enemy,
+    spinsLeft: state.maxSpins,
+    block: 0,
+    phase: 'combat',
+    comboText: '',
+    comboType: null,
+    reelResults: null,
+  };
 }
 
 const INITIAL_STATE = {
@@ -32,6 +64,10 @@ const INITIAL_STATE = {
   log: [],
   lockedItems: [],
   shopItems: null,
+  symbolPool: DEFAULT_POOL,
+  symbolPicks: null,
+  pickRerollCount: 0,
+  pickRerollKey: 0,
 };
 
 function reducer(state, action) {
@@ -177,6 +213,30 @@ function reducer(state, action) {
         gold: state.gold + gold,
         phase: isBoss ? (isFinalBoss ? 'runComplete' : 'floorComplete') : 'victory',
         lastGoldEarned: gold,
+        symbolPicks: isBoss ? null : rollSymbolPicks(3),
+        pickRerollCount: 0,
+        pickRerollKey: 0,
+      };
+    }
+
+    case 'PICK_SYMBOL': {
+      const newPool = [...state.symbolPool, action.symbolId];
+      return advanceToNextRoom({ ...state, symbolPool: newPool, symbolPicks: null });
+    }
+
+    case 'SKIP_SYMBOL': {
+      return advanceToNextRoom({ ...state, symbolPicks: null });
+    }
+
+    case 'REROLL_PICKS': {
+      const cost = rerollCost(state.pickRerollCount, state.luckBonus);
+      if (state.gold < cost) return state;
+      return {
+        ...state,
+        gold: state.gold - cost,
+        symbolPicks: rollSymbolPicks(3),
+        pickRerollCount: state.pickRerollCount + 1,
+        pickRerollKey: state.pickRerollKey + 1,
       };
     }
 
@@ -199,33 +259,8 @@ function reducer(state, action) {
     case 'GAME_OVER':
       return { ...state, phase: 'gameOver' };
 
-    case 'NEXT_ROOM': {
-      const nextRoom = state.room + 1;
-
-      if (isShopRoom(nextRoom)) {
-        const interest = calcInterest(state.gold);
-        return {
-          ...state,
-          room: nextRoom,
-          gold: state.gold + interest,
-          lastInterest: interest,
-          phase: 'shop',
-        };
-      }
-
-      const enemy = spawnForRoom(state.floor, nextRoom);
-      return {
-        ...state,
-        room: nextRoom,
-        enemy,
-        spinsLeft: state.maxSpins,
-        block: 0,
-        phase: 'combat',
-        comboText: '',
-        comboType: null,
-        reelResults: null,
-      };
-    }
+    case 'NEXT_ROOM':
+      return advanceToNextRoom(state);
 
     case 'BUY_ITEM': {
       const { item } = action;
@@ -286,6 +321,9 @@ export default function useGameState() {
   const setSpinning = useCallback((value) => dispatch({ type: 'SET_SPINNING', value }), []);
   const setReelResults = useCallback((results) => dispatch({ type: 'SET_REEL_RESULTS', results }), []);
   const debugSkipToRuby = useCallback(() => dispatch({ type: 'DEBUG_SKIP_TO_RUBY' }), []);
+  const pickSymbol = useCallback((symbolId) => dispatch({ type: 'PICK_SYMBOL', symbolId }), []);
+  const skipSymbol = useCallback(() => dispatch({ type: 'SKIP_SYMBOL' }), []);
+  const rerollPicks = useCallback(() => dispatch({ type: 'REROLL_PICKS' }), []);
 
   return {
     state,
@@ -302,5 +340,8 @@ export default function useGameState() {
     setSpinning,
     setReelResults,
     debugSkipToRuby,
+    pickSymbol,
+    skipSymbol,
+    rerollPicks,
   };
 }

@@ -1,10 +1,38 @@
 export const SYMBOLS = [
-  { id: 'sword',  icon: '⚔️', weight: 30 },
-  { id: 'shield', icon: '🛡️', weight: 25 },
-  { id: 'potion', icon: '🧪', weight: 20 },
-  { id: 'magic',  icon: '✨', weight: 15 },
-  { id: 'skull',  icon: '💀', weight: 10 },
+  { id: 'sword',  icon: '⚔️' },
+  { id: 'shield', icon: '🛡️' },
+  { id: 'potion', icon: '🧪' },
+  { id: 'magic',  icon: '✨' },
+  { id: 'skull',  icon: '💀' },
 ];
+
+// Starting symbol pool — each entry is one "card" in the pool.
+// Roughly matches the old weights (30/25/20/15/10 → 6/5/4/3/2).
+export const DEFAULT_POOL = [
+  'sword', 'sword', 'sword', 'sword', 'sword', 'sword',
+  'shield', 'shield', 'shield', 'shield', 'shield',
+  'potion', 'potion', 'potion', 'potion',
+  'magic', 'magic', 'magic',
+  'skull', 'skull',
+];
+
+// Symbols offered as post-fight rewards (no skulls — nobody picks those willingly).
+export const PICKABLE_SYMBOLS = ['sword', 'shield', 'potion', 'magic'];
+
+export function getSymbol(id) {
+  return SYMBOLS.find(s => s.id === id);
+}
+
+export function pickFromPool(pool) {
+  const id = pool[Math.floor(Math.random() * pool.length)];
+  return getSymbol(id);
+}
+
+export function rollSymbolPicks(count = 3) {
+  return Array.from({ length: count }, () =>
+    PICKABLE_SYMBOLS[Math.floor(Math.random() * PICKABLE_SYMBOLS.length)]
+  );
+}
 
 export const ENEMIES = [
   { name: 'Goblin',       sprite: '👺', hp: 20,  atk: 3,  gold: 8  },
@@ -27,7 +55,7 @@ export const SHOP_ITEMS = [
   { name: 'Max HP Up',     icon: '💪', desc: '+10 max HP',            cost: 12, effectKey: 'maxHpUp' },
   { name: 'Sharp Blade',   icon: '🗡️', desc: '+2 sword damage',      cost: 18, effectKey: 'sharpBlade' },
   { name: 'Magic Tome',    icon: '📖', desc: '+3 magic damage',       cost: 20, effectKey: 'magicTome' },
-  { name: 'Lucky Charm',   icon: '🍀', desc: 'Fewer skulls on reels', cost: 25, effectKey: 'luckyCharm' },
+  { name: 'Lucky Charm',   icon: '🍀', desc: 'Cheaper symbol rerolls', cost: 18, effectKey: 'luckyCharm' },
 ];
 
 export function applyItemEffect(state, effectKey) {
@@ -43,24 +71,10 @@ export function applyItemEffect(state, effectKey) {
     case 'magicTome':
       return { ...state, magicBonus: state.magicBonus + 3 };
     case 'luckyCharm':
-      return { ...state, luckBonus: state.luckBonus + 5 };
+      return { ...state, luckBonus: state.luckBonus + 1 };
     default:
       return state;
   }
-}
-
-export function getWeightedSymbol(luckBonus) {
-  const adjusted = SYMBOLS.map(s => ({
-    ...s,
-    weight: s.id === 'skull' ? Math.max(2, s.weight - luckBonus) : s.weight,
-  }));
-  const total = adjusted.reduce((sum, s) => sum + s.weight, 0);
-  let r = Math.random() * total;
-  for (const s of adjusted) {
-    r -= s.weight;
-    if (r <= 0) return s;
-  }
-  return adjusted[adjusted.length - 1];
 }
 
 export function spawnEnemy(floor, room) {

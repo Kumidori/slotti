@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react';
 import Reel from './Reel';
-import { getWeightedSymbol, SYMBOLS } from '../gameData';
+import { pickFromPool, SYMBOLS } from '../gameData';
 import { ensureAudio, sfx } from '../audio';
 import '../styles/SlotMachine.css';
 
@@ -45,7 +45,7 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
         const kept = SYMBOLS.find(s => s.id === displaySymbolIds[i]);
         if (kept) return kept;
       }
-      return getWeightedSymbol(state.luckBonus);
+      return pickFromPool(state.symbolPool);
     });
 
     setDisplayIcons(results.map(r => r.icon));
@@ -95,7 +95,7 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
 
       onResolve(results);
     }, stopDelays[2] + 100);
-  }, [disabled, state.spinsLeft, state.luckBonus, onResolve, onSpinningChange, lockedReels, displaySymbolIds]);
+  }, [disabled, state.spinsLeft, state.symbolPool, onResolve, onSpinningChange, lockedReels, displaySymbolIds]);
 
   useImperativeHandle(ref, () => ({ spin }), [spin]);
 

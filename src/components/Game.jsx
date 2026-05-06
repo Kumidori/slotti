@@ -6,6 +6,8 @@ import HpBar from './HpBar';
 import Shop from './Shop';
 import Overlay from './Overlay';
 import FloatNumber from './FloatNumber';
+import SymbolPicker from './SymbolPicker';
+import SymbolPool from './SymbolPool';
 import { ensureAudio, sfx } from '../audio';
 import { calcInterest } from '../gameData';
 import '../styles/Game.css';
@@ -25,9 +27,10 @@ function buildComboDetail(state) {
 export default function Game() {
   const {
     state, startRun, resolveCombo, enemyAttack,
-    enemyDefeated, triggerGameOver, nextRoom,
+    enemyDefeated, triggerGameOver,
     buyItem, setLockedItems, closeShop, setSpinning,
     nextFloor, debugSkipToRuby,
+    pickSymbol, skipSymbol, rerollPicks,
   } = useGameState();
 
   const handleNextFloor = useCallback(() => {
@@ -214,11 +217,6 @@ export default function Game() {
     buyItem(item);
   }, [buyItem]);
 
-  const handleNextRoom = useCallback(() => {
-    sfx.buttonClick();
-    nextRoom();
-  }, [nextRoom]);
-
   const handleStartRun = useCallback(() => {
     ensureAudio();
     sfx.buttonClick();
@@ -238,7 +236,10 @@ export default function Game() {
       <div className={`game ${screenShake ? 'screen-shake' : ''}`}>
 
         <div className="top-bar">
-          <div className="gold-badge">💰 {state.gold}</div>
+          <div className="top-left">
+            <div className="gold-badge">💰 {state.gold}</div>
+            <SymbolPool pool={state.symbolPool} />
+          </div>
           <div className="floor-badge">
             <span>Floor {state.floor}</span>
             <div className="floor-progress">
@@ -343,12 +344,17 @@ export default function Game() {
         </div>
       </div>
 
-      {state.phase === 'victory' && (
-        <Overlay>
-          <h2>⚔️ Enemy Defeated!</h2>
-          <p>+{state.lastGoldEarned} gold</p>
-          <button onClick={handleNextRoom}>Continue</button>
-        </Overlay>
+      {state.phase === 'victory' && state.symbolPicks && (
+        <SymbolPicker
+          picks={state.symbolPicks}
+          gold={state.gold}
+          lastGoldEarned={state.lastGoldEarned}
+          rerollCount={state.pickRerollCount}
+          luckBonus={state.luckBonus}
+          onPick={(id) => { sfx.victory(); pickSymbol(id); }}
+          onSkip={() => { sfx.buttonClick(); skipSymbol(); }}
+          onReroll={() => { sfx.buttonClick(); rerollPicks(); }}
+        />
       )}
 
       {state.phase === 'floorComplete' && (

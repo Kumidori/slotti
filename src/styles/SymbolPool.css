@@ -1,0 +1,123 @@
+.pool-badge {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 3px 6px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pool-badge:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.pool-badge-item {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 12px;
+  color: #ccc;
+}
+
+.pool-badge-icon {
+  font-size: 13px;
+}
+
+.pool-badge-count {
+  font-weight: bold;
+  color: #fff;
+}
+
+.pool-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 24px;
+}
+
+.pool-modal {
+  background: linear-gradient(180deg, #1f1638, #14102a);
+  border: 2px solid #533483;
+  border-radius: 16px;
+  padding: 20px;
+  min-width: 280px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.pool-modal h3 {
+  margin: 0 0 6px;
+  color: #fff;
+  font-size: 18px;
+}
+
+.pool-sub {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: #999;
+}
+
+.pool-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.pool-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.pool-row-icon {
+  font-size: 22px;
+}
+
+.pool-row-name {
+  text-transform: capitalize;
+  color: #ccc;
+}
+
+.pool-row-count {
+  font-weight: bold;
+  color: #fff;
+}
+
+.pool-row-pct {
+  font-size: 12px;
+  color: #888;
+  min-width: 36px;
+  text-align: right;
+}
+
+.pool-close {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ccc;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pool-close:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
