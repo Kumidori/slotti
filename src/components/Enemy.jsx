@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import HpBar from './HpBar';
 import liliImg from '../assets/lili.webp';
-import rubyImg from '../assets/ruby.jpg';
+import rubyImg from '../assets/ruby.png';
 import '../styles/Enemy.css';
 
 const SPRITE_IMAGES = { lili: liliImg, ruby: rubyImg };
