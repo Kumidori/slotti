@@ -95,7 +95,7 @@ export const ENEMIES = [
 
 export const BOSSES = [
   { name: 'Lili', sprite: 'lili', hp: 80, atk: 6, gold: 30, enrageAt: 0.3, enrageAtk: 12 },
-  { name: 'Ruby', sprite: 'ruby', hp: 110, atk: 5, gold: 45, frenzyEvery: 3, frenzyHits: 3, frenzyMult: 0.6 },
+  { name: 'Ruby', sprite: 'ruby', hp: 110, atk: 5, gold: 45, frenzyEvery: 3, frenzyHits: 5, frenzyMult: 0.5 },
   { name: 'Furzkopf', sprite: 'furzkopf', hp: 140, atk: 7, gold: 60, poisonOnHit: { dmg: 2, ticks: 3 } },
 ];
 

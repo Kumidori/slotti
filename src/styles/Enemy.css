@@ -31,6 +31,16 @@
   animation: enemyAttack 0.5s;
 }
 
+.enemy-sprite.bite {
+  animation: enemyBite 0.18s ease-out;
+}
+
+@keyframes enemyBite {
+  0%   { transform: translateY(0) scale(1); }
+  40%  { transform: translateY(18px) scale(1.18); }
+  100% { transform: translateY(0) scale(1); }
+}
+
 .enemy-img {
   width: clamp(80px, 22vh, 130px);
   height: clamp(80px, 22vh, 130px);

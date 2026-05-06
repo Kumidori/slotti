@@ -106,6 +106,18 @@ export default function Game() {
     setTimeout(() => setEnemyAnim(null), 600);
   }, []);
 
+  // Re-triggerable animation: clears, then sets on next frame so the same
+  // class-name reapplies and CSS animation restarts.
+  const flashEnemyAnim = useCallback((type, duration) => {
+    setEnemyAnim(null);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setEnemyAnim(type);
+        setTimeout(() => setEnemyAnim(null), duration);
+      });
+    });
+  }, []);
+
   const triggerBarShake = useCallback((which) => {
     if (which === 'enemy') {
       setEnemyHpShake(true);
@@ -212,36 +224,15 @@ export default function Game() {
   }, [state.comboType, state.spinsLeft, state.dmg]);
 
   const doEnemyAttack = useCallback(() => {
-    triggerEnemyAnim('attack');
+    const isFrenzy = state.enemy.frenzyEvery &&
+      ((state.enemy.attackCount || 0) + 1) % state.enemy.frenzyEvery === 0;
+    const hits = isFrenzy ? state.enemy.frenzyHits : 1;
+    const perHit = isFrenzy ? Math.ceil(state.enemy.atk * state.enemy.frenzyMult) : state.enemy.atk;
+    const totalDmg = perHit * hits;
+    const blocked = Math.min(totalDmg, state.block);
+    const incoming = Math.max(0, totalDmg - state.block);
 
-    setTimeout(() => {
-      const isFrenzy = state.enemy.frenzyEvery &&
-        ((state.enemy.attackCount || 0) + 1) % state.enemy.frenzyEvery === 0;
-      const hits = isFrenzy ? state.enemy.frenzyHits : 1;
-      const perHit = isFrenzy ? Math.ceil(state.enemy.atk * state.enemy.frenzyMult) : state.enemy.atk;
-      const totalDmg = perHit * hits;
-      const blocked = Math.min(totalDmg, state.block);
-      const incoming = Math.max(0, totalDmg - state.block);
-
-      if (blocked > 0) {
-        sfx.shieldBreak();
-        addFloat(playerHpRef, `🛡️-${blocked}`, 'shield-block');
-      }
-      if (incoming > 0) {
-        if (state.enemy.poisonOnHit) sfx.fart();
-        else sfx.playerHit();
-        triggerShake();
-        triggerFlash('red');
-        triggerBarShake('player');
-        if (isFrenzy) {
-          for (let i = 0; i < hits; i++) {
-            setTimeout(() => addFloat(playerHpRef, `-${perHit}`, 'damage'), i * 120);
-          }
-        } else {
-          addFloat(playerHpRef, `-${incoming}`, 'damage');
-        }
-      }
-
+    const finishAttack = () => {
       const parts = [];
       if (incoming > 0) parts.push(t('enemy.attack.detail.damage', { amount: incoming }));
       if (blocked > 0) parts.push(t('enemy.attack.detail.blocked', { amount: blocked }));
@@ -256,10 +247,50 @@ export default function Game() {
           : parts.join(' · ') || null,
         key: Date.now(),
       });
-
       enemyAttack();
+    };
+
+    if (isFrenzy) {
+      // Per-bite animation + sfx + float; total dmg applied at the end via enemyAttack()
+      const BITE_GAP = 200;
+      for (let i = 0; i < hits; i++) {
+        setTimeout(() => {
+          flashEnemyAnim('bite', 180);
+          if (incoming > 0) {
+            sfx.playerHit();
+            triggerBarShake('player');
+            addFloat(playerHpRef, `-${perHit}`, 'damage');
+            if (i === 0) {
+              triggerShake();
+              triggerFlash('red');
+            }
+          } else if (blocked > 0 && i === 0) {
+            sfx.shieldBreak();
+            addFloat(playerHpRef, `🛡️-${blocked}`, 'shield-block');
+          }
+        }, i * BITE_GAP);
+      }
+      setTimeout(finishAttack, hits * BITE_GAP + 100);
+      return;
+    }
+
+    triggerEnemyAnim('attack');
+    setTimeout(() => {
+      if (blocked > 0) {
+        sfx.shieldBreak();
+        addFloat(playerHpRef, `🛡️-${blocked}`, 'shield-block');
+      }
+      if (incoming > 0) {
+        if (state.enemy.poisonOnHit) sfx.fart();
+        else sfx.playerHit();
+        triggerShake();
+        triggerFlash('red');
+        triggerBarShake('player');
+        addFloat(playerHpRef, `-${incoming}`, 'damage');
+      }
+      finishAttack();
     }, 350);
-  }, [state.enemy, state.block, enemyAttack, triggerShake, triggerFlash, triggerBarShake, addFloat, t]);
+  }, [state.enemy, state.block, enemyAttack, triggerShake, triggerFlash, triggerBarShake, addFloat, flashEnemyAnim, triggerEnemyAnim, t]);
 
   const handleBuy = useCallback((item) => {
     buyItem(item);
