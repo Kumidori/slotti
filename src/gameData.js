@@ -3,13 +3,24 @@ export const ROWS = 3;
 export const REELS = 3;
 
 // Five paylines: 3 rows + 2 diagonals
-export const PAYLINES = [
+export const PAYLINES_3ROW = [
   { id: 'top',    cells: [[0,0],[0,1],[0,2]] },
   { id: 'mid',    cells: [[1,0],[1,1],[1,2]] },
   { id: 'bot',    cells: [[2,0],[2,1],[2,2]] },
   { id: 'diagD',  cells: [[0,0],[1,1],[2,2]] },
   { id: 'diagU',  cells: [[2,0],[1,1],[0,2]] },
 ];
+
+export const PAYLINES_1ROW = [
+  { id: 'only', cells: [[0,0],[0,1],[0,2]] },
+];
+
+export function getPaylines(rows) {
+  return rows >= 3 ? PAYLINES_3ROW : PAYLINES_1ROW;
+}
+
+// Default export kept for backwards compatibility
+export const PAYLINES = PAYLINES_3ROW;
 
 export const RARITIES = {
   common: { weight: 70, glow: 'rgba(255,255,255,0.0)',  border: 'rgba(255,255,255,0.15)', label: 'Common' },
@@ -109,7 +120,7 @@ export const ENEMIES = [
 export const BOSSES = [
   { name: 'Lili', sprite: 'lili', hp: 80, atk: 6, gold: 30, enrageAt: 0.3, enrageAtk: 12 },
   { name: 'Ruby', sprite: 'ruby', hp: 110, atk: 5, gold: 45, frenzyEvery: 3, frenzyHits: 5, frenzyMult: 0.5 },
-  { name: 'Furzkopf', sprite: 'furzkopf', hp: 140, atk: 7, gold: 60, poisonOnHit: { dmg: 2, ticks: 3 } },
+  { name: 'Furzkopf', sprite: 'furzkopf', hp: 240, atk: 9, gold: 80, poisonOnHit: { dmg: 3, ticks: 3 } },
 ];
 
 export const SHOP_ITEMS = [

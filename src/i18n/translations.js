@@ -153,6 +153,7 @@ const en = {
   'passive.toxicAura.name': 'Toxic Aura',
   'passive.toxicAura.desc': 'Enemy takes 2 poison damage every spin',
   'overlay.unlocked': '{name} unlocked as playable!',
+  'overlay.unlockedRows': 'Slot expanded to 3 rows — 5 paylines!',
 
   // Overlays
   'overlay.gameOver': '💀 Game Over',
@@ -320,6 +321,7 @@ const de = {
   'passive.toxicAura.name': 'Giftaura',
   'passive.toxicAura.desc': 'Gegner erleidet jeden Dreh 2 Giftschaden',
   'overlay.unlocked': '{name} als spielbar freigeschaltet!',
+  'overlay.unlockedRows': 'Slot auf 3 Reihen erweitert — 5 Gewinnlinien!',
 
   // Overlays
   'overlay.gameOver': '💀 Spiel vorbei',
@@ -487,6 +489,7 @@ const bg = {
   'passive.toxicAura.name': 'Отровна аура',
   'passive.toxicAura.desc': 'Врагът получава 2 отровни щети на завъртане',
   'overlay.unlocked': '{name} е отключен като играем!',
+  'overlay.unlockedRows': 'Слотът се разширява до 3 реда — 5 линии!',
 
   // Overlays
   'overlay.gameOver': '💀 Край на играта',

@@ -562,6 +562,9 @@ export default function Game() {
           {state.justUnlocked && (
             <p className="unlock-line">🎁 {t('overlay.unlocked', { name: t(`char.${state.justUnlocked}.name`) })}</p>
           )}
+          {state.justUnlockedRows && (
+            <p className="unlock-line">✨ {t('overlay.unlockedRows')}</p>
+          )}
           <button onClick={handleNextFloor}>{t('overlay.continueToFloor', { floor: state.floor + 1 })}</button>
         </Overlay>
       )}

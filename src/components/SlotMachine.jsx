@@ -1,19 +1,30 @@
 import { useState, useRef, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react';
 import Reel from './Reel';
-import { pickFromPool, SYMBOLS, ROWS, REELS } from '../gameData';
+import { pickFromPool, SYMBOLS, REELS } from '../gameData';
 import { ensureAudio, sfx } from '../audio';
 import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/SlotMachine.css';
 
-// Default starting display: per reel, 3 stacked icons
-const DEFAULT_REEL = ['sword', 'shield', 'sword'];
-const DEFAULT_REEL_ICONS = ['⚔️', '🛡️', '⚔️'];
+function makeDefaultReel(rows) {
+  return Array.from({ length: rows }, (_, i) => i === 1 ? 'shield' : 'sword');
+}
+function makeDefaultIcons(rows) {
+  return makeDefaultReel(rows).map(id => SYMBOLS.find(s => s.id === id)?.icon || '?');
+}
 
 const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinningChange, onUseLockTokens, disabled }, ref) {
   const { t } = useTranslation();
-  // Each reel is an array of ROWS (3) symbols, top to bottom.
-  const [reelIcons, setReelIcons] = useState([DEFAULT_REEL_ICONS, DEFAULT_REEL_ICONS, DEFAULT_REEL_ICONS]);
-  const [reelIds, setReelIds] = useState([DEFAULT_REEL, DEFAULT_REEL, DEFAULT_REEL]);
+  const rows = state.gridRows || 1;
+  // Each reel is an array of `rows` symbols, top to bottom.
+  const [reelIcons, setReelIcons] = useState(() => [makeDefaultIcons(rows), makeDefaultIcons(rows), makeDefaultIcons(rows)]);
+  const [reelIds, setReelIds] = useState(() => [makeDefaultReel(rows), makeDefaultReel(rows), makeDefaultReel(rows)]);
+
+  // Re-init the visible reels when the row count changes mid-run (Ruby unlock).
+  useEffect(() => {
+    setReelIds([makeDefaultReel(rows), makeDefaultReel(rows), makeDefaultReel(rows)]);
+    setReelIcons([makeDefaultIcons(rows), makeDefaultIcons(rows), makeDefaultIcons(rows)]);
+    setLockedReels([false, false, false]);
+  }, [rows]);
   const [spinningReels, setSpinningReels] = useState([false, false, false]);
   const [lockedReels, setLockedReels] = useState([false, false, false]);
   const [winningCells, setWinningCells] = useState([]); // [[row, reel], ...] of cells in winning lines
@@ -51,10 +62,10 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
     ensureAudio();
     sfx.spinStart();
 
-    // Build new 3x3 grid: per reel, either keep locked column or roll fresh
+    // Build the new grid: per reel, either keep locked column or roll fresh
     const newReelIds = [0, 1, 2].map(i => {
-      if (lockedReels[i]) return reelIds[i].slice();
-      return [0, 1, 2].map(() => pickFromPool(state.symbolPool).id);
+      if (lockedReels[i] && reelIds[i].length === rows) return reelIds[i].slice();
+      return Array.from({ length: rows }, () => pickFromPool(state.symbolPool).id);
     });
     const newReelIcons = newReelIds.map(col =>
       col.map(id => SYMBOLS.find(s => s.id === id)?.icon || '?')
@@ -90,7 +101,7 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
 
       // Build the grid in [row][reel] order for the reducer
       const grid = [];
-      for (let r = 0; r < ROWS; r++) {
+      for (let r = 0; r < rows; r++) {
         const row = [];
         for (let c = 0; c < REELS; c++) {
           row.push({ id: newReelIds[c][r], icon: newReelIcons[c][r] });
@@ -99,7 +110,7 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
       }
       onResolve(grid);
     }, stopDelays[2] + 100);
-  }, [disabled, state.spinsLeft, state.symbolPool, onResolve, onSpinningChange, onUseLockTokens, lockedReels, reelIds]);
+  }, [disabled, state.spinsLeft, state.symbolPool, onResolve, onSpinningChange, onUseLockTokens, lockedReels, reelIds, rows]);
 
   useImperativeHandle(ref, () => ({
     spin,
@@ -113,7 +124,7 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
 
   return (
     <div className="slot-area">
-      <div className="reels reels-3row">
+      <div className={`reels ${rows >= 3 ? 'reels-3row' : ''}`}>
         {[0, 1, 2].map(i => (
           <Reel
             key={i}

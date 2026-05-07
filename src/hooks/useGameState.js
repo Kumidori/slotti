@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from 'react';
-import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, hasRelic, DEFAULT_POOL, BOSSES, PAYLINES } from '../gameData';
+import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, hasRelic, DEFAULT_POOL, BOSSES, getPaylines } from '../gameData';
 import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars } from '../characters';
 
 // Reroll cost: 5g first, +5g each subsequent reroll within the same picker.
@@ -243,6 +243,8 @@ const INITIAL_STATE = {
   poisonStacks: [],
   shopRerollCount: 0,
   shopRerollKey: 0,
+  gridRows: 1,
+  justUnlockedRows: false,
 };
 
 function reducer(state, action) {
@@ -296,7 +298,7 @@ function reducer(state, action) {
       let primaryComboType = 'weak';
       let multFactorMax = 1;
 
-      for (const line of PAYLINES) {
+      for (const line of getPaylines(s.gridRows)) {
         const lineIds = line.cells.map(([r, c]) => grid[r][c].id);
         const lineRes = evaluateLine(lineIds, s);
         if (lineRes.dmg > 0 || lineRes.heal > 0 || lineRes.block > 0) {
@@ -494,6 +496,13 @@ function reducer(state, action) {
           saveUnlockedChars(unlockedChars);
         }
       }
+      // Beat Ruby (floor 2 boss) → unlock the 3-row slot grid for the rest of the run
+      let gridRows = state.gridRows;
+      let justUnlockedRows = false;
+      if (isBoss && state.enemy.sprite === 'ruby' && gridRows < 3) {
+        gridRows = 3;
+        justUnlockedRows = true;
+      }
       return {
         ...state,
         gold: state.gold + gold,
@@ -504,6 +513,8 @@ function reducer(state, action) {
         pickRerollKey: 0,
         unlockedChars,
         justUnlocked,
+        gridRows,
+        justUnlockedRows,
       };
     }
 
