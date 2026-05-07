@@ -201,7 +201,7 @@ export default function Game() {
       cancelled = true;
       timers.forEach(clearTimeout);
     };
-  }, [state.lineResults, state.spinsLeft, t]);
+  }, [state.lineResults, t]);
 
   useEffect(() => {
     if (state.spinning) setComboAnim(null);

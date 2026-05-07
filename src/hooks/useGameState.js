@@ -202,6 +202,7 @@ function advanceToNextRoom(state) {
     locksLeft: state.maxLocks,
     poisonStacks: [],
     phoenixUsed: false,
+    lineResults: null,
   };
 }
 
@@ -546,6 +547,7 @@ function reducer(state, action) {
         floorRoomTypes: generateFloorRoomTypes(),
         poisonStacks: [],
         phoenixUsed: false,
+        lineResults: null,
       };
     }
 
