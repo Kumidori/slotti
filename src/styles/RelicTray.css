@@ -64,6 +64,17 @@
   line-height: 1;
 }
 
+.relic-chip-count {
+  font-size: 10px;
+  font-weight: bold;
+  color: #f1c40f;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  padding: 1px 4px;
+  margin-left: 2px;
+  line-height: 1;
+}
+
 .relic-popover {
   position: absolute;
   top: 50%;

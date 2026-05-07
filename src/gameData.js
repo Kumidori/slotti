@@ -182,6 +182,13 @@ export function hasRelic(state, id) {
   return state.relics?.includes(id);
 }
 
+export function relicCount(state, id) {
+  if (!state.relics) return 0;
+  let n = 0;
+  for (const r of state.relics) if (r === id) n++;
+  return n;
+}
+
 export function spawnEnemy(floor, room) {
   const pool = ENEMIES.filter((_, i) => i <= Math.min(floor + 1, ENEMIES.length - 1));
   const template = pool[Math.floor(Math.random() * pool.length)];

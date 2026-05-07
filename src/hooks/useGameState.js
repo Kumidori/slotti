@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from 'react';
-import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, hasRelic, DEFAULT_POOL, BOSSES, getPaylines } from '../gameData';
+import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines } from '../gameData';
 import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars } from '../characters';
 
 // Reroll cost: 5g first, +5g each subsequent reroll within the same picker.
@@ -37,15 +37,17 @@ function spawnForRoom(floor, room) {
 
 // Apply per-fight relic effects when entering combat (block, heal, locks).
 function applyFightStartRelics(state) {
-  let block = 0;
+  const sturdyStacks = relicCount(state, 'sturdyBoots');
+  let block = 5 * sturdyStacks;
   let playerHp = state.playerHp;
-  if (hasRelic(state, 'sturdyBoots')) block = 5;
-  if (hasRelic(state, 'tonicVial')) {
-    const healAmount = Math.min(5, state.playerMaxHp - playerHp);
+  const tonicStacks = relicCount(state, 'tonicVial');
+  if (tonicStacks > 0) {
+    const want = 5 * tonicStacks;
+    const healAmount = Math.min(want, state.playerMaxHp - playerHp);
     playerHp = playerHp + healAmount;
-    // Healer's Hand: any heal also grants block (50% of heal amount)
-    if (healAmount > 0 && hasRelic(state, 'healersHand')) {
-      block += Math.ceil(healAmount * 0.5);
+    const healerStacks = relicCount(state, 'healersHand');
+    if (healAmount > 0 && healerStacks > 0) {
+      block += Math.ceil(healAmount * 0.5 * healerStacks);
     }
   }
   return { block, playerHp };
@@ -135,12 +137,25 @@ function evaluateLine(ids, s) {
     comboType = 'none';
   }
 
-  // Per-line relics
-  if (dmg > 0 && hasRelic(s, 'glassCannon') && comboType === 'triple') dmg = Math.round(dmg * 2);
-  if (dmg > 0 && hasRelic(s, 'twinFang') && comboSymbol === 'sword') dmg = Math.round(dmg * 1.5);
-  if (dmg > 0 && hasRelic(s, 'arcaneFocus') && comboSymbol === 'magic') dmg = Math.round(dmg * 1.75);
-  if (dmg > 0 && hasRelic(s, 'spellEcho') && comboSymbol === 'magic') dmg = Math.round(dmg * 1.5);
-  if (heal > 0 && hasRelic(s, 'greenThumb') && comboSymbol === 'potion') heal = Math.round(heal * 1.5);
+  // Per-line relics — stacks add to multiplier
+  if (dmg > 0 && comboType === 'triple') {
+    const n = relicCount(s, 'glassCannon');
+    if (n > 0) dmg = Math.round(dmg * (1 + 1 * n)); // 1 stack ×2, 2 stacks ×3
+  }
+  if (dmg > 0 && comboSymbol === 'sword') {
+    const n = relicCount(s, 'twinFang');
+    if (n > 0) dmg = Math.round(dmg * (1 + 0.5 * n));
+  }
+  if (dmg > 0 && comboSymbol === 'magic') {
+    const a = relicCount(s, 'arcaneFocus');
+    if (a > 0) dmg = Math.round(dmg * (1 + 0.75 * a));
+    const e = relicCount(s, 'spellEcho');
+    if (e > 0) dmg = Math.round(dmg * (1 + 0.5 * e));
+  }
+  if (heal > 0 && comboSymbol === 'potion') {
+    const n = relicCount(s, 'greenThumb');
+    if (n > 0) heal = Math.round(heal * (1 + 0.5 * n));
+  }
 
   // Multiplier within the line
   const multFactor = mults > 0 ? Math.pow(2, mults) : 1;
@@ -156,11 +171,13 @@ function evaluateLine(ids, s) {
   return { comboType, comboText, comboSymbol, dmg, heal, block, selfDmg, multFactor, coinGold };
 }
 
-// Phoenix Feather: revive at 25% HP if you would die. Once per fight.
+// Phoenix Feather: revive at 25% HP if you would die. Stacks grant extra revives per fight.
 function tryRevive(s) {
-  if (s.playerHp <= 0 && hasRelic(s, 'phoenixFeather') && !s.phoenixUsed) {
+  const stacks = relicCount(s, 'phoenixFeather');
+  const used = s.phoenixUsed || 0;
+  if (s.playerHp <= 0 && used < stacks) {
     s.playerHp = Math.max(1, Math.ceil(s.playerMaxHp * 0.25));
-    s.phoenixUsed = true;
+    s.phoenixUsed = used + 1;
     s.justRevived = true;
   }
   return s;
@@ -170,7 +187,7 @@ function advanceToNextRoom(state) {
   const nextRoom = state.room + 1;
   const type = roomType(state, nextRoom);
   if (type === 'shop') {
-    const cap = hasRelic(state, 'pennyPincher') ? 10 : 5;
+    const cap = 5 + 5 * relicCount(state, 'pennyPincher');
     const interest = calcInterest(state.gold, cap);
     return {
       ...state,
@@ -318,14 +335,17 @@ function reducer(state, action) {
           if (enraged) lineRes.dmg = Math.round(lineRes.dmg * 1.5);
           if (periodRageActive) lineRes.dmg = Math.round(lineRes.dmg * 1.5);
           if (packHunterReady) lineRes.dmg = lineRes.dmg * 2;
-          // Vampiric Charm: heal 20% of dmg dealt
-          if (hasRelic(s, 'vampiricCharm')) {
-            lineRes.heal = (lineRes.heal || 0) + Math.ceil(lineRes.dmg * 0.2);
+          // Vampiric Charm: heal % of dmg dealt (stacks at 20% per copy, cap 100%)
+          const vampStacks = relicCount(s, 'vampiricCharm');
+          if (vampStacks > 0) {
+            const pct = Math.min(1.0, 0.2 * vampStacks);
+            lineRes.heal = (lineRes.heal || 0) + Math.ceil(lineRes.dmg * pct);
           }
         }
-        // Healer's Hand: heal grants block
-        if (lineRes.heal > 0 && hasRelic(s, 'healersHand')) {
-          lineRes.block = (lineRes.block || 0) + Math.ceil(lineRes.heal * 0.5);
+        // Healer's Hand: each stack adds 50% of heal as block
+        const healerStacks = relicCount(s, 'healersHand');
+        if (lineRes.heal > 0 && healerStacks > 0) {
+          lineRes.block = (lineRes.block || 0) + Math.ceil(lineRes.heal * 0.5 * healerStacks);
         }
 
         if (lineRes.dmg > 0 || lineRes.heal > 0 || lineRes.block > 0 || lineRes.selfDmg > 0) {
@@ -467,9 +487,10 @@ function reducer(state, action) {
         ];
       }
 
-      // Spike Shield: retaliate when actually struck
-      if (incomingDmg > 0 && hasRelic(s, 'spikeShield')) {
-        const spikeDmg = 3;
+      // Spike Shield: retaliate when actually struck (3 dmg per stack)
+      const spikeStacks = relicCount(s, 'spikeShield');
+      if (incomingDmg > 0 && spikeStacks > 0) {
+        const spikeDmg = 3 * spikeStacks;
         s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - spikeDmg) };
         s.spikeDmg = spikeDmg;
       } else {
@@ -489,7 +510,8 @@ function reducer(state, action) {
 
     case 'ENEMY_DEFEATED': {
       let gold = state.enemy.gold;
-      if (hasRelic(state, 'magnet')) gold = Math.round(gold * 1.5);
+      const magnetStacks = relicCount(state, 'magnet');
+      if (magnetStacks > 0) gold = Math.round(gold * (1 + 0.5 * magnetStacks));
       const isBoss = state.enemy.isBoss;
       const isFinalBoss = isBoss && state.floor >= BOSSES.length;
       // Unlock the matching character if we just beat a boss
@@ -604,7 +626,9 @@ function reducer(state, action) {
 
     case 'BUY_ITEM': {
       const { item } = action;
-      const discount = hasRelic(state, 'bargainHunter') ? 0.8 : 1;
+      const bargainStacks = relicCount(state, 'bargainHunter');
+      // Each stack reduces cost by 20%, capped at 60% off (3 stacks for max).
+      const discount = Math.max(0.4, 1 - 0.2 * bargainStacks);
       const cost = Math.ceil(item.cost * discount);
       let s = { ...state, gold: state.gold - cost };
       if (item.type === 'relic') {
@@ -658,7 +682,8 @@ function reducer(state, action) {
     case 'DEBUG_KILL_ENEMY': {
       if (!state.enemy || state.phase !== 'combat') return state;
       let gold = state.enemy.gold;
-      if (hasRelic(state, 'magnet')) gold = Math.round(gold * 1.5);
+      const magnetStacks = relicCount(state, 'magnet');
+      if (magnetStacks > 0) gold = Math.round(gold * (1 + 0.5 * magnetStacks));
       const isBoss = state.enemy.isBoss;
       const isFinalBoss = isBoss && state.floor >= BOSSES.length;
       let gridRows = state.gridRows;

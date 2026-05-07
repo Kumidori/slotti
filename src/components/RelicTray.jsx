@@ -13,21 +13,33 @@ export default function RelicTray({ relics }) {
 
   if (!relics || relics.length === 0) return null;
 
+  // Group by id with counts, preserving first-acquired order
+  const seen = [];
+  const counts = {};
+  for (const id of relics) {
+    if (counts[id]) counts[id]++;
+    else { counts[id] = 1; seen.push(id); }
+  }
+
   return (
     <div className="relic-tray">
-      {relics.map((id, i) => {
+      {seen.map((id) => {
         const def = RELIC_INDEX[id];
         if (!def) return null;
+        const count = counts[id];
         return (
           <button
-            key={`${id}-${i}`}
+            key={id}
             className={`relic-chip rarity-${def.rarity || 'common'}`}
-            onClick={() => setOpen(open === i ? null : i)}
+            onClick={() => setOpen(open === id ? null : id)}
           >
             <span className="relic-chip-icon">{def.icon}</span>
-            {open === i && (
+            {count > 1 && <span className="relic-chip-count">×{count}</span>}
+            {open === id && (
               <div className="relic-popover" onClick={e => e.stopPropagation()}>
-                <div className="relic-popover-name">{t(`relic.${id}.name`)}</div>
+                <div className="relic-popover-name">
+                  {t(`relic.${id}.name`)}{count > 1 ? ` ×${count}` : ''}
+                </div>
                 <div className="relic-popover-desc">{t(`relic.${id}.desc`)}</div>
               </div>
             )}

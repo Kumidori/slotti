@@ -71,8 +71,10 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems, onReroll
     ));
   };
 
-  const discount = state.relics?.includes('bargainHunter') ? 0.8 : 1;
-  const interestCap = state.relics?.includes('pennyPincher') ? 10 : 5;
+  const bargainStacks = state.relics?.filter(r => r === 'bargainHunter').length || 0;
+  const discount = Math.max(0.4, 1 - 0.2 * bargainStacks);
+  const pennyStacks = state.relics?.filter(r => r === 'pennyPincher').length || 0;
+  const interestCap = 5 + 5 * pennyStacks;
   const nextInterest = calcInterest(state.gold, interestCap);
   const selectedItem = entries.find(e => e.item.id === selectedName)?.item;
   const selectedCost = selectedItem ? Math.ceil(selectedItem.cost * discount) : Infinity;
