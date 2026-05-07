@@ -347,9 +347,11 @@ function reducer(state, action) {
       if (dmg > 0 && hasPassive(s, 'periodRage') && s.playerHp / s.playerMaxHp < 0.3) {
         dmg = Math.round(dmg * 1.5);
       }
-      // Pack Hunter (Ruby): every 4th spin in a fight crits 2x
-      const fightSpinNumber = (s.maxSpins - s.spinsLeft); // 1-based AFTER decrement above? we already did spinsLeft - 1
-      if (dmg > 0 && hasPassive(s, 'packHunter') && fightSpinNumber > 0 && fightSpinNumber % 4 === 0) {
+      // Pack Hunter (Ruby): every 3rd spin in a fight crits for 2× damage
+      // (with default maxSpins=3 this is your last spin every fight)
+      const fightSpinNumber = (s.maxSpins - s.spinsLeft);
+      const packHunterReady = hasPassive(s, 'packHunter') && fightSpinNumber > 0 && fightSpinNumber % 3 === 0;
+      if (dmg > 0 && packHunterReady) {
         dmg = dmg * 2;
         s.packHunterTriggered = true;
       } else {

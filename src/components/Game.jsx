@@ -45,6 +45,7 @@ function comboKeyFromText(text) {
 
 function buildComboDetail(state, t) {
   const parts = [];
+  if (state.packHunterTriggered) parts.push('🐕 PACK HUNTER ✖2');
   if (state.multFactor > 1) parts.push(`✖️${state.multFactor}`);
   if (state.dmg > 0) parts.push(t('combo.detail.damage', { amount: state.dmg }));
   if (state.heal > 0) parts.push(t('combo.detail.heal', { amount: state.heal }));
@@ -477,6 +478,16 @@ export default function Game() {
               <div className="stat-item">
                 <span className="stat-icon">🔄</span>
                 <span className="stat-value">{state.spinsLeft}</span>
+                {(() => {
+                  const c = getCharacter(state.character);
+                  if (c?.passive !== 'packHunter') return null;
+                  // Next spin number after this one
+                  const nextSpinNumber = (state.maxSpins - state.spinsLeft) + 1;
+                  if (nextSpinNumber > 0 && nextSpinNumber % 3 === 0) {
+                    return <span className="pack-hunter-ready" title="Next spin: Pack Hunter ×2!">🐕</span>;
+                  }
+                  return null;
+                })()}
               </div>
               <div className="stat-item">
                 <span className="stat-icon">🔒</span>

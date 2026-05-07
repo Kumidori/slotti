@@ -339,6 +339,17 @@
   font-weight: bold;
 }
 
+.pack-hunter-ready {
+  font-size: 14px;
+  margin-left: 2px;
+  animation: packPulse 1s ease-in-out infinite;
+}
+
+@keyframes packPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(231, 76, 60, 0.6)); }
+  50%      { transform: scale(1.2); filter: drop-shadow(0 0 8px rgba(231, 76, 60, 0.9)); }
+}
+
 /* Spin button */
 .spin-btn {
   background: linear-gradient(180deg, #e94560, #c0324d);
