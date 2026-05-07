@@ -154,6 +154,8 @@ const en = {
   'passive.toxicAura.desc': 'Enemy takes 2 poison damage every spin',
   'overlay.unlocked': '{name} unlocked as playable!',
   'overlay.unlockedRows': 'Slot expanded to 3 rows — 5 paylines!',
+  'update.available': '✨ New version available',
+  'update.reload': 'Reload',
 
   // Overlays
   'overlay.gameOver': '💀 Game Over',
@@ -322,6 +324,8 @@ const de = {
   'passive.toxicAura.desc': 'Gegner erleidet jeden Dreh 2 Giftschaden',
   'overlay.unlocked': '{name} als spielbar freigeschaltet!',
   'overlay.unlockedRows': 'Slot auf 3 Reihen erweitert — 5 Gewinnlinien!',
+  'update.available': '✨ Neue Version verfügbar',
+  'update.reload': 'Neu laden',
 
   // Overlays
   'overlay.gameOver': '💀 Spiel vorbei',
@@ -490,6 +494,8 @@ const bg = {
   'passive.toxicAura.desc': 'Врагът получава 2 отровни щети на завъртане',
   'overlay.unlocked': '{name} е отключен като играем!',
   'overlay.unlockedRows': 'Слотът се разширява до 3 реда — 5 линии!',
+  'update.available': '✨ Налична е нова версия',
+  'update.reload': 'Презареди',
 
   // Overlays
   'overlay.gameOver': '💀 Край на играта',

@@ -1,0 +1,61 @@
+.update-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  background: linear-gradient(180deg, #2a1f4a, #1a1a2e);
+  border: 1px solid rgba(241, 196, 15, 0.4);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(241, 196, 15, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #fff;
+  max-width: calc(100vw - 24px);
+  animation: bannerDrop 0.4s ease-out;
+}
+
+@keyframes bannerDrop {
+  0%   { opacity: 0; transform: translate(-50%, -20px); }
+  100% { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.update-banner-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.update-banner-reload {
+  background: linear-gradient(180deg, #f1c40f, #c79b08);
+  color: #2c1c00;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-weight: bold;
+  font-size: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: filter 0.15s;
+}
+
+.update-banner-reload:hover {
+  filter: brightness(1.1);
+}
+
+.update-banner-dismiss {
+  background: transparent;
+  color: #888;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 6px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.update-banner-dismiss:hover {
+  color: #fff;
+}
