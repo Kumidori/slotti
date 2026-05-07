@@ -137,23 +137,71 @@ export default function Game() {
     }
   }, []);
 
-  const handleResolve = useCallback((results) => {
-    resolveCombo(results);
+  const handleResolve = useCallback((grid) => {
+    resolveCombo(grid);
   }, [resolveCombo]);
 
   useEffect(() => {
-    if (state.comboText) {
-      const detail = buildComboDetail(state, t);
-      const key = comboKeyFromText(state.comboText);
-      const text = key ? t(key) : state.comboText;
-      setComboAnim({ text, type: state.comboType, detail, key: Date.now() });
-      // Play prerecorded combo voice on triples (and skull-triple).
-      if (state.comboType === 'triple' || state.comboType === 'skull-triple') {
-        const audioKey = key?.replace('combo.', '');
-        if (audioKey) playComboVoice(audioKey);
+    const lines = state.lineResults;
+    if (!lines || lines.length === 0) {
+      // No winning lines — show a basic Weak hit pulse so something happens
+      if (state.comboText) {
+        const text = comboKeyFromText(state.comboText) ? t(comboKeyFromText(state.comboText)) : state.comboText;
+        setComboAnim({ text, type: state.comboType, detail: null, key: Date.now() });
       }
+      return;
     }
-  }, [state.comboText, state.spinsLeft, t]);
+    // Schedule each winning line's combo float and cell highlight in sequence
+    let cancelled = false;
+    const timers = [];
+    const STEP = 600;
+    lines.forEach((line, i) => {
+      timers.push(setTimeout(() => {
+        if (cancelled) return;
+        const key = comboKeyFromText(line.comboText);
+        const text = key ? t(key) : line.comboText;
+        const parts = [];
+        if (line.dmg > 0) parts.push(t('combo.detail.damage', { amount: line.dmg }));
+        if (line.heal > 0) parts.push(t('combo.detail.heal', { amount: line.heal }));
+        if (line.block > 0) parts.push(t('combo.detail.block', { amount: line.block }));
+        if (line.selfDmg > 0) parts.push(t('combo.detail.selfDamage', { amount: line.selfDmg }));
+        if (line.multFactor > 1) parts.unshift(`✖️${line.multFactor}`);
+        setComboAnim({ text, type: line.comboType, detail: parts.join(' · ') || null, key: Date.now() + i });
+        // Highlight cells of this line on the slot grid
+        slotRef.current?.highlightCells?.(line.cells);
+        if (line.comboType === 'triple' || line.comboType === 'skull-triple') {
+          if (key) playComboVoice(key.replace('combo.', ''));
+        }
+        if (line.dmg > 0) {
+          sfx.damage();
+          addFloat(enemySpriteRef, `-${line.dmg}`, 'damage');
+        }
+        if (line.heal > 0) {
+          sfx.heal();
+          addFloat(playerHpRef, `+${line.heal}`, 'heal');
+        }
+        if (line.block > 0) {
+          sfx.shield();
+          addFloat(playerHpRef, `🛡️+${line.block}`, 'shield-block');
+        }
+        if (line.selfDmg > 0) {
+          sfx.skull();
+          triggerBarShake('player');
+          addFloat(playerHpRef, `-${line.selfDmg}`, 'self-damage');
+        }
+      }, i * STEP));
+    });
+    // Clear highlight after the last combo
+    timers.push(setTimeout(() => {
+      if (cancelled) return;
+      slotRef.current?.highlightCells?.([]);
+    }, lines.length * STEP + 400));
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+    };
+  }, [state.lineResults, state.spinsLeft, t]);
 
   useEffect(() => {
     if (state.spinning) setComboAnim(null);
@@ -163,35 +211,14 @@ export default function Game() {
     if (!state.comboType) return;
 
     const ct = state.comboType;
-    if (ct === 'skull-triple' || ct === 'skull') {
-      sfx.skull();
-      triggerShake();
-      triggerFlash('red');
-      triggerBarShake('player');
-      const selfDmg = ct === 'skull-triple' ? 15 : 5;
-      addFloat(playerHpRef, `-${selfDmg}`, 'self-damage');
-    } else if (ct === 'triple') {
-      sfx.jackpot();
+    // One-shot reactions for the whole spin — per-line reactions live in the
+    // sequential animation effect above.
+    if (ct === 'triple') {
       triggerFlash('gold');
-    } else if (ct === 'double') {
-      sfx.comboDouble();
-    } else if (ct === 'weak') {
-      sfx.comboWeak();
     }
-
     if (state.dmg > 0) {
-      sfx.damage();
       triggerEnemyAnim('shake');
       triggerBarShake('enemy');
-      addFloat(enemySpriteRef, `-${state.dmg}`, 'damage');
-    }
-    if (state.heal > 0) {
-      addFloat(playerHpRef, `+${state.heal}`, 'heal');
-      if (ct !== 'double' && ct !== 'triple') sfx.heal();
-    }
-    if (state.blockGained > 0) {
-      addFloat(playerHpRef, `🛡️+${state.blockGained}`, 'shield-block');
-      if (ct !== 'double' && ct !== 'triple') sfx.shield();
     }
 
     if (state.poisonDmg > 0) {
@@ -223,18 +250,21 @@ export default function Game() {
       }, 800);
     }
 
+    // Wait for all winning lines to animate before resolving fight outcome
+    const lineCount = state.lineResults?.length || 0;
+    const animDelay = Math.max(300, lineCount * 600 + 200);
     if (state.enemy.hp <= 0) {
       setTimeout(() => {
         enemyDefeated();
         sfx.victory();
-      }, 300);
+      }, animDelay);
     } else if (state.playerHp <= 0) {
       setTimeout(() => {
         triggerGameOver();
         sfx.gameOver();
-      }, 300);
+      }, animDelay);
     } else if (state.spinsLeft <= 0) {
-      setTimeout(() => doEnemyAttack(), 600);
+      setTimeout(() => doEnemyAttack(), animDelay + 200);
     }
   }, [state.comboType, state.spinsLeft, state.dmg]);
 

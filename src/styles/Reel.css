@@ -1,5 +1,5 @@
 .reel {
-  --reel-h: clamp(80px, 26vw, 100px);
+  --reel-h: clamp(58px, 20vw, 80px);
   width: var(--reel-h);
   height: var(--reel-h);
   background: #0f3460;
@@ -13,13 +13,40 @@
               background 0.3s;
 }
 
+.reel.reel-3row {
+  height: calc(var(--reel-h) * 3);
+}
+
+.reel-stack {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.reel-stack .reel-item {
+  height: var(--reel-h);
+  position: relative;
+}
+
+.reel-stack .reel-item.highlighted {
+  background: rgba(241, 196, 15, 0.25);
+  box-shadow: inset 0 0 12px rgba(241, 196, 15, 0.6);
+  animation: cellPulse 0.6s ease-in-out;
+}
+
+@keyframes cellPulse {
+  0%, 100% { background: rgba(241, 196, 15, 0.25); }
+  50%      { background: rgba(241, 196, 15, 0.45); }
+}
+
 .reel-item {
   width: 100%;
   height: var(--reel-h);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(44px, 14vw, 56px);
+  font-size: clamp(32px, 11vw, 44px);
   line-height: 1;
   flex-shrink: 0;
 }
@@ -34,7 +61,7 @@
 }
 
 @keyframes reelScroll {
-  from { transform: translateY(calc(var(--reel-h) * (1 - var(--strip-count)))); }
+  from { transform: translateY(calc(var(--reel-h) * (var(--rows, 1) - var(--strip-count)))); }
   to   { transform: translateY(0); }
 }
 

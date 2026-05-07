@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from 'react';
-import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, hasRelic, DEFAULT_POOL, BOSSES } from '../gameData';
+import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, hasRelic, DEFAULT_POOL, BOSSES, PAYLINES } from '../gameData';
 import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars } from '../characters';
 
 // Reroll cost: 5g first, +5g each subsequent reroll within the same picker.
@@ -44,6 +44,111 @@ function applyFightStartRelics(state) {
     playerHp = Math.min(state.playerMaxHp, playerHp + 5);
   }
   return { block, playerHp };
+}
+
+// Evaluate one payline (3 symbol IDs). Applies per-line relics + multiplier.
+// Returns { comboType, comboText, comboSymbol, dmg, heal, block, selfDmg, multFactor, coinGold }.
+function evaluateLine(ids, s) {
+  const counts = {};
+  ids.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
+  const wilds = counts.wild || 0;
+  const mults = counts.mult || 0;
+  const coins = counts.coin || 0;
+  const skulls = counts.skull || 0;
+  const priority = ['magic', 'sword', 'potion', 'shield'];
+
+  let combo = null;
+  const singlesPresent = priority.filter(t => (counts[t] || 0) >= 1);
+  if (skulls === 3) {
+    combo = { type: 'skull-triple' };
+  } else if (wilds === 3) {
+    combo = { type: 'triple', symbol: 'magic' };
+  } else {
+    for (const t of priority) {
+      if ((counts[t] || 0) >= 1 && (counts[t] || 0) + wilds >= 3) {
+        combo = { type: 'triple', symbol: t };
+        break;
+      }
+    }
+    if (!combo && wilds >= 1 && singlesPresent.length >= 2) {
+      combo = { type: 'rainbow', symbols: singlesPresent.slice(0, 2 + (wilds - 1)) };
+    }
+    if (!combo) {
+      for (const t of priority) {
+        if ((counts[t] || 0) >= 1 && (counts[t] || 0) + wilds >= 2) {
+          combo = { type: 'double', symbol: t };
+          break;
+        }
+      }
+    }
+    if (!combo && wilds === 2) combo = { type: 'double', symbol: 'magic' };
+    if (!combo && skulls >= 1) combo = { type: 'skull', skullCount: skulls };
+    if (!combo) combo = { type: 'nothing' };
+  }
+
+  let dmg = 0, heal = 0, block = 0, selfDmg = 0;
+  let comboText = '', comboType = combo.type, comboSymbol = combo.symbol || null;
+
+  if (combo.type === 'skull-triple') {
+    if (hasRelic(s, 'cursedCoin')) {
+      heal = 20; comboText = '☠️ TRIPLE SKULL!'; comboType = 'triple';
+    } else {
+      selfDmg = 15; comboText = '☠️ TRIPLE SKULL!'; comboType = 'skull-triple';
+    }
+  } else if (combo.type === 'triple') {
+    const t = combo.symbol;
+    if (t === 'sword')  { dmg = 18 + (s.swordBonus || 0) * 3; comboText = '⚔️ TRIPLE SLASH!'; }
+    else if (t === 'magic')  { dmg = 22 + (s.magicBonus || 0) * 3; comboText = '✨ ARCANE BURST!'; }
+    else if (t === 'shield') { block = 99; heal = 5; comboText = '🛡️ FORTRESS!'; }
+    else if (t === 'potion') { heal = 20; comboText = '🧪 FULL RESTORE!'; }
+    comboType = 'triple';
+  } else if (combo.type === 'double') {
+    const t = combo.symbol;
+    if (t === 'sword')  { dmg = 8 + (s.swordBonus || 0); comboText = '⚔️ Double Strike'; }
+    else if (t === 'magic')  { dmg = 10 + (s.magicBonus || 0); comboText = '✨ Spell Cast'; }
+    else if (t === 'shield') { block = 8; comboText = '🛡️ Shield Wall'; }
+    else if (t === 'potion') { heal = 10; comboText = '🧪 Quick Heal'; }
+    comboType = 'double';
+  } else if (combo.type === 'rainbow') {
+    for (const t of combo.symbols) {
+      if (t === 'sword')  dmg += 8 + (s.swordBonus || 0);
+      else if (t === 'magic')  dmg += 10 + (s.magicBonus || 0);
+      else if (t === 'shield') block += 8;
+      else if (t === 'potion') heal += 10;
+    }
+    comboText = '⭐ Rainbow Combo';
+    comboType = 'triple';
+  } else if (combo.type === 'skull') {
+    if (hasRelic(s, 'cursedCoin')) {
+      heal = combo.skullCount * 5; comboText = '💀 Cursed!'; comboType = 'double';
+    } else {
+      selfDmg = combo.skullCount * 5; comboText = '💀 Cursed!'; comboType = 'skull';
+    }
+  } else {
+    // 'nothing' — line had no combo at all
+    comboText = '';
+    comboType = 'none';
+  }
+
+  // Per-line relics
+  if (dmg > 0 && hasRelic(s, 'glassCannon') && comboType === 'triple') dmg = Math.round(dmg * 2);
+  if (dmg > 0 && hasRelic(s, 'twinFang') && comboSymbol === 'sword') dmg = Math.round(dmg * 1.5);
+  if (dmg > 0 && hasRelic(s, 'arcaneFocus') && comboSymbol === 'magic') dmg = Math.round(dmg * 1.75);
+  if (dmg > 0 && hasRelic(s, 'spellEcho') && comboSymbol === 'magic') dmg = Math.round(dmg * 1.5);
+  if (heal > 0 && hasRelic(s, 'greenThumb') && comboSymbol === 'potion') heal = Math.round(heal * 1.5);
+
+  // Multiplier within the line
+  const multFactor = mults > 0 ? Math.pow(2, mults) : 1;
+  if (mults > 0) {
+    dmg = dmg * multFactor;
+    heal = heal * multFactor;
+    block = block * multFactor;
+  }
+
+  // Coins (per-line)
+  const coinGold = coins * 2;
+
+  return { comboType, comboText, comboSymbol, dmg, heal, block, selfDmg, multFactor, coinGold };
 }
 
 // Phoenix Feather: revive at 25% HP if you would die. Once per fight.
@@ -176,118 +281,64 @@ function reducer(state, action) {
       return { ...state, reelResults: action.results };
 
     case 'RESOLVE_COMBO': {
-      const { results } = action;
-      const ids = results.map(r => r.id);
-      const counts = {};
-      ids.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
-
+      const { grid } = action;
+      // Evaluate each payline using the existing single-line logic.
+      // grid is a 2D array of symbol objects: grid[row][reel] = { id, icon }.
       let s = { ...state, spinsLeft: state.spinsLeft - 1, spinning: false };
-      let dmg = 0, heal = 0, block = 0;
-      let comboText = '', comboType = 'normal';
 
-      const wilds = counts.wild || 0;
-      const mults = counts.mult || 0;
-      const coins = counts.coin || 0;
-      const skulls = counts.skull || 0;
-      const priority = ['magic', 'sword', 'potion', 'shield'];
+      const lineResults = [];
+      let totalDmg = 0, totalHeal = 0, totalBlock = 0;
+      let totalSelfDmg = 0;
+      let totalCoinGold = 0;
+      let anyTriple = false;
+      let primaryComboText = '';
+      let primaryComboType = 'weak';
+      let multFactorMax = 1;
 
-      // Determine best combo. Wilds substitute for any non-skull symbol but
-      // cannot trigger a combo by themselves unless 3 wilds (jackpot).
-      let combo = null;
-      const singlesPresent = priority.filter(t => (counts[t] || 0) >= 1);
-      if (skulls === 3) {
-        combo = { type: 'skull-triple' };
-      } else if (wilds === 3) {
-        combo = { type: 'triple', symbol: 'magic' };
-      } else {
-        for (const t of priority) {
-          if ((counts[t] || 0) >= 1 && (counts[t] || 0) + wilds >= 3) {
-            combo = { type: 'triple', symbol: t };
-            break;
-          }
+      for (const line of PAYLINES) {
+        const lineIds = line.cells.map(([r, c]) => grid[r][c].id);
+        const lineRes = evaluateLine(lineIds, s);
+        if (lineRes.dmg > 0 || lineRes.heal > 0 || lineRes.block > 0) {
+          lineResults.push({ paylineId: line.id, cells: line.cells, ...lineRes });
         }
-        // Rainbow: 1 wild + 2 distinct singles → double of each
-        if (!combo && wilds >= 1 && singlesPresent.length >= 2) {
-          combo = { type: 'rainbow', symbols: singlesPresent.slice(0, 2 + (wilds - 1)) };
+        totalDmg += lineRes.dmg;
+        totalHeal += lineRes.heal;
+        totalBlock += lineRes.block;
+        totalSelfDmg += lineRes.selfDmg || 0;
+        totalCoinGold += lineRes.coinGold || 0;
+        if (lineRes.multFactor > multFactorMax) multFactorMax = lineRes.multFactor;
+        if (lineRes.comboType === 'triple') {
+          anyTriple = true;
+          if (lineRes.dmg > 0) { primaryComboText = lineRes.comboText; primaryComboType = 'triple'; }
         }
-        if (!combo) {
-          for (const t of priority) {
-            if ((counts[t] || 0) >= 1 && (counts[t] || 0) + wilds >= 2) {
-              combo = { type: 'double', symbol: t };
-              break;
-            }
-          }
+        if (!primaryComboText && (lineRes.dmg > 0 || lineRes.heal > 0 || lineRes.block > 0)) {
+          primaryComboText = lineRes.comboText;
+          primaryComboType = lineRes.comboType;
         }
-        if (!combo && wilds === 2) combo = { type: 'double', symbol: 'magic' };
-        if (!combo && skulls >= 1) combo = { type: 'skull', skullCount: skulls };
-        if (!combo) combo = { type: 'weak' };
+      }
+      if (!primaryComboText) {
+        primaryComboText = 'Weak hit';
+        primaryComboType = 'weak';
+        totalDmg = 3; // small bump for the "you hit nothing" case
       }
 
-      if (combo.type === 'skull-triple') {
-        if (hasRelic(s, 'cursedCoin')) {
-          heal = 20;
-          comboText = '☠️ TRIPLE SKULL!';
-          comboType = 'triple';
-        } else {
-          const selfDmg = 15;
-          s.playerHp -= selfDmg;
-          comboText = '☠️ TRIPLE SKULL!';
-          comboType = 'skull-triple';
-        }
-      } else if (combo.type === 'triple') {
-        const t = combo.symbol;
-        if (t === 'sword')  { dmg = 18 + s.swordBonus * 3; comboText = '⚔️ TRIPLE SLASH!'; }
-        else if (t === 'magic')  { dmg = 22 + s.magicBonus * 3; comboText = '✨ ARCANE BURST!'; }
-        else if (t === 'shield') { block = 99; heal = 5; comboText = '🛡️ FORTRESS!'; }
-        else if (t === 'potion') { heal = 20; comboText = '🧪 FULL RESTORE!'; }
-        comboType = 'triple';
-      } else if (combo.type === 'double') {
-        const t = combo.symbol;
-        if (t === 'sword')  { dmg = 8 + s.swordBonus; comboText = '⚔️ Double Strike'; }
-        else if (t === 'magic')  { dmg = 10 + s.magicBonus; comboText = '✨ Spell Cast'; }
-        else if (t === 'shield') { block = 8; comboText = '🛡️ Shield Wall'; }
-        else if (t === 'potion') { heal = 10; comboText = '🧪 Quick Heal'; }
-        comboType = 'double';
-      } else if (combo.type === 'rainbow') {
-        for (const t of combo.symbols) {
-          if (t === 'sword')  dmg += 8 + s.swordBonus;
-          else if (t === 'magic')  dmg += 10 + s.magicBonus;
-          else if (t === 'shield') block += 8;
-          else if (t === 'potion') heal += 10;
-        }
-        comboText = '⭐ Rainbow Combo';
-        comboType = 'triple';
-      } else if (combo.type === 'skull') {
-        if (hasRelic(s, 'cursedCoin')) {
-          heal = combo.skullCount * 5;
-          comboText = '💀 Cursed!';
-          comboType = 'double';
-        } else {
-          const selfDmg = combo.skullCount * 5;
-          s.playerHp -= selfDmg;
-          comboText = '💀 Cursed!';
-          comboType = 'skull';
-        }
-      } else {
-        dmg = 3;
-        comboText = 'Weak hit';
-        comboType = 'weak';
-      }
+      s.gold = (s.gold || 0) + totalCoinGold;
+      s.coinGold = totalCoinGold;
+      s.multFactor = multFactorMax;
+      s.multCount = multFactorMax > 1 ? Math.round(Math.log2(multFactorMax)) : 0;
+      s.lineResults = lineResults; // for sequential animation
 
-      // Multipliers double dmg/heal/block per multiplier, but never self-damage
-      const multFactor = mults > 0 ? Math.pow(2, mults) : 1;
-      if (mults > 0) {
-        dmg = dmg * multFactor;
-        heal = heal * multFactor;
-        block = block * multFactor;
-      }
-      s.multCount = mults;
-      s.multFactor = multFactor;
+      // Aggregate working values for per-spin post-processing
+      let dmg = totalDmg;
+      let heal = totalHeal;
+      let block = totalBlock;
+      let comboText = primaryComboText;
+      let comboType = primaryComboType;
 
-      // Coins give gold each
-      const coinGold = coins * 2;
-      if (coinGold > 0) s.gold += coinGold;
-      s.coinGold = coinGold;
+      // Apply self-damage from skulls (sum of all skull lines)
+      if (totalSelfDmg > 0) {
+        s.playerHp -= totalSelfDmg;
+      }
 
       // Toxic Aura (Furzkopf): 2 passive damage to the enemy each spin
       if (hasPassive(s, 'toxicAura') && s.enemy && s.enemy.hp > 0) {
@@ -320,25 +371,6 @@ function reducer(state, action) {
         }
       }
 
-      if (dmg > 0 && hasRelic(s, 'glassCannon') && comboType === 'triple') {
-        dmg = Math.round(dmg * 2);
-      }
-      // Twin Fang: sword combos hit 50% harder
-      if (dmg > 0 && hasRelic(s, 'twinFang') && combo.symbol === 'sword') {
-        dmg = Math.round(dmg * 1.5);
-      }
-      // Arcane Focus: magic combos hit 75% harder
-      if (dmg > 0 && hasRelic(s, 'arcaneFocus') && combo.symbol === 'magic') {
-        dmg = Math.round(dmg * 1.75);
-      }
-      // Spell Echo: magic combos echo for an extra 50% damage
-      if (dmg > 0 && hasRelic(s, 'spellEcho') && combo.symbol === 'magic') {
-        dmg = Math.round(dmg * 1.5);
-      }
-      // Green Thumb: heal combos heal 50% more
-      if (heal > 0 && hasRelic(s, 'greenThumb') && combo.symbol === 'potion') {
-        heal = Math.round(heal * 1.5);
-      }
       // Healer's Hand: any heal triggers a small block bonus too
       if (heal > 0 && hasRelic(s, 'healersHand')) {
         block += Math.ceil(heal * 0.5);
@@ -631,7 +663,7 @@ export default function useGameState() {
   const startRun = useCallback((characterId) => dispatch({ type: 'START_RUN', characterId }), []);
   const goToMenu = useCallback(() => dispatch({ type: 'GO_TO_MENU' }), []);
   const clearJustUnlocked = useCallback(() => dispatch({ type: 'CLEAR_JUST_UNLOCKED' }), []);
-  const resolveCombo = useCallback((results) => dispatch({ type: 'RESOLVE_COMBO', results }), []);
+  const resolveCombo = useCallback((grid) => dispatch({ type: 'RESOLVE_COMBO', grid }), []);
   const enemyAttack = useCallback(() => dispatch({ type: 'ENEMY_ATTACK' }), []);
   const enemyDefeated = useCallback(() => dispatch({ type: 'ENEMY_DEFEATED' }), []);
   const triggerGameOver = useCallback(() => dispatch({ type: 'GAME_OVER' }), []);

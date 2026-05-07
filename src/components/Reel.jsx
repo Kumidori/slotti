@@ -1,23 +1,22 @@
 import { useMemo } from 'react';
-import { SYMBOLS } from '../gameData';
+import { SYMBOLS, ROWS } from '../gameData';
 import '../styles/Reel.css';
 
 const FILLERS = 18;
 
-export default function Reel({ icon, spinning, spinDuration = 1000, spinKey, highlight, locked, canLock, onToggleLock, rarity }) {
+export default function Reel({ icons, spinning, spinDuration = 1000, spinKey, locked, canLock, onToggleLock, highlightedRows = [] }) {
+  // Build a strip whose top ROWS items are the targets, then fillers below.
   const strip = useMemo(() => {
-    if (!spinning) return [icon];
+    if (!spinning) return icons;
     const fillers = Array.from({ length: FILLERS }, () =>
       SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].icon
     );
-    return [icon, ...fillers];
-  }, [spinKey, spinning, icon]);
+    return [...icons, ...fillers];
+  }, [spinKey, spinning, icons]);
 
-  const classes = ['reel'];
-  if (highlight) classes.push(highlight);
+  const classes = ['reel', 'reel-3row'];
   if (locked) classes.push('locked');
   if (canLock && !spinning) classes.push('clickable');
-  if (!spinning && rarity && rarity !== 'common') classes.push(`reel-rarity-${rarity}`);
 
   const handleClick = () => {
     if (canLock && !spinning) onToggleLock?.();
@@ -27,13 +26,23 @@ export default function Reel({ icon, spinning, spinDuration = 1000, spinKey, hig
     <div className={classes.join(' ')} onClick={handleClick}>
       {locked && <span className="reel-lock-badge">🔒</span>}
       {!spinning ? (
-        <div className="reel-item">{icon}</div>
+        <div className="reel-stack">
+          {icons.map((ic, r) => (
+            <div
+              key={r}
+              className={`reel-item ${highlightedRows.includes(r) ? 'highlighted' : ''}`}
+            >
+              {ic}
+            </div>
+          ))}
+        </div>
       ) : (
         <div
           key={spinKey}
           className="reel-strip"
           style={{
             '--strip-count': strip.length,
+            '--rows': ROWS,
             animationDuration: `${spinDuration}ms`,
           }}
         >

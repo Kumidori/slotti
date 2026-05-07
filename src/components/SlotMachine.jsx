@@ -1,24 +1,28 @@
 import { useState, useRef, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react';
 import Reel from './Reel';
-import { pickFromPool, SYMBOLS } from '../gameData';
+import { pickFromPool, SYMBOLS, ROWS, REELS } from '../gameData';
 import { ensureAudio, sfx } from '../audio';
 import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/SlotMachine.css';
 
+// Default starting display: per reel, 3 stacked icons
+const DEFAULT_REEL = ['sword', 'shield', 'sword'];
+const DEFAULT_REEL_ICONS = ['⚔️', '🛡️', '⚔️'];
+
 const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinningChange, onUseLockTokens, disabled }, ref) {
   const { t } = useTranslation();
-  const [displayIcons, setDisplayIcons] = useState(['⚔️', '🛡️', '⚔️']);
-  const [displaySymbolIds, setDisplaySymbolIds] = useState(['sword', 'shield', 'sword']);
+  // Each reel is an array of ROWS (3) symbols, top to bottom.
+  const [reelIcons, setReelIcons] = useState([DEFAULT_REEL_ICONS, DEFAULT_REEL_ICONS, DEFAULT_REEL_ICONS]);
+  const [reelIds, setReelIds] = useState([DEFAULT_REEL, DEFAULT_REEL, DEFAULT_REEL]);
   const [spinningReels, setSpinningReels] = useState([false, false, false]);
-  const [highlights, setHighlights] = useState([null, null, null]);
   const [lockedReels, setLockedReels] = useState([false, false, false]);
+  const [winningCells, setWinningCells] = useState([]); // [[row, reel], ...] of cells in winning lines
   const [spinKey, setSpinKey] = useState(0);
   const tickRef = useRef(null);
   const isSpinning = useRef(false);
 
   const stopDelays = [700, 1050, 1400];
 
-  // Reset locks when fight changes or no spins remain
   useEffect(() => {
     if (state.spinsLeft <= 0 || !state.enemy) {
       setLockedReels([false, false, false]);
@@ -47,27 +51,28 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
     ensureAudio();
     sfx.spinStart();
 
-    const results = [0, 1, 2].map(i => {
-      if (lockedReels[i]) {
-        const kept = SYMBOLS.find(s => s.id === displaySymbolIds[i]);
-        if (kept) return kept;
-      }
-      return pickFromPool(state.symbolPool);
+    // Build new 3x3 grid: per reel, either keep locked column or roll fresh
+    const newReelIds = [0, 1, 2].map(i => {
+      if (lockedReels[i]) return reelIds[i].slice();
+      return [0, 1, 2].map(() => pickFromPool(state.symbolPool).id);
     });
+    const newReelIcons = newReelIds.map(col =>
+      col.map(id => SYMBOLS.find(s => s.id === id)?.icon || '?')
+    );
 
     const lockedCount = lockedReels.filter(Boolean).length;
     if (lockedCount > 0) onUseLockTokens?.(lockedCount);
 
-    setDisplayIcons(results.map(r => r.icon));
-    setDisplaySymbolIds(results.map(r => r.id));
+    setReelIds(newReelIds);
+    setReelIcons(newReelIcons);
     setLockedReels([false, false, false]);
+    setWinningCells([]);
     setSpinKey(k => k + 1);
     setSpinningReels(lockedReels.map(l => !l));
-    setHighlights([null, null, null]);
 
     tickRef.current = setInterval(() => sfx.reelTick(), 80);
 
-    results.forEach((_, i) => {
+    [0, 1, 2].forEach((i) => {
       setTimeout(() => {
         setSpinningReels(prev => {
           const next = [...prev];
@@ -83,31 +88,23 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
       isSpinning.current = false;
       onSpinningChange?.(false);
 
-      const ids = results.map(r => r.id);
-      const counts = {};
-      ids.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
-      const activeSymbol = Object.keys(counts).find(k => counts[k] >= 2);
-      const hasSkull = counts.skull >= 1;
-      const isTriple = Object.values(counts).some(c => c === 3);
-
-      const newHighlights = ids.map(id => {
-        if (hasSkull && (counts.skull >= 2 || !activeSymbol)) {
-          return id === 'skull' ? 'active-skull' : (counts.skull >= 1 && !activeSymbol ? null : 'inactive');
+      // Build the grid in [row][reel] order for the reducer
+      const grid = [];
+      for (let r = 0; r < ROWS; r++) {
+        const row = [];
+        for (let c = 0; c < REELS; c++) {
+          row.push({ id: newReelIds[c][r], icon: newReelIcons[c][r] });
         }
-        if (activeSymbol) {
-          if (id === activeSymbol) return isTriple ? 'active-triple' : 'active';
-          return 'inactive';
-        }
-        return null;
-      });
-      setHighlights(newHighlights);
-      setTimeout(() => setHighlights([null, null, null]), 1800);
-
-      onResolve(results);
+        grid.push(row);
+      }
+      onResolve(grid);
     }, stopDelays[2] + 100);
-  }, [disabled, state.spinsLeft, state.symbolPool, onResolve, onSpinningChange, onUseLockTokens, lockedReels, displaySymbolIds]);
+  }, [disabled, state.spinsLeft, state.symbolPool, onResolve, onSpinningChange, onUseLockTokens, lockedReels, reelIds]);
 
-  useImperativeHandle(ref, () => ({ spin }), [spin]);
+  useImperativeHandle(ref, () => ({
+    spin,
+    highlightCells: (cells) => setWinningCells(cells || []),
+  }), [spin]);
 
   const canLockNow = !isSpinning.current && !disabled && state.spinsLeft >= 1 && state.locksLeft > 0;
   const lockedCount = lockedReels.filter(Boolean).length;
@@ -116,18 +113,18 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
 
   return (
     <div className="slot-area">
-      <div className="reels">
+      <div className="reels reels-3row">
         {[0, 1, 2].map(i => (
           <Reel
             key={i}
-            icon={displayIcons[i]}
+            icons={reelIcons[i]}
             spinning={spinningReels[i]}
             spinDuration={stopDelays[i]}
             spinKey={spinKey}
-            highlight={highlights[i]}
             locked={lockedReels[i]}
             onToggleLock={() => toggleLock(i)}
             canLock={canLockNow && (lockedReels[i] || remainingTokens > 0)}
+            highlightedRows={winningCells.filter(([r, c]) => c === i).map(([r]) => r)}
           />
         ))}
       </div>

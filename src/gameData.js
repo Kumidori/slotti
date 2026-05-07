@@ -1,3 +1,16 @@
+// Grid is 3 rows × 3 reels, indexed [row][reel]
+export const ROWS = 3;
+export const REELS = 3;
+
+// Five paylines: 3 rows + 2 diagonals
+export const PAYLINES = [
+  { id: 'top',    cells: [[0,0],[0,1],[0,2]] },
+  { id: 'mid',    cells: [[1,0],[1,1],[1,2]] },
+  { id: 'bot',    cells: [[2,0],[2,1],[2,2]] },
+  { id: 'diagD',  cells: [[0,0],[1,1],[2,2]] },
+  { id: 'diagU',  cells: [[2,0],[1,1],[0,2]] },
+];
+
 export const RARITIES = {
   common: { weight: 70, glow: 'rgba(255,255,255,0.0)',  border: 'rgba(255,255,255,0.15)', label: 'Common' },
   rare:   { weight: 25, glow: 'rgba(80,160,255,0.55)',  border: '#5aa0ff',                 label: 'Rare' },
