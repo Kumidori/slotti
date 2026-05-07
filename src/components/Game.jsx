@@ -586,6 +586,16 @@ export default function Game() {
           {state.justUnlocked && (
             <p className="unlock-line">🎁 {t('overlay.unlocked', { name: t(`char.${state.justUnlocked}.name`) })}</p>
           )}
+          <p className="reward-line">
+            <a
+              href="https://www.amazon.de/g/KAE7SZGQFFYQBM?t=SvL"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="reward-link"
+            >
+              🏆 {t('overlay.firstWinReward')}
+            </a>
+          </p>
           <button onClick={handleBackToMenu}>{t('overlay.playAgain')}</button>
         </Overlay>
       )}

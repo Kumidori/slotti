@@ -156,6 +156,7 @@ const en = {
   'overlay.unlockedRows': 'Slot expanded to 3 rows — 5 paylines!',
   'update.available': '✨ New version available',
   'update.reload': 'Reload',
+  'overlay.firstWinReward': 'First winner — claim your prize!',
 
   // Overlays
   'overlay.gameOver': '💀 Game Over',
@@ -326,6 +327,7 @@ const de = {
   'overlay.unlockedRows': 'Slot auf 3 Reihen erweitert — 5 Gewinnlinien!',
   'update.available': '✨ Neue Version verfügbar',
   'update.reload': 'Neu laden',
+  'overlay.firstWinReward': 'Erster Gewinner — hol dir deinen Preis!',
 
   // Overlays
   'overlay.gameOver': '💀 Spiel vorbei',
@@ -496,6 +498,7 @@ const bg = {
   'overlay.unlockedRows': 'Слотът се разширява до 3 реда — 5 линии!',
   'update.available': '✨ Налична е нова версия',
   'update.reload': 'Презареди',
+  'overlay.firstWinReward': 'Първи победител — вземи наградата си!',
 
   // Overlays
   'overlay.gameOver': '💀 Край на играта',
