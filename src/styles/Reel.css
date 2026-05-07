@@ -1,5 +1,5 @@
 .reel {
-  --reel-h: clamp(46px, 9vh, 88px);
+  --reel-h: clamp(46px, 11vh, 108px);
   width: var(--reel-h);
   height: var(--reel-h);
   background: #0f3460;
@@ -46,7 +46,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(26px, 5vh, 50px);
+  font-size: clamp(26px, 6vh, 60px);
   line-height: 1;
   flex-shrink: 0;
 }

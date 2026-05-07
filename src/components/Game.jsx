@@ -426,6 +426,7 @@ export default function Game() {
           </div>
         </div>
 
+        <div className="enemy-area">
         <Enemy
           enemy={state.enemy}
           spriteAnim={enemyAnim}
@@ -453,6 +454,7 @@ export default function Game() {
                     ? t('enemy.intent.bossPrepares', { name: state.enemy.name })
                     : t('enemy.intent.prepares', { name: state.enemy.name })
             : ''}
+        </div>
         </div>
 
         <div className="mid-zone">
