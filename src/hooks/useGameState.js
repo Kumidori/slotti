@@ -542,6 +542,8 @@ function reducer(state, action) {
     case 'NEXT_FLOOR': {
       const nextFloor = state.floor + 1;
       const fightStart = applyFightStartRelics(state);
+      // Safety: ensure 3-row grid is unlocked from floor 3 onwards
+      const gridRows = nextFloor >= 3 ? Math.max(3, state.gridRows) : state.gridRows;
       return {
         ...state,
         floor: nextFloor,
@@ -559,6 +561,7 @@ function reducer(state, action) {
         poisonStacks: [],
         phoenixUsed: false,
         lineResults: null,
+        gridRows,
       };
     }
 
@@ -651,6 +654,12 @@ function reducer(state, action) {
       if (hasRelic(state, 'magnet')) gold = Math.round(gold * 1.5);
       const isBoss = state.enemy.isBoss;
       const isFinalBoss = isBoss && state.floor >= BOSSES.length;
+      let gridRows = state.gridRows;
+      let justUnlockedRows = false;
+      if (isBoss && state.enemy.sprite === 'ruby' && gridRows < 3) {
+        gridRows = 3;
+        justUnlockedRows = true;
+      }
       return {
         ...state,
         enemy: { ...state.enemy, hp: 0 },
@@ -660,6 +669,8 @@ function reducer(state, action) {
         symbolPicks: isBoss ? null : rollSymbolPicks(3),
         pickRerollCount: 0,
         pickRerollKey: 0,
+        gridRows,
+        justUnlockedRows,
       };
     }
 
