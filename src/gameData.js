@@ -185,9 +185,14 @@ export function hasRelic(state, id) {
 export function spawnEnemy(floor, room) {
   const pool = ENEMIES.filter((_, i) => i <= Math.min(floor + 1, ENEMIES.length - 1));
   const template = pool[Math.floor(Math.random() * pool.length)];
-  const statScale = 1 + (floor - 1) * 0.2 + (room - 1) * 0.05;
-  // Flatter gold scaling so late game doesn't run away with money
-  const goldScale = 1 + (floor - 1) * 0.15 + (room - 1) * 0.03;
+  let statScale = 1 + (floor - 1) * 0.2 + (room - 1) * 0.05;
+  let goldScale = 1 + (floor - 1) * 0.15 + (room - 1) * 0.03;
+  // Floor 3+ runs on the 3-row slot, so enemies need ~1.5x stats and gold
+  // to keep up with the multi-payline output.
+  if (floor >= 3) {
+    statScale *= 1.5;
+    goldScale *= 1.3;
+  }
   return {
     name: template.name,
     sprite: template.sprite,
@@ -200,8 +205,13 @@ export function spawnEnemy(floor, room) {
 
 export function spawnBoss(floor) {
   const template = BOSSES[Math.min(floor - 1, BOSSES.length - 1)];
-  const statScale = 1 + (floor - 1) * 0.3;
-  const goldScale = 1 + (floor - 1) * 0.2;
+  let statScale = 1 + (floor - 1) * 0.3;
+  let goldScale = 1 + (floor - 1) * 0.2;
+  // Floor 3+ bosses face a 5-payline player — bump them similarly
+  if (floor >= 3) {
+    statScale *= 1.4;
+    goldScale *= 1.3;
+  }
   const boss = {
     name: template.name,
     sprite: template.sprite,
