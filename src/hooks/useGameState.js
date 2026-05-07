@@ -344,6 +344,15 @@ function reducer(state, action) {
       if (!primaryComboText) {
         primaryComboText = 'Weak hit';
         primaryComboType = 'weak';
+        // Synthesize a small weak-hit line so the spin still does something
+        // and the animation/damage flow has at least one line to play.
+        const weakLine = {
+          paylineId: 'weak', cells: [],
+          comboType: 'weak', comboText: 'Weak hit', comboSymbol: null,
+          dmg: 3, heal: 0, block: 0, selfDmg: 0, multFactor: 1, coinGold: 0,
+        };
+        lineResults.push(weakLine);
+        totalDmg += 3;
       }
 
       // Reset block at the start of each spin (lines accumulate fresh block)

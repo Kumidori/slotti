@@ -253,25 +253,29 @@ export default function Game() {
       }, 800);
     }
 
-    // Wait for all winning lines to animate before resolving fight outcome
+    // Schedule enemy attack only if we still have spins (the enemy.hp watcher
+    // below handles enemy death after per-line damage applies)
     const lineCount = state.lineResults?.length || 0;
     const animDelay = Math.max(300, lineCount * 600 + 200);
-    if (state.enemy.hp <= 0) {
-      setTimeout(() => {
-        enemyDefeated();
-        sfx.victory();
-      }, animDelay);
-    } else if (state.playerHp <= 0) {
-      setTimeout(() => {
-        triggerGameOver();
-        sfx.gameOver();
-      }, animDelay);
-    } else if (state.spinsLeft <= 0) {
+    if (state.spinsLeft <= 0) {
       setTimeout(() => doEnemyAttack(), animDelay + 200);
     }
   }, [state.comboType, state.spinsLeft, state.dmg]);
 
+  // Watch for enemy death (per-line damage may finish them mid-animation)
+  useEffect(() => {
+    if (state.phase === 'combat' && state.enemy && state.enemy.hp <= 0) {
+      const t = setTimeout(() => {
+        enemyDefeated();
+        sfx.victory();
+      }, 250);
+      return () => clearTimeout(t);
+    }
+  }, [state.enemy?.hp, state.phase, enemyDefeated]);
+
   const doEnemyAttack = useCallback(() => {
+    // Don't attack if enemy is already dead (line damage may have killed them)
+    if (!state.enemy || state.enemy.hp <= 0 || state.phase !== 'combat') return;
     const isFrenzy = state.enemy.frenzyEvery &&
       ((state.enemy.attackCount || 0) + 1) % state.enemy.frenzyEvery === 0;
     const hits = isFrenzy ? state.enemy.frenzyHits : 1;
