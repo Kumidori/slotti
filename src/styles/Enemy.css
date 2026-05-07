@@ -41,8 +41,8 @@
 }
 
 .enemy-img {
-  width: clamp(72px, 18vh, 180px);
-  height: clamp(72px, 18vh, 180px);
+  width: clamp(70px, 16vh, 150px);
+  height: clamp(70px, 16vh, 150px);
   object-fit: cover;
   border-radius: 12px;
 }
