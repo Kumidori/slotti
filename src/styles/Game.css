@@ -111,8 +111,8 @@
 
 /* --- Mid zone (between enemy and slot machine) --- */
 .mid-zone {
-  flex: 1 1 auto;
-  min-height: 40px;
+  flex: 0 0 auto;
+  height: clamp(50px, 10vh, 90px);
   display: flex;
   flex-direction: column;
   align-items: center;
