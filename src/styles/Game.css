@@ -183,17 +183,17 @@
 
 @keyframes comboRise {
   0% {
-    bottom: -30px;
-    transform: scale(1.4);
+    top: 100%;
+    transform: translateY(-50%) scale(1.4);
     opacity: 0;
   }
   40% {
     opacity: 1;
-    transform: scale(1.1);
+    transform: translateY(-50%) scale(1.1);
   }
   100% {
-    bottom: 8px;
-    transform: scale(1);
+    top: 50%;
+    transform: translateY(-50%) scale(1);
     opacity: 1;
   }
 }
