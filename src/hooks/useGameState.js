@@ -41,7 +41,12 @@ function applyFightStartRelics(state) {
   let playerHp = state.playerHp;
   if (hasRelic(state, 'sturdyBoots')) block = 5;
   if (hasRelic(state, 'tonicVial')) {
-    playerHp = Math.min(state.playerMaxHp, playerHp + 5);
+    const healAmount = Math.min(5, state.playerMaxHp - playerHp);
+    playerHp = playerHp + healAmount;
+    // Healer's Hand: any heal also grants block (50% of heal amount)
+    if (healAmount > 0 && hasRelic(state, 'healersHand')) {
+      block += Math.ceil(healAmount * 0.5);
+    }
   }
   return { block, playerHp };
 }
