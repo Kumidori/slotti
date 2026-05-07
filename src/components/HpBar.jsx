@@ -14,12 +14,7 @@ const HpBar = forwardRef(function HpBar({ current, max, type, shaking, block }, 
         {Math.max(0, current)} / {max}
       </div>
       {type === 'player' && (
-        <>
-          <div className={`shield-bar ${block > 0 ? 'active' : ''}`} />
-          {block > 0 && (
-            <div className="shield-value">🛡️ {block}</div>
-          )}
-        </>
+        <div className={`shield-bar ${block > 0 ? 'active' : ''}`} />
       )}
     </div>
   );

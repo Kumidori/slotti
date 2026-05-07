@@ -355,8 +355,6 @@ function reducer(state, action) {
         totalDmg += 3;
       }
 
-      // Reset block at the start of each spin (lines accumulate fresh block)
-      s.block = 0;
       s.gold = (s.gold || 0) + totalCoinGold;
       s.coinGold = totalCoinGold;
       s.multFactor = multFactorMax;
