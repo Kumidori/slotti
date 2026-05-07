@@ -26,46 +26,57 @@ export function ensureAudio() {
     src.connect(ctx.destination);
     src.start(0);
     unlocked = true;
-    primeComboAudio();
+    loadVoiceBuffers();
   }
 }
 
-let comboPrimed = false;
-function primeComboAudio() {
-  if (comboPrimed) return;
-  comboPrimed = true;
-  // Mobile requires each <audio> element to be unlocked by a user gesture.
-  const allClips = [...Object.keys(COMBO_AUDIO).map(getComboAudio), getFartAudio()];
-  for (const audio of allClips) {
-    if (!audio) continue;
-    const original = audio.volume;
-    audio.volume = 0;
-    audio.play()
-      .then(() => {
-        audio.pause();
-        audio.currentTime = 0;
-        audio.volume = original;
-      })
-      .catch(() => {
-        audio.volume = original;
-      });
+// --- Voice clips loaded into AudioBuffers (works on iOS, no audible priming) ---
+const VOICE_URLS = {
+  tripleSlash: tripleSlashUrl,
+  arcaneBurst: arcaneBurstUrl,
+  fortress: fortressUrl,
+  fullRestore: fullRestoreUrl,
+  rainbow: rainbowUrl,
+  tripleSkull: tripleSkullUrl,
+  fart: fartUrl,
+};
+
+const voiceBuffers = {};
+let voiceLoadStarted = false;
+let currentVoiceSrc = null;
+
+async function loadVoiceBuffers() {
+  if (voiceLoadStarted) return;
+  voiceLoadStarted = true;
+  const ctx = getCtx();
+  for (const [key, url] of Object.entries(VOICE_URLS)) {
+    try {
+      const res = await fetch(url);
+      const data = await res.arrayBuffer();
+      voiceBuffers[key] = await ctx.decodeAudioData(data);
+    } catch { /* ignore */ }
   }
 }
 
-let fartAudio = null;
-function getFartAudio() {
-  if (!fartAudio) {
-    fartAudio = new Audio(fartUrl);
-    fartAudio.volume = 0.85;
+function playVoice(key, volume = 0.9) {
+  const buf = voiceBuffers[key];
+  if (!buf) return;
+  const ctx = getCtx();
+  if (currentVoiceSrc) {
+    try { currentVoiceSrc.stop(); } catch { /* already stopped */ }
   }
-  return fartAudio;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const gain = ctx.createGain();
+  gain.gain.value = volume;
+  src.connect(gain);
+  gain.connect(ctx.destination);
+  src.start();
+  currentVoiceSrc = src;
 }
 
 function playFart() {
-  const a = getFartAudio();
-  if (!a) return;
-  a.currentTime = 0;
-  a.play().catch(() => {});
+  playVoice('fart', 0.85);
 }
 
 function playTone(freq, duration, type = 'square', volume = 0.15, delay = 0) {
@@ -510,37 +521,7 @@ export function isMusicMuted() {
   return musicState.muted;
 }
 
-// --- Combo announcer (prerecorded English voice clips) ---
-
-const COMBO_AUDIO = {
-  tripleSlash: tripleSlashUrl,
-  arcaneBurst: arcaneBurstUrl,
-  fortress: fortressUrl,
-  fullRestore: fullRestoreUrl,
-  rainbow: rainbowUrl,
-  tripleSkull: tripleSkullUrl,
-};
-
-const audioCache = {};
-function getComboAudio(key) {
-  if (!COMBO_AUDIO[key]) return null;
-  if (!audioCache[key]) {
-    audioCache[key] = new Audio(COMBO_AUDIO[key]);
-    audioCache[key].volume = 0.9;
-  }
-  return audioCache[key];
-}
-
-let currentClip = null;
-export function playComboVoice(comboKey) {
-  const audio = getComboAudio(comboKey);
-  if (!audio) return;
-  if (currentClip && !currentClip.paused) {
-    currentClip.pause();
-    currentClip.currentTime = 0;
-  }
-  currentClip = audio;
-  audio.currentTime = 0;
-  audio.play().catch(() => { /* autoplay may be blocked until first interaction */ });
+export function playComboVoice(key) {
+  playVoice(key, 0.9);
 }
 
