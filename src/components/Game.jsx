@@ -13,6 +13,7 @@ import RelicTray from './RelicTray';
 import LangToggle from './LangToggle';
 import MusicToggle from './MusicToggle';
 import CharacterSelect from './CharacterSelect';
+import WinnerClaim from './WinnerClaim';
 import { getCharacter } from '../characters';
 import liliPortrait from '../assets/lili.webp';
 import rubyPortrait from '../assets/ruby.png';
@@ -586,6 +587,7 @@ export default function Game() {
           {state.justUnlocked && (
             <p className="unlock-line">🎁 {t('overlay.unlocked', { name: t(`char.${state.justUnlocked}.name`) })}</p>
           )}
+          <WinnerClaim />
           <button onClick={handleBackToMenu}>{t('overlay.playAgain')}</button>
         </Overlay>
       )}
