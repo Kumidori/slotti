@@ -4,21 +4,21 @@
   align-items: center;
   justify-content: flex-start;
   flex: 0 0 auto;
-  gap: 4px;
+  gap: 2px;
   width: 100%;
-  padding-top: 4px;
+  padding-top: 2px;
 }
 
 .enemy-name {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .enemy-sprite {
-  font-size: 56px;
+  font-size: 48px;
   line-height: 1;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
   display: inline-block;
   transition: transform 0.15s;
 }
@@ -42,8 +42,8 @@
 }
 
 .enemy-img {
-  width: clamp(80px, 22vh, 130px);
-  height: clamp(80px, 22vh, 130px);
+  width: clamp(64px, 14vh, 110px);
+  height: clamp(64px, 14vh, 110px);
   object-fit: cover;
   border-radius: 12px;
 }
