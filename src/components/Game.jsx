@@ -448,31 +448,32 @@ export default function Game() {
 
         <div className="bottom-zone">
           <div className="bottom-panel">
-            <div className="player-hp-section">
-              <div className="player-hp-row">
-                {(() => {
-                  const c = getCharacter(state.character);
-                  const portrait = CHAR_PORTRAITS[state.character];
-                  return (
-                    <span className="player-portrait" title={c ? t(`char.${c.id}.name`) : ''}>
-                      {portrait
-                        ? <img src={portrait} alt="" className="player-portrait-img" />
-                        : <span className="player-portrait-emoji">{c?.icon || '❤️'}</span>}
-                    </span>
-                  );
-                })()}
-                <HpBar
-                  ref={playerHpRef}
-                  current={state.playerHp}
-                  max={state.playerMaxHp}
-                  type="player"
-                  shaking={playerHpShake}
-                  block={state.block}
-                />
+            {(() => {
+              const c = getCharacter(state.character);
+              const portrait = CHAR_PORTRAITS[state.character];
+              return (
+                <span className="player-portrait" title={c ? t(`char.${c.id}.name`) : ''}>
+                  {portrait
+                    ? <img src={portrait} alt="" className="player-portrait-img" />
+                    : <span className="player-portrait-emoji">{c?.icon || '❤️'}</span>}
+                </span>
+              );
+            })()}
+            <div className="bottom-panel-content">
+              <div className="player-hp-section">
+                <div className="player-hp-row">
+                  <HpBar
+                    ref={playerHpRef}
+                    current={state.playerHp}
+                    max={state.playerMaxHp}
+                    type="player"
+                    shaking={playerHpShake}
+                    block={state.block}
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="stats-row">
+              <div className="stats-row">
               <div className="stat-item">
                 <span className="stat-icon">🔄</span>
                 <span className="stat-value">{state.spinsLeft}</span>
@@ -485,6 +486,7 @@ export default function Game() {
                 <span className="stat-icon">🛡️</span>
                 <span className="stat-value">{state.block}</span>
               </div>
+            </div>
             </div>
           </div>
 
