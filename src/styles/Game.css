@@ -128,8 +128,8 @@
   align-items: center;
   justify-content: flex-start;
   width: 100%;
-  gap: 4px;
-  padding-top: 4px;
+  gap: clamp(4px, 1vh, 12px);
+  padding-top: clamp(4px, 1vh, 10px);
 }
 
 .enemy-intent {
