@@ -372,7 +372,7 @@ export default function Game() {
           </div>
           <div className="floor-progress">
             <span className="floor-label">{t('ui.floor', { floor: state.floor })}</span>
-            {[1, 2, 3, 4, 5].map(r => {
+            {[1, 2, 3, 4, 5, 6].map(r => {
               const type = state.floorRoomTypes?.[r - 1] || 'fight';
               const done = r < state.room;
               const current = r === state.room;

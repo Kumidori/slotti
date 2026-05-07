@@ -84,13 +84,13 @@ export function rollSacrificeReward() {
 }
 
 export const ENEMIES = [
-  { name: 'Goblin',       sprite: '👺', hp: 20,  atk: 3,  gold: 8  },
-  { name: 'Skeleton',     sprite: '💀', hp: 30,  atk: 5,  gold: 12 },
-  { name: 'Slime',        sprite: '🟢', hp: 25,  atk: 4,  gold: 10 },
-  { name: 'Dark Knight',  sprite: '🖤', hp: 45,  atk: 7,  gold: 18 },
-  { name: 'Dragon',       sprite: '🐉', hp: 60,  atk: 10, gold: 25 },
-  { name: 'Lich',         sprite: '👻', hp: 50,  atk: 8,  gold: 22 },
-  { name: 'Demon Lord',   sprite: '😈', hp: 80,  atk: 12, gold: 35 },
+  { name: 'Goblin',       sprite: '👺', hp: 20,  atk: 3,  gold: 13 },
+  { name: 'Skeleton',     sprite: '💀', hp: 30,  atk: 5,  gold: 16 },
+  { name: 'Slime',        sprite: '🟢', hp: 25,  atk: 4,  gold: 14 },
+  { name: 'Dark Knight',  sprite: '🖤', hp: 45,  atk: 7,  gold: 22 },
+  { name: 'Dragon',       sprite: '🐉', hp: 60,  atk: 10, gold: 28 },
+  { name: 'Lich',         sprite: '👻', hp: 50,  atk: 8,  gold: 25 },
+  { name: 'Demon Lord',   sprite: '😈', hp: 80,  atk: 12, gold: 36 },
 ];
 
 export const BOSSES = [
@@ -155,32 +155,35 @@ export function hasRelic(state, id) {
 export function spawnEnemy(floor, room) {
   const pool = ENEMIES.filter((_, i) => i <= Math.min(floor + 1, ENEMIES.length - 1));
   const template = pool[Math.floor(Math.random() * pool.length)];
-  const scale = 1 + (floor - 1) * 0.2 + (room - 1) * 0.05;
+  const statScale = 1 + (floor - 1) * 0.2 + (room - 1) * 0.05;
+  // Flatter gold scaling so late game doesn't run away with money
+  const goldScale = 1 + (floor - 1) * 0.15 + (room - 1) * 0.03;
   return {
     name: template.name,
     sprite: template.sprite,
-    hp: Math.round(template.hp * scale),
-    maxHp: Math.round(template.hp * scale),
-    atk: Math.round(template.atk * scale),
-    gold: Math.round(template.gold * scale),
+    hp: Math.round(template.hp * statScale),
+    maxHp: Math.round(template.hp * statScale),
+    atk: Math.round(template.atk * statScale),
+    gold: Math.round(template.gold * goldScale),
   };
 }
 
 export function spawnBoss(floor) {
   const template = BOSSES[Math.min(floor - 1, BOSSES.length - 1)];
-  const scale = 1 + (floor - 1) * 0.3;
+  const statScale = 1 + (floor - 1) * 0.3;
+  const goldScale = 1 + (floor - 1) * 0.2;
   const boss = {
     name: template.name,
     sprite: template.sprite,
-    hp: Math.round(template.hp * scale),
-    maxHp: Math.round(template.hp * scale),
-    atk: Math.round(template.atk * scale),
-    gold: Math.round(template.gold * scale),
+    hp: Math.round(template.hp * statScale),
+    maxHp: Math.round(template.hp * statScale),
+    atk: Math.round(template.atk * statScale),
+    gold: Math.round(template.gold * goldScale),
     isBoss: true,
   };
   if (template.enrageAt) {
     boss.enrageAt = template.enrageAt;
-    boss.enrageAtk = Math.round(template.enrageAtk * scale);
+    boss.enrageAtk = Math.round(template.enrageAtk * statScale);
   }
   if (template.frenzyEvery) {
     boss.frenzyEvery = template.frenzyEvery;
@@ -190,7 +193,7 @@ export function spawnBoss(floor) {
   }
   if (template.poisonOnHit) {
     boss.poisonOnHit = {
-      dmg: Math.max(1, Math.round(template.poisonOnHit.dmg * scale)),
+      dmg: Math.max(1, Math.round(template.poisonOnHit.dmg * statScale)),
       ticks: template.poisonOnHit.ticks,
     };
   }

@@ -8,9 +8,11 @@ export function rerollCost(rerollCount, luckBonus = 0) {
   return Math.max(1, 5 * (rerollCount + 1) - luckBonus);
 }
 
-// Rooms 2 and 4 are randomly shop or sacrifice per floor; 1 & 3 are fights, 5 is boss.
+// 6 rooms per floor: fight, fight, shop/sac, fight, shop/sac, boss.
+// Two warm-up fights before the first shop so the player has gold to spend.
 function generateFloorRoomTypes() {
   return [
+    'fight',
     'fight',
     Math.random() < 0.5 ? 'shop' : 'sacrifice',
     'fight',
@@ -24,7 +26,7 @@ function roomType(state, room) {
 }
 
 function spawnForRoom(floor, room) {
-  if (room === 5) return spawnBoss(floor);
+  if (room === 6) return spawnBoss(floor);
   return spawnEnemy(floor, room);
 }
 
