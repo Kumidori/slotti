@@ -57,5 +57,17 @@ export default async function handler(req, res) {
     return res.status(409).json({ winner: existing, claimed: false });
   }
 
+  // DELETE clears the winner. Protected by ADMIN_TOKEN env var.
+  // Use for testing/resetting before sharing the game.
+  if (req.method === 'DELETE') {
+    const adminToken = process.env.ADMIN_TOKEN;
+    if (!adminToken) return res.status(503).json({ error: 'reset disabled (no ADMIN_TOKEN configured)' });
+    const auth = req.headers.authorization || '';
+    const provided = auth.startsWith('Bearer ') ? auth.slice(7) : (req.query?.token || '');
+    if (provided !== adminToken) return res.status(401).json({ error: 'unauthorized' });
+    await client.del(KEY);
+    return res.status(200).json({ reset: true });
+  }
+
   return res.status(405).json({ error: 'method not allowed' });
 }
