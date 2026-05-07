@@ -157,6 +157,13 @@ const en = {
   'update.available': '✨ New version available',
   'update.reload': 'Reload',
   'overlay.firstWinReward': 'First winner — claim your prize!',
+  'reward.checking': 'Checking the leaderboard…',
+  'reward.firstWinner': "You're the first to beat the game!",
+  'reward.namePlaceholder': 'Your name',
+  'reward.claim': 'Claim prize',
+  'reward.alreadyWon': 'Already won by {name} — better luck next time!',
+  'reward.justClaimed': 'Someone just beat us to it. Sorry!',
+  'reward.error': 'Could not reach the server, try again later.',
 
   // Overlays
   'overlay.gameOver': '💀 Game Over',
@@ -328,6 +335,13 @@ const de = {
   'update.available': '✨ Neue Version verfügbar',
   'update.reload': 'Neu laden',
   'overlay.firstWinReward': 'Erster Gewinner — hol dir deinen Preis!',
+  'reward.checking': 'Prüfe die Bestenliste…',
+  'reward.firstWinner': 'Du bist der Erste, der das Spiel besiegt hat!',
+  'reward.namePlaceholder': 'Dein Name',
+  'reward.claim': 'Preis abholen',
+  'reward.alreadyWon': 'Schon gewonnen von {name} — viel Glück nächstes Mal!',
+  'reward.justClaimed': 'Jemand war gerade schneller. Schade!',
+  'reward.error': 'Server nicht erreichbar, versuche es später.',
 
   // Overlays
   'overlay.gameOver': '💀 Spiel vorbei',
@@ -499,6 +513,13 @@ const bg = {
   'update.available': '✨ Налична е нова версия',
   'update.reload': 'Презареди',
   'overlay.firstWinReward': 'Първи победител — вземи наградата си!',
+  'reward.checking': 'Проверявам класирането…',
+  'reward.firstWinner': 'Ти си първият, който победи играта!',
+  'reward.namePlaceholder': 'Твоето име',
+  'reward.claim': 'Вземи наградата',
+  'reward.alreadyWon': 'Вече спечелено от {name} — следващия път!',
+  'reward.justClaimed': 'Някой ни изпревари. Жалко!',
+  'reward.error': 'Сървърът не отговаря, опитай по-късно.',
 
   // Overlays
   'overlay.gameOver': '💀 Край на играта',
