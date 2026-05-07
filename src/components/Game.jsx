@@ -60,7 +60,7 @@ function buildComboDetail(state, t) {
 export default function Game() {
   const { t } = useTranslation();
   const {
-    state, startRun, resolveCombo, enemyAttack,
+    state, startRun, resolveCombo, applyLineEffects, enemyAttack,
     enemyDefeated, triggerGameOver,
     buyItem, setLockedItems, closeShop, setSpinning,
     nextFloor, debugKillEnemy, useLockTokens,
@@ -167,13 +167,16 @@ export default function Game() {
         if (line.selfDmg > 0) parts.push(t('combo.detail.selfDamage', { amount: line.selfDmg }));
         if (line.multFactor > 1) parts.unshift(`✖️${line.multFactor}`);
         setComboAnim({ text, type: line.comboType, detail: parts.join(' · ') || null, key: Date.now() + i });
-        // Highlight cells of this line on the slot grid
         slotRef.current?.highlightCells?.(line.cells);
         if (line.comboType === 'triple' || line.comboType === 'skull-triple') {
           if (key) playComboVoice(key.replace('combo.', ''));
         }
+        // Apply this line's HP/block changes NOW so the bar drops in chunk
+        applyLineEffects(i);
         if (line.dmg > 0) {
           sfx.damage();
+          triggerEnemyAnim('shake');
+          triggerBarShake('enemy');
           addFloat(enemySpriteRef, `-${line.dmg}`, 'damage');
         }
         if (line.heal > 0) {

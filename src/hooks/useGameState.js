@@ -298,10 +298,32 @@ function reducer(state, action) {
       let primaryComboType = 'weak';
       let multFactorMax = 1;
 
+      // Per-spin modifiers, all applied per-line so damage drops in chunks during animation
+      const fightSpinNumber = (s.maxSpins - s.spinsLeft);
+      const packHunterReady = hasPassive(s, 'packHunter') && fightSpinNumber > 0 && fightSpinNumber % 3 === 0;
+      const periodRageActive = hasPassive(s, 'periodRage') && s.playerHp / s.playerMaxHp < 0.3;
+      const enraged = s.enemy?.enraged;
+
       for (const line of getPaylines(s.gridRows)) {
         const lineIds = line.cells.map(([r, c]) => grid[r][c].id);
         const lineRes = evaluateLine(lineIds, s);
-        if (lineRes.dmg > 0 || lineRes.heal > 0 || lineRes.block > 0) {
+
+        // Apply per-spin damage modifiers per-line so each chunk shows the boost
+        if (lineRes.dmg > 0) {
+          if (enraged) lineRes.dmg = Math.round(lineRes.dmg * 1.5);
+          if (periodRageActive) lineRes.dmg = Math.round(lineRes.dmg * 1.5);
+          if (packHunterReady) lineRes.dmg = lineRes.dmg * 2;
+          // Vampiric Charm: heal 20% of dmg dealt
+          if (hasRelic(s, 'vampiricCharm')) {
+            lineRes.heal = (lineRes.heal || 0) + Math.ceil(lineRes.dmg * 0.2);
+          }
+        }
+        // Healer's Hand: heal grants block
+        if (lineRes.heal > 0 && hasRelic(s, 'healersHand')) {
+          lineRes.block = (lineRes.block || 0) + Math.ceil(lineRes.heal * 0.5);
+        }
+
+        if (lineRes.dmg > 0 || lineRes.heal > 0 || lineRes.block > 0 || lineRes.selfDmg > 0) {
           lineResults.push({ paylineId: line.id, cells: line.cells, ...lineRes });
         }
         totalDmg += lineRes.dmg;
@@ -322,28 +344,23 @@ function reducer(state, action) {
       if (!primaryComboText) {
         primaryComboText = 'Weak hit';
         primaryComboType = 'weak';
-        totalDmg = 3; // small bump for the "you hit nothing" case
       }
 
+      // Reset block at the start of each spin (lines accumulate fresh block)
+      s.block = 0;
       s.gold = (s.gold || 0) + totalCoinGold;
       s.coinGold = totalCoinGold;
       s.multFactor = multFactorMax;
       s.multCount = multFactorMax > 1 ? Math.round(Math.log2(multFactorMax)) : 0;
-      s.lineResults = lineResults; // for sequential animation
+      s.lineResults = lineResults;
+      s.comboText = primaryComboText;
+      s.comboType = primaryComboType;
+      s.packHunterTriggered = packHunterReady;
+      s.dmg = totalDmg;
+      s.heal = totalHeal;
+      s.blockGained = totalBlock;
 
-      // Aggregate working values for per-spin post-processing
-      let dmg = totalDmg;
-      let heal = totalHeal;
-      let block = totalBlock;
-      let comboText = primaryComboText;
-      let comboType = primaryComboType;
-
-      // Apply self-damage from skulls (sum of all skull lines)
-      if (totalSelfDmg > 0) {
-        s.playerHp -= totalSelfDmg;
-      }
-
-      // Toxic Aura (Furzkopf): 2 passive damage to the enemy each spin
+      // Toxic Aura (Furzkopf): instant — applies regardless of any combo
       if (hasPassive(s, 'toxicAura') && s.enemy && s.enemy.hp > 0) {
         s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - 2) };
         s.toxicAuraDmg = 2;
@@ -351,15 +368,13 @@ function reducer(state, action) {
         s.toxicAuraDmg = 0;
       }
 
-      // Tick poison stacks: each stack hits, then loses one tick
+      // Poison tick — environmental damage applied immediately
       let poisonDmg = 0;
       if (s.poisonStacks.length > 0) {
         const newStacks = [];
         for (const p of s.poisonStacks) {
           poisonDmg += p.dmg;
-          if (p.ticksLeft - 1 > 0) {
-            newStacks.push({ ...p, ticksLeft: p.ticksLeft - 1 });
-          }
+          if (p.ticksLeft - 1 > 0) newStacks.push({ ...p, ticksLeft: p.ticksLeft - 1 });
         }
         s.poisonStacks = newStacks;
         if (poisonDmg > 0) s.playerHp = Math.max(0, s.playerHp - poisonDmg);
@@ -368,58 +383,38 @@ function reducer(state, action) {
 
       if (s.playerHp <= 0) {
         tryRevive(s);
-        if (s.playerHp <= 0) {
-          s.playerHp = 0;
-          s.phase = 'gameOver';
-        }
+        if (s.playerHp <= 0) { s.playerHp = 0; s.phase = 'gameOver'; }
       }
 
-      // Healer's Hand: any heal triggers a small block bonus too
-      if (heal > 0 && hasRelic(s, 'healersHand')) {
-        block += Math.ceil(heal * 0.5);
-      }
-      // Period Rage (Lili): below 30% HP, deal +50% damage
-      if (dmg > 0 && hasPassive(s, 'periodRage') && s.playerHp / s.playerMaxHp < 0.3) {
-        dmg = Math.round(dmg * 1.5);
-      }
-      // Pack Hunter (Ruby): every 3rd spin in a fight crits for 2× damage
-      // (with default maxSpins=3 this is your last spin every fight)
-      const fightSpinNumber = (s.maxSpins - s.spinsLeft);
-      const packHunterReady = hasPassive(s, 'packHunter') && fightSpinNumber > 0 && fightSpinNumber % 3 === 0;
-      if (dmg > 0 && packHunterReady) {
-        dmg = dmg * 2;
-        s.packHunterTriggered = true;
-      } else {
-        s.packHunterTriggered = false;
-      }
-      if (dmg > 0 && s.enemy.enraged) {
-        dmg = Math.round(dmg * 1.5);
-      }
-      if (dmg > 0) {
+      return s;
+    }
+
+    case 'APPLY_LINE_EFFECTS': {
+      const line = state.lineResults?.[action.index];
+      if (!line) return state;
+      let s = { ...state };
+      if (line.dmg > 0 && s.enemy) {
         const wasAboveThreshold = !s.enemy.enraged;
-        s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - dmg) };
+        s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - line.dmg) };
         if (s.enemy.enrageAt && wasAboveThreshold &&
             s.enemy.hp > 0 && s.enemy.hp <= s.enemy.maxHp * s.enemy.enrageAt) {
           s.enemy = { ...s.enemy, atk: s.enemy.enrageAtk, enraged: true };
           s.justEnraged = true;
         }
-        if (hasRelic(s, 'vampiricCharm')) {
-          heal += Math.ceil(dmg * 0.2);
+      }
+      if (line.heal > 0) {
+        s.playerHp = Math.min(s.playerMaxHp, s.playerHp + line.heal);
+      }
+      if (line.block > 0) {
+        s.block = (s.block || 0) + line.block;
+      }
+      if (line.selfDmg > 0) {
+        s.playerHp -= line.selfDmg;
+        if (s.playerHp <= 0) {
+          tryRevive(s);
+          if (s.playerHp <= 0) { s.playerHp = 0; s.phase = 'gameOver'; }
         }
       }
-      if (heal > 0) {
-        s.playerHp = Math.min(s.playerMaxHp, s.playerHp + heal);
-      }
-      if (block > 0) {
-        s.block = block;
-      }
-
-      s.comboText = comboText;
-      s.comboType = comboType;
-      s.dmg = dmg;
-      s.heal = heal;
-      s.blockGained = block;
-
       return s;
     }
 
@@ -688,6 +683,7 @@ export default function useGameState() {
   const goToMenu = useCallback(() => dispatch({ type: 'GO_TO_MENU' }), []);
   const clearJustUnlocked = useCallback(() => dispatch({ type: 'CLEAR_JUST_UNLOCKED' }), []);
   const resolveCombo = useCallback((grid) => dispatch({ type: 'RESOLVE_COMBO', grid }), []);
+  const applyLineEffects = useCallback((index) => dispatch({ type: 'APPLY_LINE_EFFECTS', index }), []);
   const enemyAttack = useCallback(() => dispatch({ type: 'ENEMY_ATTACK' }), []);
   const enemyDefeated = useCallback(() => dispatch({ type: 'ENEMY_DEFEATED' }), []);
   const triggerGameOver = useCallback(() => dispatch({ type: 'GAME_OVER' }), []);
@@ -712,6 +708,7 @@ export default function useGameState() {
     state,
     startRun,
     resolveCombo,
+    applyLineEffects,
     enemyAttack,
     enemyDefeated,
     triggerGameOver,
