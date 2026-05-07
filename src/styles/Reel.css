@@ -13,6 +13,12 @@
               background 0.3s;
 }
 
+/* In 3-row mode, the column is 3x as tall — cap individual cells smaller
+   so the whole slot still fits next to the boss sprite + bottom UI. */
+.reels-3row .reel {
+  --reel-h: clamp(40px, 7.5vh, 76px);
+}
+
 .reel.reel-3row {
   height: calc(var(--reel-h) * 3);
 }
