@@ -79,6 +79,7 @@ const en = {
   'shop.interestPrompt': 'Save 10+ gold to earn interest (max +5)',
   'shop.choose': 'Choose',
   'shop.leave': 'Leave Shop →',
+  'shop.reroll': 'Reroll',
 
   // Shop items
   'item.extraSpin.name': 'Extra Spin',
@@ -121,6 +122,14 @@ const en = {
   'relic.phoenixFeather.desc': 'Revive at 25% HP once per fight',
   'relic.twinFang.name': 'Twin Fang',
   'relic.twinFang.desc': 'Sword combos deal 50% more damage',
+  'relic.greenThumb.name': 'Green Thumb',
+  'relic.greenThumb.desc': 'Potion combos heal 50% more',
+  'relic.healersHand.name': "Healer's Hand",
+  'relic.healersHand.desc': 'Any heal also grants block (50% of heal amount)',
+  'relic.spellEcho.name': 'Spell Echo',
+  'relic.spellEcho.desc': 'Magic combos echo for +50% damage',
+  'relic.arcaneFocus.name': 'Arcane Focus',
+  'relic.arcaneFocus.desc': 'Magic combos deal 75% more damage',
 
   // Character select
   'charSelect.title': 'Choose your fighter',
@@ -237,6 +246,7 @@ const de = {
   'shop.interestPrompt': 'Spare 10+ Gold für Zinsen (max +5)',
   'shop.choose': 'Kaufen',
   'shop.leave': 'Shop verlassen →',
+  'shop.reroll': 'Neu würfeln',
 
   // Shop items
   'item.extraSpin.name': 'Extra-Dreh',
@@ -279,6 +289,14 @@ const de = {
   'relic.phoenixFeather.desc': 'Wiederbelebung mit 25% LP, einmal pro Kampf',
   'relic.twinFang.name': 'Zwillingsfang',
   'relic.twinFang.desc': 'Schwert-Combos machen 50% mehr Schaden',
+  'relic.greenThumb.name': 'Grüner Daumen',
+  'relic.greenThumb.desc': 'Trank-Combos heilen 50% mehr',
+  'relic.healersHand.name': 'Heilerhand',
+  'relic.healersHand.desc': 'Heilung gewährt auch Block (50% der Heilung)',
+  'relic.spellEcho.name': 'Zauber-Echo',
+  'relic.spellEcho.desc': 'Magie-Combos hallen für +50% Schaden nach',
+  'relic.arcaneFocus.name': 'Arkaner Fokus',
+  'relic.arcaneFocus.desc': 'Magie-Combos machen 75% mehr Schaden',
 
   // Character select
   'charSelect.title': 'Wähle deinen Kämpfer',
@@ -395,6 +413,7 @@ const bg = {
   'shop.interestPrompt': 'Запази 10+ злато за лихва (макс. +5)',
   'shop.choose': 'Купи',
   'shop.leave': 'Напусни магазина →',
+  'shop.reroll': 'Превърти',
 
   // Shop items
   'item.extraSpin.name': 'Допълнително завъртане',
@@ -437,6 +456,14 @@ const bg = {
   'relic.phoenixFeather.desc': 'Възкръсваш с 25% HP, веднъж на бой',
   'relic.twinFang.name': 'Двоен зъб',
   'relic.twinFang.desc': 'Меч-комбота нанасят 50% повече щети',
+  'relic.greenThumb.name': 'Зелен палец',
+  'relic.greenThumb.desc': 'Отвара-комбота лекуват 50% повече',
+  'relic.healersHand.name': 'Ръка на лечител',
+  'relic.healersHand.desc': 'Лечението дава и блок (50% от лекуването)',
+  'relic.spellEcho.name': 'Заклинателно ехо',
+  'relic.spellEcho.desc': 'Магия-комбота отекват за +50% щети',
+  'relic.arcaneFocus.name': 'Арканен фокус',
+  'relic.arcaneFocus.desc': 'Магия-комбота нанасят 75% повече щети',
 
   // Character select
   'charSelect.title': 'Избери своя боец',

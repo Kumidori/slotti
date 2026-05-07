@@ -8,6 +8,11 @@ export function rerollCost(rerollCount, luckBonus = 0) {
   return Math.max(1, 5 * (rerollCount + 1) - luckBonus);
 }
 
+// Shop reroll: 8g first, +8g each subsequent reroll within the same shop visit.
+export function shopRerollCost(rerollCount, luckBonus = 0) {
+  return Math.max(2, 8 * (rerollCount + 1) - luckBonus);
+}
+
 // 6 rooms per floor: fight, fight, shop/sac, fight, shop/sac, boss.
 // Two warm-up fights before the first shop so the player has gold to spend.
 function generateFloorRoomTypes() {
@@ -63,6 +68,8 @@ function advanceToNextRoom(state) {
       gold: state.gold + interest,
       lastInterest: interest,
       phase: 'shop',
+      shopRerollCount: 0,
+      shopRerollKey: (state.shopRerollKey || 0),
     };
   }
   if (type === 'sacrifice') {
@@ -128,6 +135,8 @@ const INITIAL_STATE = {
   sacrificeChosen: null,
   sacrificeReward: null,
   poisonStacks: [],
+  shopRerollCount: 0,
+  shopRerollKey: 0,
 };
 
 function reducer(state, action) {
@@ -317,6 +326,22 @@ function reducer(state, action) {
       // Twin Fang: sword combos hit 50% harder
       if (dmg > 0 && hasRelic(s, 'twinFang') && combo.symbol === 'sword') {
         dmg = Math.round(dmg * 1.5);
+      }
+      // Arcane Focus: magic combos hit 75% harder
+      if (dmg > 0 && hasRelic(s, 'arcaneFocus') && combo.symbol === 'magic') {
+        dmg = Math.round(dmg * 1.75);
+      }
+      // Spell Echo: magic combos echo for an extra 50% damage
+      if (dmg > 0 && hasRelic(s, 'spellEcho') && combo.symbol === 'magic') {
+        dmg = Math.round(dmg * 1.5);
+      }
+      // Green Thumb: heal combos heal 50% more
+      if (heal > 0 && hasRelic(s, 'greenThumb') && combo.symbol === 'potion') {
+        heal = Math.round(heal * 1.5);
+      }
+      // Healer's Hand: any heal triggers a small block bonus too
+      if (heal > 0 && hasRelic(s, 'healersHand')) {
+        block += Math.ceil(heal * 0.5);
       }
       // Period Rage (Lili): below 30% HP, deal +50% damage
       if (dmg > 0 && hasPassive(s, 'periodRage') && s.playerHp / s.playerMaxHp < 0.3) {
@@ -541,6 +566,17 @@ function reducer(state, action) {
     case 'SET_LOCKED_ITEMS':
       return { ...state, lockedItems: action.items };
 
+    case 'REROLL_SHOP': {
+      const cost = shopRerollCost(state.shopRerollCount || 0, state.luckBonus);
+      if (state.gold < cost) return state;
+      return {
+        ...state,
+        gold: state.gold - cost,
+        shopRerollCount: (state.shopRerollCount || 0) + 1,
+        shopRerollKey: (state.shopRerollKey || 0) + 1,
+      };
+    }
+
     case 'CLOSE_SHOP': {
       const nextRoom = state.room + 1;
       const enemy = spawnForRoom(state.floor, nextRoom);
@@ -606,6 +642,7 @@ export default function useGameState() {
   const setReelResults = useCallback((results) => dispatch({ type: 'SET_REEL_RESULTS', results }), []);
   const debugKillEnemy = useCallback(() => dispatch({ type: 'DEBUG_KILL_ENEMY' }), []);
   const useLockTokens = useCallback((count) => dispatch({ type: 'USE_LOCK_TOKENS', count }), []);
+  const rerollShop = useCallback(() => dispatch({ type: 'REROLL_SHOP' }), []);
   const sacrificeSymbol = useCallback((symbolId) => dispatch({ type: 'SACRIFICE_SYMBOL', symbolId }), []);
   const skipSacrifice = useCallback(() => dispatch({ type: 'SKIP_SACRIFICE' }), []);
   const finishSacrifice = useCallback(() => dispatch({ type: 'FINISH_SACRIFICE' }), []);
@@ -629,6 +666,7 @@ export default function useGameState() {
     setReelResults,
     debugKillEnemy,
     useLockTokens,
+    rerollShop,
     sacrificeSymbol,
     skipSacrifice,
     finishSacrifice,

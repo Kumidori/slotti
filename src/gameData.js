@@ -120,7 +120,13 @@ export const SHOP_ITEMS = [
   { id: 'spikeShield',   type: 'relic', icon: '🌵', cost: 40, rarity: 'rare' },
   { id: 'quickHands',    type: 'relic', icon: '✋', cost: 45, rarity: 'rare' },
   { id: 'bargainHunter', type: 'relic', icon: '🏷️', cost: 50, rarity: 'rare' },
-  // Epic
+  // Heal/Potion synergy
+  { id: 'greenThumb',    type: 'relic', icon: '🌿', cost: 30, rarity: 'common' },
+  { id: 'healersHand',   type: 'relic', icon: '🩹', cost: 45, rarity: 'rare' },
+  // Magic synergy
+  { id: 'spellEcho',     type: 'relic', icon: '🌀', cost: 45, rarity: 'rare' },
+  { id: 'arcaneFocus',   type: 'relic', icon: '🔮', cost: 65, rarity: 'epic' },
+  // Existing epics
   { id: 'glassCannon',   type: 'relic', icon: '💎', cost: 60, rarity: 'epic' },
   { id: 'cursedCoin',    type: 'relic', icon: '☠️', cost: 55, rarity: 'epic' },
   { id: 'phoenixFeather',type: 'relic', icon: '🪶', cost: 70, rarity: 'epic' },

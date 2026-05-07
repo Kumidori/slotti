@@ -3,9 +3,10 @@ import ShopItem from './ShopItem';
 import { SHOP_ITEMS, calcInterest, pickByRarity } from '../gameData';
 import { sfx, ensureAudio } from '../audio';
 import { useTranslation } from '../i18n/useTranslation.jsx';
+import { shopRerollCost } from '../hooks/useGameState';
 import '../styles/Shop.css';
 
-export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
+export default function Shop({ state, onBuy, onClose, onSetLockedItems, onReroll }) {
   const { t } = useTranslation();
   const [entries, setEntries] = useState([]);
   const [selectedName, setSelectedName] = useState(null);
@@ -24,7 +25,8 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
       locked: lockedIds.has(item.id),
       sold: false,
     })));
-  }, []);
+    setSelectedName(null);
+  }, [state.shopRerollKey]);
 
   const handleSelect = (item) => {
     ensureAudio();
@@ -75,6 +77,8 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
   const selectedItem = entries.find(e => e.item.id === selectedName)?.item;
   const selectedCost = selectedItem ? Math.ceil(selectedItem.cost * discount) : Infinity;
   const canAfford = selectedName ? state.gold >= selectedCost : true;
+  const rerollPrice = shopRerollCost(state.shopRerollCount || 0, state.luckBonus || 0);
+  const canReroll = state.gold >= rerollPrice;
 
   return (
     <div className="shop-overlay">
@@ -108,9 +112,19 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems }) {
       >
         {t('shop.choose')}
       </button>
-      <button className="shop-skip-btn" onClick={handleSkip}>
-        {t('shop.leave')}
-      </button>
+      <div className="shop-bottom-row">
+        <button
+          className="shop-reroll-btn"
+          onClick={() => { sfx.buttonClick(); onReroll?.(); }}
+          disabled={!canReroll}
+          title={canReroll ? `Reroll for ${rerollPrice}g` : `Need ${rerollPrice}g`}
+        >
+          🎲 {t('shop.reroll')} <span className="reroll-cost">{rerollPrice}g</span>
+        </button>
+        <button className="shop-skip-btn" onClick={handleSkip}>
+          {t('shop.leave')}
+        </button>
+      </div>
     </div>
   );
 }

@@ -212,3 +212,47 @@
 .shop-skip-btn:active {
   transform: scale(0.97);
 }
+
+.shop-bottom-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+  justify-content: center;
+}
+
+.shop-reroll-btn {
+  flex: 1;
+  background: linear-gradient(180deg, #f1c40f, #c79b08);
+  color: #2c1c00;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: filter 0.15s, transform 0.1s, opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.shop-reroll-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.shop-reroll-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.shop-reroll-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.shop-bottom-row .shop-skip-btn {
+  flex: 1;
+  min-width: 0;
+}

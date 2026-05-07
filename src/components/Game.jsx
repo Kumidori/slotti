@@ -13,6 +13,12 @@ import RelicTray from './RelicTray';
 import LangToggle from './LangToggle';
 import MusicToggle from './MusicToggle';
 import CharacterSelect from './CharacterSelect';
+import { getCharacter } from '../characters';
+import liliPortrait from '../assets/lili.webp';
+import rubyPortrait from '../assets/ruby.png';
+import furzkopfPortrait from '../assets/furzkopf.webp';
+
+const CHAR_PORTRAITS = { lili: liliPortrait, ruby: rubyPortrait, furzkopf: furzkopfPortrait };
 import { ensureAudio, sfx, playComboVoice, startMusic, setMusicIntensity, stopMusic } from '../audio';
 import { calcInterest } from '../gameData';
 import { useTranslation } from '../i18n/useTranslation.jsx';
@@ -59,7 +65,7 @@ export default function Game() {
     nextFloor, debugKillEnemy, useLockTokens,
     pickSymbol, skipSymbol, rerollPicks,
     sacrificeSymbol, skipSacrifice, finishSacrifice,
-    goToMenu,
+    rerollShop, goToMenu,
   } = useGameState();
 
   const handleNextFloor = useCallback(() => {
@@ -444,7 +450,17 @@ export default function Game() {
           <div className="bottom-panel">
             <div className="player-hp-section">
               <div className="player-hp-row">
-                <span className="heart-icon">❤️</span>
+                {(() => {
+                  const c = getCharacter(state.character);
+                  const portrait = CHAR_PORTRAITS[state.character];
+                  return (
+                    <span className="player-portrait" title={c ? t(`char.${c.id}.name`) : ''}>
+                      {portrait
+                        ? <img src={portrait} alt="" className="player-portrait-img" />
+                        : <span className="player-portrait-emoji">{c?.icon || '❤️'}</span>}
+                    </span>
+                  );
+                })()}
                 <HpBar
                   ref={playerHpRef}
                   current={state.playerHp}
@@ -552,6 +568,7 @@ export default function Game() {
           onBuy={handleBuy}
           onClose={closeShop}
           onSetLockedItems={setLockedItems}
+          onReroll={rerollShop}
         />
       )}
 
