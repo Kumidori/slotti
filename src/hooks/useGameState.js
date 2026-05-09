@@ -228,43 +228,62 @@ function evaluateLine(ids, s) {
 function enterRoom(state, type) {
   const roomNumber = (state.floorPath?.length || 0) + 1;
   const newPath = [...(state.floorPath || []), type];
+  // Every non-boss room has a fight first; shop/rest/sacrifice run as a
+  // post-fight bonus once the enemy is defeated.
+  const pendingRoomReward =
+    type === 'shop' || type === 'rest' || type === 'sacrifice' ? type : null;
   const baseTransition = {
     ...state,
     room: roomNumber,
     floorPath: newPath,
     pendingPathChoices: null,
+    pendingRoomReward,
     comboText: '',
     comboType: null,
     reelResults: null,
     lineResults: null,
   };
 
-  if (type === 'fight' || type === 'elite' || type === 'boss') {
-    let enemy;
-    if (type === 'boss') enemy = spawnBoss(state.floor);
-    else if (type === 'elite') enemy = spawnElite(state.floor, roomNumber);
-    else enemy = spawnEnemy(state.floor, roomNumber);
-    const fightStart = applyFightStartRelics(state);
-    const ability = getAbility(state);
-    return {
-      ...baseTransition,
-      enemy,
-      spinsLeft: state.maxSpins,
-      block: fightStart.block,
-      playerHp: fightStart.playerHp,
-      phase: 'combat',
-      locksLeft: state.maxLocks,
-      poisonStacks: [],
-      phoenixUsed: false,
-      abilityChargesLeft: ability?.charges || 0,
-      bloodragePending: false,
-    };
+  if (type === 'fight' || type === 'elite' || type === 'boss' || pendingRoomReward) {
+    // Reward rooms (shop/rest/sacrifice) spawn a normal fight first.
+    const fightType = (type === 'fight' || type === 'elite' || type === 'boss') ? type : 'fight';
+    return enterFight(baseTransition, fightType, roomNumber);
   }
+  return baseTransition;
+}
+
+function enterFight(baseTransition, type, roomNumber) {
+  const state = baseTransition;
+  let enemy;
+  if (type === 'boss') enemy = spawnBoss(state.floor);
+  else if (type === 'elite') enemy = spawnElite(state.floor, roomNumber);
+  else enemy = spawnEnemy(state.floor, roomNumber);
+  const fightStart = applyFightStartRelics(state);
+  const ability = getAbility(state);
+  return {
+    ...baseTransition,
+    enemy,
+    spinsLeft: state.maxSpins,
+    block: fightStart.block,
+    playerHp: fightStart.playerHp,
+    phase: 'combat',
+    locksLeft: state.maxLocks,
+    poisonStacks: [],
+    phoenixUsed: false,
+    abilityChargesLeft: ability?.charges || 0,
+    bloodragePending: false,
+  };
+}
+
+// Enter the post-fight reward phase (shop/rest/sacrifice). Does NOT increment
+// floorPath — the room was already counted when the fight started.
+function enterRoomReward(state, type) {
+  const cleared = { ...state, pendingRoomReward: null };
   if (type === 'shop') {
     const cap = 5 + 5 * relicCount(state, 'pennyPincher');
     const interest = calcInterest(state.gold, cap);
     return {
-      ...baseTransition,
+      ...cleared,
       gold: state.gold + interest,
       lastInterest: interest,
       phase: 'shop',
@@ -274,7 +293,7 @@ function enterRoom(state, type) {
   }
   if (type === 'sacrifice') {
     return {
-      ...baseTransition,
+      ...cleared,
       phase: 'sacrifice',
       sacrificeChosen: null,
       sacrificeReward: null,
@@ -282,17 +301,21 @@ function enterRoom(state, type) {
   }
   if (type === 'rest') {
     return {
-      ...baseTransition,
+      ...cleared,
       phase: 'rest',
       playerHp: state.playerMaxHp,
     };
   }
-  return baseTransition;
+  return cleared;
 }
 
 // After finishing a room: re-show the map so the player can pick the next
 // node. After all ROOMS_PER_FLOOR rooms are done, go straight to boss.
 function transitionAfterRoom(state) {
+  // If the room had a post-fight bonus (shop/rest/sacrifice), play it now.
+  if (state.pendingRoomReward) {
+    return enterRoomReward(state, state.pendingRoomReward);
+  }
   const visited = state.floorPath?.length || 0;
   if (visited >= ROOMS_PER_FLOOR) {
     return enterRoom(state, 'boss');
@@ -346,6 +369,7 @@ const INITIAL_STATE = {
   floorPath: [],          // rooms VISITED so far this floor
   floorMap: null,         // { levels: [[node,...]] } — branching graph
   mapPath: [],            // [{ level, slot }] — chosen positions on the graph so far
+  pendingRoomReward: null, // 'shop' | 'rest' | 'sacrifice' — bonus phase after the fight
   sacrificeChosen: null,
   sacrificeReward: null,
   poisonStacks: [],
@@ -683,6 +707,7 @@ function reducer(state, action) {
         floorPath: [],
         floorMap: generateFloorGraph(nextFloor),
         mapPath: [],
+        pendingRoomReward: null,
         gridRows,
         phase: 'pathChoice',
       };
