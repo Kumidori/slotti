@@ -22,7 +22,7 @@ export const CHARACTERS = [
     icon: '⚔️',
     pool: makePool({ sword: 2, magic: -1 }),
     passive: null,
-    ability: { id: 'slash', icon: '⚔️', charges: 2, dmg: 10 },
+    ability: { id: 'slash', icon: '⚔️', charges: 2, dmg: 10, costSpin: true },
     locked: false,
   },
   {
@@ -30,7 +30,7 @@ export const CHARACTERS = [
     icon: '🧙',
     pool: makePool({ magic: 2, sword: -1 }),
     passive: null,
-    ability: { id: 'bolt', icon: '✨', charges: 2, dmg: 12 },
+    ability: { id: 'bolt', icon: '✨', charges: 2, dmg: 12, costSpin: true },
     locked: false,
   },
   // Unlockable bosses
@@ -57,7 +57,7 @@ export const CHARACTERS = [
     icon: '👷',
     pool: DEFAULT_POOL,
     passive: 'toxicAura',
-    ability: { id: 'toxicBlast', icon: '💨', charges: 2, dmg: 6, poison: { dmg: 2, ticks: 3 } },
+    ability: { id: 'toxicBlast', icon: '💨', charges: 2, dmg: 6, poison: { dmg: 2, ticks: 3 }, costSpin: true },
     locked: true,
     unlockedBy: 'furzkopf',
   },

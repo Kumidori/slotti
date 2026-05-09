@@ -647,27 +647,35 @@ function reducer(state, action) {
       if ((state.abilityChargesLeft || 0) <= 0) return state;
       const ability = getAbility(state);
       if (!ability) return state;
+      // Spin-cost abilities require at least one spin available
+      if (ability.costSpin && state.spinsLeft <= 0) return state;
       let s = { ...state, abilityChargesLeft: state.abilityChargesLeft - 1 };
-      if (ability.id === 'slash' || ability.id === 'bolt') {
-        // Direct damage
-        let dmg = ability.dmg;
-        if (s.enemy.weakTo?.includes(ability.id === 'slash' ? 'sword' : 'magic')) dmg = Math.round(dmg * 1.5);
-        else if (s.enemy.resists?.includes(ability.id === 'slash' ? 'sword' : 'magic')) dmg = Math.round(dmg * 0.5);
+      if (ability.costSpin) s.spinsLeft = Math.max(0, s.spinsLeft - 1);
+
+      if (ability.id === 'slash') {
+        let dmg = ability.dmg + (s.swordBonus || 0) * 2;
+        if (s.enemy.weakTo?.includes('sword')) dmg = Math.round(dmg * 1.5);
+        else if (s.enemy.resists?.includes('sword')) dmg = Math.round(dmg * 0.5);
+        s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - dmg) };
+        s.lastAbilityDmg = dmg;
+      } else if (ability.id === 'bolt') {
+        let dmg = ability.dmg + (s.magicBonus || 0) * 2;
+        if (s.enemy.weakTo?.includes('magic')) dmg = Math.round(dmg * 1.5);
+        else if (s.enemy.resists?.includes('magic')) dmg = Math.round(dmg * 0.5);
         s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - dmg) };
         s.lastAbilityDmg = dmg;
       } else if (ability.id === 'pounce') {
-        // Restore one spin
         s.spinsLeft = Math.min(s.maxSpins, s.spinsLeft + 1);
       } else if (ability.id === 'bloodrage') {
-        // Cost HP, mark next combo as doubled
         s.playerHp = Math.max(1, s.playerHp - (ability.hpCost || 5));
         s.bloodragePending = true;
       } else if (ability.id === 'toxicBlast') {
-        // Damage + poison stack
-        s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - ability.dmg) };
-        s.lastAbilityDmg = ability.dmg;
+        let dmg = ability.dmg;
+        if (s.enemy.weakTo?.includes('magic')) dmg = Math.round(dmg * 1.5);
+        else if (s.enemy.resists?.includes('magic')) dmg = Math.round(dmg * 0.5);
+        s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - dmg) };
+        s.lastAbilityDmg = dmg;
         if (ability.poison) {
-          // Apply poison TO enemy (reuse player poison concept inverted) — store on enemy
           const cur = s.enemy.bonusPoison || [];
           s.enemy = { ...s.enemy, bonusPoison: [...cur, { dmg: ability.poison.dmg, ticksLeft: ability.poison.ticks }] };
         }
