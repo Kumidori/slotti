@@ -84,6 +84,21 @@ export default function SymbolPicker({ picks, gold, lastGoldEarned, rerollCount,
           })}
         </div>
 
+        <div className="picker-info">
+          {selectedIndex !== null && revealed ? (
+            <>
+              <div className="picker-info-name">
+                {getSymbol(picks[selectedIndex]).icon} {t(`symbol.${picks[selectedIndex]}.name`)}
+              </div>
+              <div className="picker-info-desc">
+                {t(`symbol.${picks[selectedIndex]}.desc`)}
+              </div>
+            </>
+          ) : (
+            <div className="picker-info-hint">{t('picker.tapForInfo')}</div>
+          )}
+        </div>
+
         <button
           className="picker-choose"
           onClick={() => { sfx.buttonClick(); onPick(picks[selectedIndex]); }}
