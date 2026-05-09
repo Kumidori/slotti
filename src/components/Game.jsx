@@ -14,7 +14,7 @@ import LangToggle from './LangToggle';
 import MusicToggle from './MusicToggle';
 import CharacterSelect from './CharacterSelect';
 import WinnerClaim from './WinnerClaim';
-import PathChoice from './PathChoice';
+import FloorMap from './FloorMap';
 import RestRoom from './RestRoom';
 import { getCharacter } from '../characters';
 import liliPortrait from '../assets/lili.webp';
@@ -69,7 +69,7 @@ export default function Game() {
     nextFloor, debugKillEnemy, useLockTokens,
     pickSymbol, skipSymbol, rerollPicks,
     sacrificeSymbol, skipSacrifice, finishSacrifice,
-    rerollShop, goToMenu, choosePath, finishRest, useAbility,
+    rerollShop, goToMenu, selectPlanOption, commitPlan, finishRest, useAbility,
   } = useGameState();
 
   const handleNextFloor = useCallback(() => {
@@ -432,13 +432,14 @@ export default function Game() {
           <div className="floor-progress">
             <span className="floor-label">{t('ui.floor', { floor: state.floor })}</span>
             {(() => {
-              const path = state.floorPath || [];
+              const visited = state.floorPath || [];
+              const plan = state.floorPlan || [];
               const ROOMS = 5;
               const dots = [];
               for (let i = 0; i < ROOMS; i++) {
-                const type = path[i];
-                const isCurrent = i === path.length - 1 && state.phase !== 'pathChoice' && state.phase !== 'floorComplete';
-                const isFuture = !type;
+                const type = visited[i] || plan[i] || null;
+                const isVisited = i < visited.length;
+                const isCurrent = i === visited.length - 1 && state.phase !== 'planning' && state.phase !== 'floorComplete';
                 const icon = !type ? '?' :
                   type === 'shop' ? '💰' :
                   type === 'sacrifice' ? '🪦' :
@@ -447,14 +448,13 @@ export default function Game() {
                 dots.push(
                   <span
                     key={i}
-                    className={`floor-dot ${type || 'unknown'}${i < path.length - 1 ? ' done' : ''}${isCurrent ? ' current' : ''}${isFuture ? ' future' : ''}`}
+                    className={`floor-dot ${type || 'unknown'}${isVisited && !isCurrent ? ' done' : ''}${isCurrent ? ' current' : ''}${!isVisited ? ' future' : ''}`}
                   >
                     {icon}
                   </span>
                 );
               }
-              // Boss dot at the end
-              const bossCurrent = path[path.length - 1] === 'boss';
+              const bossCurrent = visited[visited.length - 1] === 'boss';
               dots.push(
                 <span key="boss" className={`floor-dot boss${bossCurrent ? ' current' : ''}`}>💀</span>
               );
@@ -650,10 +650,12 @@ export default function Game() {
         </Overlay>
       )}
 
-      {state.phase === 'pathChoice' && state.pendingPathChoices && (
-        <PathChoice
-          choices={state.pendingPathChoices}
-          onPick={choosePath}
+      {state.phase === 'planning' && state.planningLevels && (
+        <FloorMap
+          floor={state.floor}
+          levels={state.planningLevels}
+          onSelect={selectPlanOption}
+          onCommit={commitPlan}
         />
       )}
 
