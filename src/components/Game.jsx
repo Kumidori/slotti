@@ -14,6 +14,8 @@ import LangToggle from './LangToggle';
 import MusicToggle from './MusicToggle';
 import CharacterSelect from './CharacterSelect';
 import WinnerClaim from './WinnerClaim';
+import PathChoice from './PathChoice';
+import RestRoom from './RestRoom';
 import { getCharacter } from '../characters';
 import liliPortrait from '../assets/lili.webp';
 import rubyPortrait from '../assets/ruby.png';
@@ -67,7 +69,7 @@ export default function Game() {
     nextFloor, debugKillEnemy, useLockTokens,
     pickSymbol, skipSymbol, rerollPicks,
     sacrificeSymbol, skipSacrifice, finishSacrifice,
-    rerollShop, goToMenu,
+    rerollShop, goToMenu, choosePath, finishRest,
   } = useGameState();
 
   const handleNextFloor = useCallback(() => {
@@ -417,20 +419,35 @@ export default function Game() {
           </div>
           <div className="floor-progress">
             <span className="floor-label">{t('ui.floor', { floor: state.floor })}</span>
-            {[1, 2, 3, 4, 5, 6].map(r => {
-              const type = state.floorRoomTypes?.[r - 1] || 'fight';
-              const done = r < state.room;
-              const current = r === state.room;
-              const icon = type === 'shop' ? '💰' : type === 'sacrifice' ? '🪦' : type === 'boss' ? '💀' : '';
-              return (
-                <span
-                  key={r}
-                  className={`floor-dot ${type}${done ? ' done' : ''}${current ? ' current' : ''}`}
-                >
-                  {icon}
-                </span>
+            {(() => {
+              const path = state.floorPath || [];
+              const ROOMS = 5;
+              const dots = [];
+              for (let i = 0; i < ROOMS; i++) {
+                const type = path[i];
+                const isCurrent = i === path.length - 1 && state.phase !== 'pathChoice' && state.phase !== 'floorComplete';
+                const isFuture = !type;
+                const icon = !type ? '?' :
+                  type === 'shop' ? '💰' :
+                  type === 'sacrifice' ? '🪦' :
+                  type === 'rest' ? '🏕' :
+                  type === 'elite' ? '👹' : '';
+                dots.push(
+                  <span
+                    key={i}
+                    className={`floor-dot ${type || 'unknown'}${i < path.length - 1 ? ' done' : ''}${isCurrent ? ' current' : ''}${isFuture ? ' future' : ''}`}
+                  >
+                    {icon}
+                  </span>
+                );
+              }
+              // Boss dot at the end
+              const bossCurrent = path[path.length - 1] === 'boss';
+              dots.push(
+                <span key="boss" className={`floor-dot boss${bossCurrent ? ' current' : ''}`}>💀</span>
               );
-            })}
+              return dots;
+            })()}
           </div>
         </div>
 
@@ -599,6 +616,21 @@ export default function Game() {
           <p>{t('overlay.goldEarned', { gold: state.gold })}</p>
           <button onClick={handleBackToMenu}>{t('overlay.tryAgain')}</button>
         </Overlay>
+      )}
+
+      {state.phase === 'pathChoice' && state.pendingPathChoices && (
+        <PathChoice
+          choices={state.pendingPathChoices}
+          onPick={choosePath}
+        />
+      )}
+
+      {state.phase === 'rest' && (
+        <RestRoom
+          playerHp={state.playerHp}
+          playerMaxHp={state.playerMaxHp}
+          onContinue={finishRest}
+        />
       )}
 
       {state.phase === 'menu' && (

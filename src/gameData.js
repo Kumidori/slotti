@@ -228,6 +228,20 @@ export function spawnEnemy(floor, room) {
   };
 }
 
+export function spawnElite(floor, room = 1) {
+  // An elite is a regular enemy with significantly bigger stats and gold reward
+  const e = spawnEnemy(floor, room);
+  return {
+    ...e,
+    name: '⚔ Elite ' + e.name,
+    hp: Math.round(e.hp * 1.6),
+    maxHp: Math.round(e.hp * 1.6),
+    atk: Math.round(e.atk * 1.3),
+    gold: Math.round(e.gold * 1.5),
+    isElite: true,
+  };
+}
+
 export function spawnBoss(floor) {
   const template = BOSSES[Math.min(floor - 1, BOSSES.length - 1)];
   let statScale = 1 + (floor - 1) * 0.3;
@@ -269,4 +283,28 @@ export function spawnBoss(floor) {
 
 export function calcInterest(gold, cap = 5) {
   return Math.min(cap, Math.floor(gold / 10));
+}
+
+// Generate 2 distinct path choices for the next room.
+export function rollPathChoice(floor, alreadyVisited = []) {
+  // Weight pool: fights are most common, specials less so. rest is more
+  // common late-floor when player has taken damage.
+  const pool = [
+    'fight', 'fight', 'fight',
+    'shop', 'shop',
+    'sacrifice',
+    'rest',
+  ];
+  if (floor >= 2) pool.push('elite');
+  // Avoid offering rest if last room was rest
+  const last = alreadyVisited[alreadyVisited.length - 1];
+  const filtered = last === 'rest' ? pool.filter(t => t !== 'rest') : pool;
+  const a = filtered[Math.floor(Math.random() * filtered.length)];
+  let b;
+  let safety = 20;
+  do {
+    b = filtered[Math.floor(Math.random() * filtered.length)];
+    safety--;
+  } while (b === a && safety > 0);
+  return [a, b];
 }

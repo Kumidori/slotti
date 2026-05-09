@@ -1,0 +1,119 @@
+.path-choice {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.path-choice-inner {
+  background: linear-gradient(180deg, #1f1638, #14102a);
+  border: 2px solid #533483;
+  border-radius: 18px;
+  padding: 22px 18px;
+  max-width: 440px;
+  width: calc(100vw - 32px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(83, 52, 131, 0.4);
+}
+
+.path-choice-inner h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #fff;
+}
+
+.path-sub {
+  margin: 0;
+  font-size: 13px;
+  color: #aaa;
+  text-align: center;
+}
+
+.path-cards {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.path-card {
+  flex: 1;
+  max-width: 180px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 16px 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 0.15s, transform 0.1s, background 0.15s;
+}
+
+.path-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.path-card:active {
+  transform: scale(0.97);
+}
+
+.path-card-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.path-card-label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  text-transform: capitalize;
+}
+
+.path-card-desc {
+  font-size: 11px;
+  color: #aaa;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* Distinct visual treatments */
+.path-card.type-elite {
+  border-color: rgba(231, 76, 60, 0.5);
+  background: rgba(231, 76, 60, 0.1);
+}
+.path-card.type-elite:hover {
+  border-color: #e74c3c;
+  background: rgba(231, 76, 60, 0.2);
+}
+.path-card.type-shop {
+  border-color: rgba(241, 196, 15, 0.4);
+}
+.path-card.type-shop:hover {
+  border-color: #f1c40f;
+  background: rgba(241, 196, 15, 0.1);
+}
+.path-card.type-rest {
+  border-color: rgba(46, 204, 113, 0.4);
+}
+.path-card.type-rest:hover {
+  border-color: #2ecc71;
+  background: rgba(46, 204, 113, 0.1);
+}
+.path-card.type-sacrifice {
+  border-color: rgba(180, 80, 255, 0.4);
+}
+.path-card.type-sacrifice:hover {
+  border-color: #b04fff;
+  background: rgba(180, 80, 255, 0.1);
+}
