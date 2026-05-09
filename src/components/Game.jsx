@@ -381,6 +381,12 @@ export default function Game() {
     goToMenu();
   }, [goToMenu]);
 
+  const handleRestartRun = useCallback(() => {
+    if (!window.confirm(t('ui.restartConfirm'))) return;
+    sfx.buttonClick();
+    goToMenu();
+  }, [goToMenu, t]);
+
   // Switch BGM intensity for boss fights — each boss has its own theme
   useEffect(() => {
     const inBossFight = state.phase === 'combat' && state.enemy?.isBoss;
@@ -428,6 +434,14 @@ export default function Game() {
             <div className="gold-badge" ref={goldBadgeRef}>💰 {state.gold}</div>
             <LangToggle />
             <MusicToggle />
+            <button
+              className="icon-button restart-button"
+              onClick={handleRestartRun}
+              title={t('ui.restartRun')}
+              aria-label={t('ui.restartRun')}
+            >
+              🏳
+            </button>
           </div>
           <div className="floor-progress">
             <span className="floor-label">{t('ui.floor', { floor: state.floor })}</span>

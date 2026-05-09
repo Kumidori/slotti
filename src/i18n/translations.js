@@ -5,6 +5,8 @@ const en = {
   // Top bar
   'ui.floor': 'Floor {floor}',
   'ui.spins': '{count} spins',
+  'ui.restartRun': 'Give up run',
+  'ui.restartConfirm': 'Give up this run and return to the menu? Your progress will be lost.',
 
   // Slot machine
   'slot.lockHint': '💡 Tap a reel to lock it for the next spin',
@@ -229,6 +231,8 @@ const de = {
   // Top bar
   'ui.floor': 'Etage {floor}',
   'ui.spins': '{count} Drehs',
+  'ui.restartRun': 'Run aufgeben',
+  'ui.restartConfirm': 'Diesen Run aufgeben und zum Menü zurück? Dein Fortschritt geht verloren.',
 
   // Slot machine
   'slot.lockHint': '💡 Tippe eine Walze zum Sperren für den nächsten Dreh',
@@ -453,6 +457,8 @@ const bg = {
   // Top bar
   'ui.floor': 'Етаж {floor}',
   'ui.spins': '{count} завъртания',
+  'ui.restartRun': 'Откажи се от рунa',
+  'ui.restartConfirm': 'Откажи този рун и обратно в менюто? Прогресът ще се изгуби.',
 
   // Slot machine
   'slot.lockHint': '💡 Докоснете барабан, за да го заключите за следващото завъртане',

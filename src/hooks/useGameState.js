@@ -1,4 +1,4 @@
-import { useReducer, useCallback } from 'react';
+import { useReducer, useCallback, useEffect } from 'react';
 import { spawnEnemy, spawnBoss, spawnElite, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, rollPathChoice, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines, SHOP_ITEMS, RARITIES, pickByRarity } from '../gameData';
 import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars, getAbility } from '../characters';
 
@@ -873,10 +873,67 @@ function reducer(state, action) {
   }
 }
 
+// Persist active runs to localStorage so a refresh doesn't wipe progress.
+// We skip transient UI fields (animations, picker reels) and never persist
+// menu / runComplete / gameOver — those should start fresh.
+const SAVE_KEY = 'slotti.run.v1';
+const TRANSIENT_FIELDS = [
+  'spinning', 'reelResults', 'comboText', 'comboType',
+  'lineResults', 'symbolPicks', 'pickRerollCount', 'pickRerollKey',
+  'shopItems', 'lockedItems', 'shopRerollCount', 'shopRerollKey',
+  'justUnlocked', 'justUnlockedRows', 'justRevived', 'lastInterest',
+  'lastGoldEarned', 'log',
+];
+const SAVEABLE_PHASES = new Set([
+  'pathChoice', 'combat', 'shop', 'sacrifice', 'rest',
+  'victory', 'floorComplete',
+]);
+
+function saveRunState(state) {
+  try {
+    if (!SAVEABLE_PHASES.has(state.phase)) {
+      localStorage.removeItem(SAVE_KEY);
+      return;
+    }
+    const slim = { ...state };
+    for (const k of TRANSIENT_FIELDS) delete slim[k];
+    // Don't persist unlockedChars in the run save — it's stored separately.
+    delete slim.unlockedChars;
+    localStorage.setItem(SAVE_KEY, JSON.stringify(slim));
+  } catch (e) { /* storage full / disabled — ignore */ }
+}
+
+function loadRunState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !SAVEABLE_PHASES.has(parsed.phase)) return null;
+    return parsed;
+  } catch (e) { return null; }
+}
+
+function clearRunState() {
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* ignore */ }
+}
+
 export default function useGameState() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE, (init) => {
-    return { ...init, unlockedChars: loadUnlockedChars() };
+    const unlockedChars = loadUnlockedChars();
+    const saved = loadRunState();
+    if (saved) {
+      // Restore mid-run on refresh, merging in the latest unlocks.
+      return { ...init, ...saved, unlockedChars };
+    }
+    return { ...init, unlockedChars };
   });
+
+  // Persist on every state change (debounced via microtask is unnecessary —
+  // localStorage writes are synchronous but very fast and only happen on
+  // discrete reducer dispatches, not animation frames).
+  useEffect(() => {
+    saveRunState(state);
+  }, [state]);
 
   const startRun = useCallback((characterId) => dispatch({ type: 'START_RUN', characterId }), []);
   const goToMenu = useCallback(() => dispatch({ type: 'GO_TO_MENU' }), []);
