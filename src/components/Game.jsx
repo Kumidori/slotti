@@ -66,11 +66,21 @@ export default function Game() {
     state, startRun, resolveCombo, applyLineEffects, enemyAttack,
     enemyDefeated, triggerGameOver,
     buyItem, setLockedItems, closeShop, setSpinning,
-    nextFloor, debugKillEnemy, useLockTokens,
+    nextFloor, debugKillEnemy, debugJumpToBoss, debugNextFloor,
+    debugGiveGold, debugFullHeal, useLockTokens,
     pickSymbol, skipSymbol, rerollPicks,
     sacrificeSymbol, skipSacrifice, finishSacrifice,
     rerollShop, goToMenu, chooseNextRoom, finishRest, useAbility,
   } = useGameState();
+
+  // Debug mode is on when ?debug=1 is in the URL or localStorage flag is set.
+  // Toggle with backtick (`) — persists across reloads.
+  const [debugOn, setDebugOn] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('debug')) return true;
+    return localStorage.getItem('slotti.debug') === '1';
+  });
 
   const handleNextFloor = useCallback(() => {
     sfx.buttonClick();
@@ -78,10 +88,30 @@ export default function Game() {
   }, [nextFloor]);
 
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'b' || e.key === 'B') debugKillEnemy(); };
+    const onKey = (e) => {
+      // Backtick toggles debug overlay + persists in localStorage
+      if (e.key === '`') {
+        const next = !debugOn;
+        setDebugOn(next);
+        try { localStorage.setItem('slotti.debug', next ? '1' : '0'); } catch {}
+        return;
+      }
+      if (!debugOn) return;
+      // Ignore when typing in input fields
+      const tag = e.target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      switch (e.key) {
+        case 'b': case 'B': debugKillEnemy(); break;
+        case 'n': case 'N': debugJumpToBoss(); break;
+        case 'f': case 'F': debugNextFloor(); break;
+        case 'g': case 'G': debugGiveGold(100); break;
+        case 'h': case 'H': debugFullHeal(); break;
+        default: break;
+      }
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [debugKillEnemy]);
+  }, [debugOn, debugKillEnemy, debugJumpToBoss, debugNextFloor, debugGiveGold, debugFullHeal]);
 
   const [screenShake, setScreenShake] = useState(false);
   const [screenFlash, setScreenFlash] = useState(null);
@@ -717,6 +747,18 @@ export default function Game() {
       {floats.map(f => (
         <FloatNumber key={f.id} text={f.text} type={f.type} targetRef={f.ref} />
       ))}
+
+      {debugOn && state.phase !== 'menu' && (
+        <div className="debug-panel">
+          <div className="debug-panel-title">DEBUG</div>
+          <button onClick={debugKillEnemy} title="B">Kill enemy</button>
+          <button onClick={debugJumpToBoss} title="N">Jump to boss</button>
+          <button onClick={debugNextFloor} title="F">Skip floor</button>
+          <button onClick={() => debugGiveGold(100)} title="G">+100 gold</button>
+          <button onClick={debugFullHeal} title="H">Full heal</button>
+          <div className="debug-panel-hint">` to toggle</div>
+        </div>
+      )}
     </>
   );
 }
