@@ -10,22 +10,15 @@ const ROOM_META = {
   rest:      { icon: '🏕️', labelKey: 'path.rest' },
 };
 
-export default function FloorMap({ floor, levels, onSelect, onCommit }) {
+export default function FloorMap({ floor, levels, currentLevelIndex, onChoose }) {
   const { t } = useTranslation();
-  const allChosen = levels.every(l => l.chosen);
-
-  const pick = (level, option) => {
+  const pick = (option) => {
     sfx.buttonClick();
-    onSelect(level, option);
-  };
-  const start = () => {
-    sfx.buttonClick();
-    onCommit();
+    onChoose(option);
   };
 
-  // Render top-down: boss first, then levels reversed (level 5 closest to boss)
-  // Visually: boss on top, then row 5 (one before boss), down to row 1 (start)
-  const reversed = [...levels].reverse(); // index 0 = level 5
+  // Render boss at top, then levels reversed (level 5 closest to boss, level 1 at bottom)
+  const reversed = [...levels].reverse();
 
   return (
     <div className="floor-map">
@@ -34,28 +27,35 @@ export default function FloorMap({ floor, levels, onSelect, onCommit }) {
         <p className="plan-sub">{t('plan.subtitle')}</p>
 
         <div className="map-tracks">
-          {/* Boss row at the top */}
           <div className="map-row map-row-boss">
             <div className="map-node boss">
               <span className="map-node-icon">💀</span>
               <span className="map-node-label">{t('plan.boss')}</span>
             </div>
           </div>
-          {/* Levels from top (level 5) down to bottom (level 1) */}
           {reversed.map((level, idx) => {
-            // actual level index (0-4)
             const lvlIdx = levels.length - 1 - idx;
+            const isPast = lvlIdx < currentLevelIndex;
+            const isCurrent = lvlIdx === currentLevelIndex;
             return (
-              <div key={lvlIdx} className="map-row">
+              <div key={lvlIdx} className={`map-row ${isCurrent ? 'current-row' : ''}`}>
                 {level.options.map((opt, i) => {
                   const meta = ROOM_META[opt] || ROOM_META.fight;
                   const isChosen = level.chosen === opt;
-                  const otherChosen = level.chosen && level.chosen !== opt;
+                  const isLockedOut = (isPast && !isChosen) || (!isPast && !isCurrent);
+                  const className = [
+                    'map-node',
+                    `type-${opt}`,
+                    isChosen ? 'chosen' : '',
+                    isCurrent && !isChosen ? 'available' : '',
+                    isLockedOut ? 'locked-out' : '',
+                  ].join(' ');
                   return (
                     <button
                       key={i}
-                      className={`map-node type-${opt} ${isChosen ? 'chosen' : ''} ${otherChosen ? 'dimmed' : ''}`}
-                      onClick={() => pick(lvlIdx, opt)}
+                      className={className}
+                      onClick={() => isCurrent && pick(opt)}
+                      disabled={!isCurrent}
                     >
                       <span className="map-node-icon">{meta.icon}</span>
                       <span className="map-node-label">{t(meta.labelKey)}</span>
@@ -66,14 +66,6 @@ export default function FloorMap({ floor, levels, onSelect, onCommit }) {
             );
           })}
         </div>
-
-        <button
-          className="plan-start"
-          onClick={start}
-          disabled={!allChosen}
-        >
-          {allChosen ? t('plan.start') : t('plan.pickAll')}
-        </button>
       </div>
     </div>
   );

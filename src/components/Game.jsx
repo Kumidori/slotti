@@ -69,7 +69,7 @@ export default function Game() {
     nextFloor, debugKillEnemy, useLockTokens,
     pickSymbol, skipSymbol, rerollPicks,
     sacrificeSymbol, skipSacrifice, finishSacrifice,
-    rerollShop, goToMenu, selectPlanOption, commitPlan, finishRest, useAbility,
+    rerollShop, goToMenu, chooseNextRoom, finishRest, useAbility,
   } = useGameState();
 
   const handleNextFloor = useCallback(() => {
@@ -433,7 +433,7 @@ export default function Game() {
             <span className="floor-label">{t('ui.floor', { floor: state.floor })}</span>
             {(() => {
               const visited = state.floorPath || [];
-              const plan = state.floorPlan || [];
+              const plan = (state.floorMap || []).map(l => l.chosen);
               const ROOMS = 5;
               const dots = [];
               for (let i = 0; i < ROOMS; i++) {
@@ -650,12 +650,12 @@ export default function Game() {
         </Overlay>
       )}
 
-      {state.phase === 'planning' && state.planningLevels && (
+      {state.phase === 'pathChoice' && state.floorMap && (
         <FloorMap
           floor={state.floor}
-          levels={state.planningLevels}
-          onSelect={selectPlanOption}
-          onCommit={commitPlan}
+          levels={state.floorMap}
+          currentLevelIndex={state.floorPath?.length || 0}
+          onChoose={chooseNextRoom}
         />
       )}
 

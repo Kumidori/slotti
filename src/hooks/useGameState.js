@@ -248,15 +248,14 @@ function enterRoom(state, type) {
   return baseTransition;
 }
 
-// Decide what to do after finishing a room: enter the next room from the
-// committed plan, or enter the boss after all 5 rooms are done.
+// After finishing a room: re-show the map so the player can pick the next
+// node. After all ROOMS_PER_FLOOR rooms are done, go straight to boss.
 function transitionAfterRoom(state) {
   const visited = state.floorPath?.length || 0;
   if (visited >= ROOMS_PER_FLOOR) {
     return enterRoom(state, 'boss');
   }
-  const planned = state.floorPlan?.[visited] || 'fight';
-  return enterRoom(state, planned);
+  return { ...state, phase: 'pathChoice' };
 }
 
 // Phoenix Feather: revive at 25% HP if you would die. Stacks grant extra revives per fight.
@@ -303,8 +302,7 @@ const INITIAL_STATE = {
   locksLeft: 3,
   maxLocks: 3,
   floorPath: [],          // rooms VISITED so far this floor
-  floorPlan: null,        // committed plan: array of 5 room types for this floor
-  planningLevels: null,   // [{ options: [a,b], chosen: type|null }] — UI state for the map view
+  floorMap: null,         // [{ options: [a,b], chosen: type|null }] — full floor map, picked one level at a time
   sacrificeChosen: null,
   sacrificeReward: null,
   poisonStacks: [],
@@ -324,8 +322,8 @@ function reducer(state, action) {
         character: charId,
         symbolPool: char?.pool || DEFAULT_POOL,
         unlockedChars: state.unlockedChars,
-        phase: 'planning',
-        planningLevels: generatePlanningLevels(1),
+        phase: 'pathChoice',
+        floorMap: generatePlanningLevels(1),
       };
     }
 
@@ -640,10 +638,9 @@ function reducer(state, action) {
         ...state,
         floor: nextFloor,
         floorPath: [],
-        floorPlan: null,
-        planningLevels: generatePlanningLevels(nextFloor),
+        floorMap: generatePlanningLevels(nextFloor),
         gridRows,
-        phase: 'planning',
+        phase: 'pathChoice',
       };
     }
 
@@ -718,21 +715,16 @@ function reducer(state, action) {
     case 'NEXT_ROOM':
       return transitionAfterRoom(state);
 
-    case 'SELECT_PLAN_OPTION': {
-      const { level, option } = action;
-      if (!state.planningLevels) return state;
-      const next = state.planningLevels.map((l, i) =>
-        i === level ? { ...l, chosen: option } : l
+    case 'CHOOSE_NEXT_ROOM': {
+      const { option } = action;
+      if (!state.floorMap) return state;
+      const visited = state.floorPath?.length || 0;
+      if (visited >= ROOMS_PER_FLOOR) return state;
+      // Lock in the chosen option for this level on the map
+      const newMap = state.floorMap.map((l, i) =>
+        i === visited ? { ...l, chosen: option } : l
       );
-      return { ...state, planningLevels: next };
-    }
-
-    case 'COMMIT_PLAN': {
-      if (!state.planningLevels) return state;
-      // Fill any unchosen levels with the first option as a fallback
-      const plan = state.planningLevels.map(l => l.chosen || l.options[0]);
-      // Enter the first room from the plan
-      return enterRoom({ ...state, floorPlan: plan, planningLevels: null }, plan[0]);
+      return enterRoom({ ...state, floorMap: newMap }, option);
     }
 
     case 'FINISH_REST':
@@ -824,8 +816,7 @@ export default function useGameState() {
   const buyItem = useCallback((item) => dispatch({ type: 'BUY_ITEM', item }), []);
   const setLockedItems = useCallback((items) => dispatch({ type: 'SET_LOCKED_ITEMS', items }), []);
   const closeShop = useCallback(() => dispatch({ type: 'CLOSE_SHOP' }), []);
-  const selectPlanOption = useCallback((level, option) => dispatch({ type: 'SELECT_PLAN_OPTION', level, option }), []);
-  const commitPlan = useCallback(() => dispatch({ type: 'COMMIT_PLAN' }), []);
+  const chooseNextRoom = useCallback((option) => dispatch({ type: 'CHOOSE_NEXT_ROOM', option }), []);
   const finishRest = useCallback(() => dispatch({ type: 'FINISH_REST' }), []);
   const useAbility = useCallback(() => dispatch({ type: 'USE_ABILITY' }), []);
   const nextFloor = useCallback(() => dispatch({ type: 'NEXT_FLOOR' }), []);
@@ -859,8 +850,7 @@ export default function useGameState() {
     debugKillEnemy,
     useLockTokens,
     rerollShop,
-    selectPlanOption,
-    commitPlan,
+    chooseNextRoom,
     finishRest,
     useAbility,
     sacrificeSymbol,
