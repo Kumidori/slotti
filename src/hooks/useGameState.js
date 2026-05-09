@@ -1,6 +1,6 @@
 import { useReducer, useCallback } from 'react';
 import { spawnEnemy, spawnBoss, spawnElite, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, rollPathChoice, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines, SHOP_ITEMS, RARITIES, pickByRarity } from '../gameData';
-import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars } from '../characters';
+import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars, getAbility } from '../characters';
 
 // Reroll cost: 5g first, +5g each subsequent reroll within the same picker.
 // Lucky Charm reduces cost by 1g per stack (min 1g).
@@ -193,6 +193,7 @@ function enterRoom(state, type) {
     else if (type === 'elite') enemy = spawnElite(state.floor, roomNumber);
     else enemy = spawnEnemy(state.floor, roomNumber);
     const fightStart = applyFightStartRelics(state);
+    const ability = getAbility(state);
     return {
       ...baseTransition,
       enemy,
@@ -203,6 +204,8 @@ function enterRoom(state, type) {
       locksLeft: state.maxLocks,
       poisonStacks: [],
       phoenixUsed: false,
+      abilityChargesLeft: ability?.charges || 0,
+      bloodragePending: false,
     };
   }
   if (type === 'shop') {
@@ -357,6 +360,19 @@ function reducer(state, action) {
       const packHunterReady = hasPassive(s, 'packHunter') && fightSpinNumber > 0 && fightSpinNumber % 3 === 0;
       const periodRageActive = hasPassive(s, 'periodRage') && s.playerHp / s.playerMaxHp < 0.3;
       const enraged = s.enemy?.enraged;
+      const bloodrage = !!s.bloodragePending;
+      if (bloodrage) s.bloodragePending = false; // consume on this spin
+
+      // Tick enemy bonus poison from abilities
+      if (s.enemy?.bonusPoison?.length > 0) {
+        let extraDmg = 0;
+        const newStacks = [];
+        for (const p of s.enemy.bonusPoison) {
+          extraDmg += p.dmg;
+          if (p.ticksLeft - 1 > 0) newStacks.push({ ...p, ticksLeft: p.ticksLeft - 1 });
+        }
+        s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - extraDmg), bonusPoison: newStacks };
+      }
 
       for (const line of getPaylines(s.gridRows)) {
         const lineIds = line.cells.map(([r, c]) => grid[r][c].id);
@@ -367,6 +383,7 @@ function reducer(state, action) {
           if (enraged) lineRes.dmg = Math.round(lineRes.dmg * 1.5);
           if (periodRageActive) lineRes.dmg = Math.round(lineRes.dmg * 1.5);
           if (packHunterReady) lineRes.dmg = lineRes.dmg * 2;
+          if (bloodrage) lineRes.dmg = lineRes.dmg * 2;
           // Vampiric Charm: heal % of dmg dealt (stacks at 20% per copy, cap 100%)
           const vampStacks = relicCount(s, 'vampiricCharm');
           if (vampStacks > 0) {
@@ -625,6 +642,39 @@ function reducer(state, action) {
       return { ...state, locksLeft: Math.max(0, state.locksLeft - action.count) };
     }
 
+    case 'USE_ABILITY': {
+      if (state.phase !== 'combat' || !state.enemy) return state;
+      if ((state.abilityChargesLeft || 0) <= 0) return state;
+      const ability = getAbility(state);
+      if (!ability) return state;
+      let s = { ...state, abilityChargesLeft: state.abilityChargesLeft - 1 };
+      if (ability.id === 'slash' || ability.id === 'bolt') {
+        // Direct damage
+        let dmg = ability.dmg;
+        if (s.enemy.weakTo?.includes(ability.id === 'slash' ? 'sword' : 'magic')) dmg = Math.round(dmg * 1.5);
+        else if (s.enemy.resists?.includes(ability.id === 'slash' ? 'sword' : 'magic')) dmg = Math.round(dmg * 0.5);
+        s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - dmg) };
+        s.lastAbilityDmg = dmg;
+      } else if (ability.id === 'pounce') {
+        // Restore one spin
+        s.spinsLeft = Math.min(s.maxSpins, s.spinsLeft + 1);
+      } else if (ability.id === 'bloodrage') {
+        // Cost HP, mark next combo as doubled
+        s.playerHp = Math.max(1, s.playerHp - (ability.hpCost || 5));
+        s.bloodragePending = true;
+      } else if (ability.id === 'toxicBlast') {
+        // Damage + poison stack
+        s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - ability.dmg) };
+        s.lastAbilityDmg = ability.dmg;
+        if (ability.poison) {
+          // Apply poison TO enemy (reuse player poison concept inverted) — store on enemy
+          const cur = s.enemy.bonusPoison || [];
+          s.enemy = { ...s.enemy, bonusPoison: [...cur, { dmg: ability.poison.dmg, ticksLeft: ability.poison.ticks }] };
+        }
+      }
+      return s;
+    }
+
     case 'SACRIFICE_SYMBOL': {
       // Remove first occurrence of chosen symbol, add a freshly rolled reward
       const idx = state.symbolPool.indexOf(action.symbolId);
@@ -748,6 +798,7 @@ export default function useGameState() {
   const closeShop = useCallback(() => dispatch({ type: 'CLOSE_SHOP' }), []);
   const choosePath = useCallback((roomType) => dispatch({ type: 'CHOOSE_PATH', roomType }), []);
   const finishRest = useCallback(() => dispatch({ type: 'FINISH_REST' }), []);
+  const useAbility = useCallback(() => dispatch({ type: 'USE_ABILITY' }), []);
   const nextFloor = useCallback(() => dispatch({ type: 'NEXT_FLOOR' }), []);
   const setSpinning = useCallback((value) => dispatch({ type: 'SET_SPINNING', value }), []);
   const setReelResults = useCallback((results) => dispatch({ type: 'SET_REEL_RESULTS', results }), []);
@@ -781,6 +832,7 @@ export default function useGameState() {
     rerollShop,
     choosePath,
     finishRest,
+    useAbility,
     sacrificeSymbol,
     skipSacrifice,
     finishSacrifice,

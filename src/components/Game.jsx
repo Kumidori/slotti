@@ -69,7 +69,7 @@ export default function Game() {
     nextFloor, debugKillEnemy, useLockTokens,
     pickSymbol, skipSymbol, rerollPicks,
     sacrificeSymbol, skipSacrifice, finishSacrifice,
-    rerollShop, goToMenu, choosePath, finishRest,
+    rerollShop, goToMenu, choosePath, finishRest, useAbility,
   } = useGameState();
 
   const handleNextFloor = useCallback(() => {
@@ -557,6 +557,26 @@ export default function Game() {
             </div>
             </div>
           </div>
+
+          {(() => {
+            const c = getCharacter(state.character);
+            const ab = c?.ability;
+            if (!ab || state.phase !== 'combat') return null;
+            const left = state.abilityChargesLeft || 0;
+            const ready = left > 0 && !state.spinning;
+            return (
+              <button
+                className={`ability-btn ${ready ? '' : 'disabled'} ${state.bloodragePending ? 'pending' : ''}`}
+                onClick={() => { if (ready) { sfx.buttonClick(); useAbility(); } }}
+                disabled={!ready}
+                title={t(`ability.${ab.id}.desc`)}
+              >
+                <span className="ability-icon">{ab.icon}</span>
+                <span className="ability-name">{t(`ability.${ab.id}.name`)}</span>
+                <span className="ability-charges">{left}/{ab.charges}</span>
+              </button>
+            );
+          })()}
 
           <button
             className="spin-btn"

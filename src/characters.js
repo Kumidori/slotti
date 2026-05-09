@@ -22,6 +22,7 @@ export const CHARACTERS = [
     icon: '⚔️',
     pool: makePool({ sword: 2, magic: -1 }),
     passive: null,
+    ability: { id: 'slash', icon: '⚔️', charges: 2, dmg: 10 },
     locked: false,
   },
   {
@@ -29,6 +30,7 @@ export const CHARACTERS = [
     icon: '🧙',
     pool: makePool({ magic: 2, sword: -1 }),
     passive: null,
+    ability: { id: 'bolt', icon: '✨', charges: 2, dmg: 12 },
     locked: false,
   },
   // Unlockable bosses
@@ -37,14 +39,16 @@ export const CHARACTERS = [
     icon: '👩',
     pool: DEFAULT_POOL,
     passive: 'periodRage',
+    ability: { id: 'bloodrage', icon: '🩸', charges: 1, hpCost: 5, multiplier: 2 },
     locked: true,
-    unlockedBy: 'lili',  // boss sprite
+    unlockedBy: 'lili',
   },
   {
     id: 'ruby',
     icon: '🐕',
     pool: makePool({ sword: 1 }),
     passive: 'packHunter',
+    ability: { id: 'pounce', icon: '🐾', charges: 2 }, // restores 1 spin
     locked: true,
     unlockedBy: 'ruby',
   },
@@ -53,10 +57,17 @@ export const CHARACTERS = [
     icon: '👷',
     pool: DEFAULT_POOL,
     passive: 'toxicAura',
+    ability: { id: 'toxicBlast', icon: '💨', charges: 2, dmg: 6, poison: { dmg: 2, ticks: 3 } },
     locked: true,
     unlockedBy: 'furzkopf',
   },
 ];
+
+export function getAbility(state) {
+  if (!state?.character) return null;
+  const c = getCharacter(state.character);
+  return c?.ability || null;
+}
 
 export function getCharacter(id) {
   return CHARACTERS.find(c => c.id === id);
