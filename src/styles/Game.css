@@ -368,10 +368,10 @@
   background: linear-gradient(180deg, #6e3bd6, #4f2aa3);
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  padding: 8px 14px;
-  border-radius: 10px;
+  padding: 4px 12px;
+  border-radius: 8px;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -379,7 +379,8 @@
   gap: 8px;
   transition: filter 0.15s, transform 0.1s, opacity 0.15s;
   -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 4px 12px rgba(110, 59, 214, 0.35);
+  box-shadow: 0 2px 8px rgba(110, 59, 214, 0.3);
+  min-height: 28px;
 }
 
 .ability-btn:hover:not(:disabled) {
@@ -407,15 +408,15 @@
 }
 
 .ability-icon {
-  font-size: 18px;
+  font-size: 14px;
   line-height: 1;
 }
 
 .ability-charges {
   background: rgba(0, 0, 0, 0.4);
-  border-radius: 8px;
-  padding: 2px 8px;
-  font-size: 11px;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
 
