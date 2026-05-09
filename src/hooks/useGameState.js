@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from 'react';
-import { spawnEnemy, spawnBoss, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines } from '../gameData';
+import { spawnEnemy, spawnBoss, spawnElite, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, rollPathChoice, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines, SHOP_ITEMS, RARITIES, pickByRarity } from '../gameData';
 import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars } from '../characters';
 
 // Reroll cost: 5g first, +5g each subsequent reroll within the same picker.
@@ -13,25 +13,11 @@ export function shopRerollCost(rerollCount, luckBonus = 0) {
   return Math.max(2, 8 * (rerollCount + 1) - luckBonus);
 }
 
-// 6 rooms per floor: fight, fight, shop/sac, fight, shop/sac, boss.
-// Two warm-up fights before the first shop so the player has gold to spend.
-function generateFloorRoomTypes() {
-  return [
-    'fight',
-    'fight',
-    Math.random() < 0.5 ? 'shop' : 'sacrifice',
-    'fight',
-    Math.random() < 0.5 ? 'shop' : 'sacrifice',
-    'boss',
-  ];
-}
-
-function roomType(state, room) {
-  return (state.floorRoomTypes && state.floorRoomTypes[room - 1]) || 'fight';
-}
+// Each floor has ROOMS_PER_FLOOR non-boss rooms then the boss as the final room.
+const ROOMS_PER_FLOOR = 5;
 
 function spawnForRoom(floor, room) {
-  if (room === 6) return spawnBoss(floor);
+  if (room > ROOMS_PER_FLOOR) return spawnBoss(floor);
   return spawnEnemy(floor, room);
 }
 
@@ -185,6 +171,84 @@ function evaluateLine(ids, s) {
   return { comboType, comboText, comboSymbol, dmg, heal, block, selfDmg, multFactor, coinGold };
 }
 
+// Enter a room of the given type. Returns the new state with phase set
+// and the appropriate per-room state initialized.
+function enterRoom(state, type) {
+  const roomNumber = (state.floorPath?.length || 0) + 1;
+  const newPath = [...(state.floorPath || []), type];
+  const baseTransition = {
+    ...state,
+    room: roomNumber,
+    floorPath: newPath,
+    pendingPathChoices: null,
+    comboText: '',
+    comboType: null,
+    reelResults: null,
+    lineResults: null,
+  };
+
+  if (type === 'fight' || type === 'elite' || type === 'boss') {
+    let enemy;
+    if (type === 'boss') enemy = spawnBoss(state.floor);
+    else if (type === 'elite') enemy = spawnElite(state.floor, roomNumber);
+    else enemy = spawnEnemy(state.floor, roomNumber);
+    const fightStart = applyFightStartRelics(state);
+    return {
+      ...baseTransition,
+      enemy,
+      spinsLeft: state.maxSpins,
+      block: fightStart.block,
+      playerHp: fightStart.playerHp,
+      phase: 'combat',
+      locksLeft: state.maxLocks,
+      poisonStacks: [],
+      phoenixUsed: false,
+    };
+  }
+  if (type === 'shop') {
+    const cap = 5 + 5 * relicCount(state, 'pennyPincher');
+    const interest = calcInterest(state.gold, cap);
+    return {
+      ...baseTransition,
+      gold: state.gold + interest,
+      lastInterest: interest,
+      phase: 'shop',
+      shopRerollCount: 0,
+      shopRerollKey: (state.shopRerollKey || 0),
+    };
+  }
+  if (type === 'sacrifice') {
+    return {
+      ...baseTransition,
+      phase: 'sacrifice',
+      sacrificeChosen: null,
+      sacrificeReward: null,
+    };
+  }
+  if (type === 'rest') {
+    return {
+      ...baseTransition,
+      phase: 'rest',
+      playerHp: state.playerMaxHp,
+    };
+  }
+  return baseTransition;
+}
+
+// Decide what to do after finishing a room: show path choice, or enter boss.
+function transitionAfterRoom(state) {
+  const visited = state.floorPath?.length || 0;
+  if (visited >= ROOMS_PER_FLOOR) {
+    // Time for the boss
+    return enterRoom(state, 'boss');
+  }
+  return {
+    ...state,
+    phase: 'pathChoice',
+    pendingPathChoices: rollPathChoice(state.floor, state.floorPath || []),
+  };
+}
+
 // Phoenix Feather: revive at 25% HP if you would die. Stacks grant extra revives per fight.
 function tryRevive(s) {
   const stacks = relicCount(s, 'phoenixFeather');
@@ -195,51 +259,6 @@ function tryRevive(s) {
     s.justRevived = true;
   }
   return s;
-}
-
-function advanceToNextRoom(state) {
-  const nextRoom = state.room + 1;
-  const type = roomType(state, nextRoom);
-  if (type === 'shop') {
-    const cap = 5 + 5 * relicCount(state, 'pennyPincher');
-    const interest = calcInterest(state.gold, cap);
-    return {
-      ...state,
-      room: nextRoom,
-      gold: state.gold + interest,
-      lastInterest: interest,
-      phase: 'shop',
-      shopRerollCount: 0,
-      shopRerollKey: (state.shopRerollKey || 0),
-    };
-  }
-  if (type === 'sacrifice') {
-    return {
-      ...state,
-      room: nextRoom,
-      phase: 'sacrifice',
-      sacrificeChosen: null,
-      sacrificeReward: null,
-    };
-  }
-  const enemy = spawnForRoom(state.floor, nextRoom);
-  const fightStart = applyFightStartRelics(state);
-  return {
-    ...state,
-    room: nextRoom,
-    enemy,
-    spinsLeft: state.maxSpins,
-    block: fightStart.block,
-    playerHp: fightStart.playerHp,
-    phase: 'combat',
-    comboText: '',
-    comboType: null,
-    reelResults: null,
-    locksLeft: state.maxLocks,
-    poisonStacks: [],
-    phoenixUsed: false,
-    lineResults: null,
-  };
 }
 
 const INITIAL_STATE = {
@@ -273,7 +292,8 @@ const INITIAL_STATE = {
   relics: [],
   locksLeft: 3,
   maxLocks: 3,
-  floorRoomTypes: generateFloorRoomTypes(),
+  floorPath: [],
+  pendingPathChoices: null,
   sacrificeChosen: null,
   sacrificeReward: null,
   poisonStacks: [],
@@ -288,16 +308,14 @@ function reducer(state, action) {
     case 'START_RUN': {
       const charId = action.characterId || 'knight';
       const char = getCharacter(charId);
-      const enemy = spawnForRoom(1, 1);
-      return {
+      // First room of the run is always a fight, no choice for room 1
+      const base = {
         ...INITIAL_STATE,
-        phase: 'combat',
         character: charId,
         symbolPool: char?.pool || DEFAULT_POOL,
         unlockedChars: state.unlockedChars,
-        enemy,
-        floorRoomTypes: generateFloorRoomTypes(),
       };
+      return enterRoom(base, 'fight');
     }
 
     case 'GO_TO_MENU':
@@ -546,6 +564,13 @@ function reducer(state, action) {
         gridRows = 3;
         justUnlockedRows = true;
       }
+      // Elite reward: pick a random relic and add it for free
+      let bonusRelics = state.relics;
+      if (state.enemy.isElite) {
+        const relicPool = SHOP_ITEMS.filter(i => i.type === 'relic');
+        const reward = pickByRarity(relicPool, 1)[0];
+        if (reward) bonusRelics = [...state.relics, reward.id];
+      }
       return {
         ...state,
         gold: state.gold + gold,
@@ -558,16 +583,17 @@ function reducer(state, action) {
         justUnlocked,
         gridRows,
         justUnlockedRows,
+        relics: bonusRelics,
       };
     }
 
     case 'PICK_SYMBOL': {
       const newPool = [...state.symbolPool, action.symbolId];
-      return advanceToNextRoom({ ...state, symbolPool: newPool, symbolPicks: null });
+      return transitionAfterRoom({ ...state, symbolPool: newPool, symbolPicks: null });
     }
 
     case 'SKIP_SYMBOL': {
-      return advanceToNextRoom({ ...state, symbolPicks: null });
+      return transitionAfterRoom({ ...state, symbolPicks: null });
     }
 
     case 'REROLL_PICKS': {
@@ -584,28 +610,15 @@ function reducer(state, action) {
 
     case 'NEXT_FLOOR': {
       const nextFloor = state.floor + 1;
-      const fightStart = applyFightStartRelics(state);
       // Safety: ensure 3-row grid is unlocked from floor 3 onwards
       const gridRows = nextFloor >= 3 ? Math.max(3, state.gridRows) : state.gridRows;
-      return {
+      const base = {
         ...state,
         floor: nextFloor,
-        room: 1,
-        enemy: spawnForRoom(nextFloor, 1),
-        spinsLeft: state.maxSpins,
-        block: fightStart.block,
-        playerHp: fightStart.playerHp,
-        phase: 'combat',
-        comboText: '',
-        comboType: null,
-        reelResults: null,
-        locksLeft: state.maxLocks,
-        floorRoomTypes: generateFloorRoomTypes(),
-        poisonStacks: [],
-        phoenixUsed: false,
-        lineResults: null,
+        floorPath: [],
         gridRows,
       };
+      return enterRoom(base, 'fight');
     }
 
     case 'USE_LOCK_TOKENS': {
@@ -630,13 +643,22 @@ function reducer(state, action) {
 
     case 'SKIP_SACRIFICE':
     case 'FINISH_SACRIFICE':
-      return advanceToNextRoom({ ...state, sacrificeChosen: null, sacrificeReward: null });
+      return transitionAfterRoom({ ...state, sacrificeChosen: null, sacrificeReward: null });
 
     case 'GAME_OVER':
       return { ...state, phase: 'gameOver' };
 
     case 'NEXT_ROOM':
-      return advanceToNextRoom(state);
+      return transitionAfterRoom(state);
+
+    case 'CHOOSE_PATH': {
+      const t = action.roomType;
+      if (!t) return state;
+      return enterRoom(state, t);
+    }
+
+    case 'FINISH_REST':
+      return transitionAfterRoom(state);
 
     case 'BUY_ITEM': {
       const { item } = action;
@@ -672,26 +694,8 @@ function reducer(state, action) {
       };
     }
 
-    case 'CLOSE_SHOP': {
-      const nextRoom = state.room + 1;
-      const enemy = spawnForRoom(state.floor, nextRoom);
-      const fightStart = applyFightStartRelics(state);
-      return {
-        ...state,
-        room: nextRoom,
-        enemy,
-        spinsLeft: state.maxSpins,
-        block: fightStart.block,
-        playerHp: fightStart.playerHp,
-        phase: 'combat',
-        comboText: '',
-        comboType: null,
-        reelResults: null,
-        shopItems: null,
-        locksLeft: state.maxLocks,
-        phoenixUsed: false,
-      };
-    }
+    case 'CLOSE_SHOP':
+      return transitionAfterRoom({ ...state, shopItems: null });
 
     case 'DEBUG_KILL_ENEMY': {
       if (!state.enemy || state.phase !== 'combat') return state;
@@ -742,6 +746,8 @@ export default function useGameState() {
   const buyItem = useCallback((item) => dispatch({ type: 'BUY_ITEM', item }), []);
   const setLockedItems = useCallback((items) => dispatch({ type: 'SET_LOCKED_ITEMS', items }), []);
   const closeShop = useCallback(() => dispatch({ type: 'CLOSE_SHOP' }), []);
+  const choosePath = useCallback((roomType) => dispatch({ type: 'CHOOSE_PATH', roomType }), []);
+  const finishRest = useCallback(() => dispatch({ type: 'FINISH_REST' }), []);
   const nextFloor = useCallback(() => dispatch({ type: 'NEXT_FLOOR' }), []);
   const setSpinning = useCallback((value) => dispatch({ type: 'SET_SPINNING', value }), []);
   const setReelResults = useCallback((results) => dispatch({ type: 'SET_REEL_RESULTS', results }), []);
@@ -773,6 +779,8 @@ export default function useGameState() {
     debugKillEnemy,
     useLockTokens,
     rerollShop,
+    choosePath,
+    finishRest,
     sacrificeSymbol,
     skipSacrifice,
     finishSacrifice,
