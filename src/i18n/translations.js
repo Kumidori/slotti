@@ -205,6 +205,24 @@ const en = {
   'overlay.allBossesDefeated': 'You defeated all bosses!',
   'overlay.totalGold': 'Total gold: {gold}',
   'overlay.playAgain': 'Play Again',
+  // Symbols
+  'symbol.sword.name': 'Sword',
+  'symbol.sword.desc': '3 in a line → deal damage to the enemy',
+  'symbol.shield.name': 'Shield',
+  'symbol.shield.desc': '3 in a line → gain block (reduces next hit)',
+  'symbol.potion.name': 'Potion',
+  'symbol.potion.desc': '3 in a line → restore HP',
+  'symbol.magic.name': 'Magic',
+  'symbol.magic.desc': '3 in a line → magic damage (ignores block effects)',
+  'symbol.skull.name': 'Skull',
+  'symbol.skull.desc': '3 in a line → hurts you (avoid unless you have a relic)',
+  'symbol.wild.name': 'Wild',
+  'symbol.wild.desc': 'Counts as any symbol to complete a line',
+  'symbol.mult.name': 'Multiplier',
+  'symbol.mult.desc': 'Doubles the damage / heal of the line it lands on',
+  'symbol.coin.name': 'Coin',
+  'symbol.coin.desc': '3 in a line → bonus gold',
+  'picker.tapForInfo': 'Tap a symbol to see what it does',
 };
 
 const de = {
@@ -411,6 +429,24 @@ const de = {
   'overlay.allBossesDefeated': 'Du hast alle Bosse besiegt!',
   'overlay.totalGold': 'Gesamtes Gold: {gold}',
   'overlay.playAgain': 'Nochmal spielen',
+  // Symbols
+  'symbol.sword.name': 'Schwert',
+  'symbol.sword.desc': '3 in einer Reihe → Schaden am Gegner',
+  'symbol.shield.name': 'Schild',
+  'symbol.shield.desc': '3 in einer Reihe → Block (verringert nächsten Treffer)',
+  'symbol.potion.name': 'Trank',
+  'symbol.potion.desc': '3 in einer Reihe → LP heilen',
+  'symbol.magic.name': 'Magie',
+  'symbol.magic.desc': '3 in einer Reihe → magischer Schaden (umgeht Block-Effekte)',
+  'symbol.skull.name': 'Schädel',
+  'symbol.skull.desc': '3 in einer Reihe → tut dir weh (außer mit passendem Relikt)',
+  'symbol.wild.name': 'Joker',
+  'symbol.wild.desc': 'Zählt als jedes Symbol, um eine Linie zu vervollständigen',
+  'symbol.mult.name': 'Multiplikator',
+  'symbol.mult.desc': 'Verdoppelt Schaden / Heilung der getroffenen Linie',
+  'symbol.coin.name': 'Münze',
+  'symbol.coin.desc': '3 in einer Reihe → Bonusgold',
+  'picker.tapForInfo': 'Tippe ein Symbol, um zu sehen, was es macht',
 };
 
 const bg = {
@@ -617,6 +653,24 @@ const bg = {
   'overlay.allBossesDefeated': 'Победи всички босове!',
   'overlay.totalGold': 'Общо злато: {gold}',
   'overlay.playAgain': 'Играй пак',
+  // Symbols
+  'symbol.sword.name': 'Меч',
+  'symbol.sword.desc': '3 в линия → щета на врага',
+  'symbol.shield.name': 'Щит',
+  'symbol.shield.desc': '3 в линия → блок (намалява следващия удар)',
+  'symbol.potion.name': 'Отвара',
+  'symbol.potion.desc': '3 в линия → възстанови HP',
+  'symbol.magic.name': 'Магия',
+  'symbol.magic.desc': '3 в линия → магическа щета (игнорира блок)',
+  'symbol.skull.name': 'Череп',
+  'symbol.skull.desc': '3 в линия → наранява те (освен с подходящ реликт)',
+  'symbol.wild.name': 'Wild',
+  'symbol.wild.desc': 'Брои се за всеки символ, за да завърши линия',
+  'symbol.mult.name': 'Множител',
+  'symbol.mult.desc': 'Удвоява щетата / лечението на линията',
+  'symbol.coin.name': 'Монета',
+  'symbol.coin.desc': '3 в линия → бонус злато',
+  'picker.tapForInfo': 'Докосни символ, за да видиш какво прави',
 };
 
 export const TRANSLATIONS = { en, de, bg };
