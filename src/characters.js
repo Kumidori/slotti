@@ -20,14 +20,14 @@ export const CHARACTERS = [
   {
     id: 'knight',
     icon: '⚔️',
-    pool: makePool({ sword: 3, magic: -2 }),  // +3 swords, -2 magic
+    pool: makePool({ sword: 2, magic: -1 }),
     passive: null,
     locked: false,
   },
   {
     id: 'mage',
     icon: '🧙',
-    pool: makePool({ magic: 3, sword: -2 }),  // +3 magic, -2 sword
+    pool: makePool({ magic: 2, sword: -1 }),
     passive: null,
     locked: false,
   },

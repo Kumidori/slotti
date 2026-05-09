@@ -100,7 +100,21 @@ export function pickFromPool(pool) {
 }
 
 export function rollSymbolPicks(count = 3) {
-  return Array.from({ length: count }, () => weightedPick(PICK_WEIGHTS));
+  // Guarantee distinct symbols where possible; fall back to duplicates only
+  // when the available pool is smaller than `count`.
+  const picks = [];
+  const seen = new Set();
+  let safety = 30;
+  while (picks.length < count && safety-- > 0) {
+    const id = weightedPick(PICK_WEIGHTS);
+    if (!seen.has(id)) {
+      picks.push(id);
+      seen.add(id);
+    }
+  }
+  // If we ran out of safety attempts (very unlikely), fill remaining freely
+  while (picks.length < count) picks.push(weightedPick(PICK_WEIGHTS));
+  return picks;
 }
 
 export function rollSacrificeReward() {
