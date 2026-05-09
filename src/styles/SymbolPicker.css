@@ -88,6 +88,129 @@
   opacity: 0.85;
 }
 
+.gamble-panel {
+  width: 100%;
+  background: linear-gradient(180deg, rgba(241, 196, 15, 0.08), rgba(233, 69, 96, 0.08));
+  border: 1px solid rgba(241, 196, 15, 0.35);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.gamble-panel.flash-win {
+  background: rgba(46, 204, 113, 0.25);
+  border-color: #2ecc71;
+  animation: gambleWinFlash 0.7s ease-out;
+}
+
+.gamble-panel.flash-lose {
+  background: rgba(231, 76, 60, 0.3);
+  border-color: #e74c3c;
+  animation: gambleLoseFlash 0.7s ease-out;
+}
+
+@keyframes gambleWinFlash {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.05); box-shadow: 0 0 30px rgba(46, 204, 113, 0.7); }
+  100% { transform: scale(1); }
+}
+
+@keyframes gambleLoseFlash {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.gamble-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  max-width: 200px;
+  align-items: center;
+}
+
+.gamble-rung {
+  width: 100%;
+  text-align: center;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #888;
+  border: 1px solid transparent;
+}
+
+.gamble-rung.current {
+  background: linear-gradient(180deg, #f1c40f, #c79b08);
+  color: #2c1c00;
+  border-color: #f1c40f;
+  box-shadow: 0 0 12px rgba(241, 196, 15, 0.5);
+  font-size: 15px;
+  padding: 5px 8px;
+}
+
+.gamble-rung.past {
+  color: #555;
+  text-decoration: line-through;
+}
+
+.gamble-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.gamble-btn {
+  flex: 1;
+  max-width: 160px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 13px;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gamble-btn.cashout {
+  background: linear-gradient(180deg, #2ecc71, #25a25a);
+  color: #fff;
+}
+
+.gamble-btn.double {
+  background: linear-gradient(180deg, #e94560, #c0324d);
+  color: #fff;
+}
+
+.gamble-btn:hover { filter: brightness(1.1); }
+.gamble-btn:active { transform: scale(0.97); }
+
+.gamble-bust {
+  font-size: 16px;
+  font-weight: bold;
+  color: #e74c3c;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 6px 12px;
+}
+
+.gamble-hint {
+  font-size: 11px;
+  color: #aaa;
+  font-style: italic;
+}
+
 .picker-info {
   width: 100%;
   min-height: 56px;

@@ -65,6 +65,10 @@ const en = {
   'picker.victory': '⚔️ Victory!',
   'picker.goldEarned': '+{amount} gold',
   'picker.subtitle': 'Add a symbol to your pool — or skip.',
+  'gamble.cashOut': '💰 Cash out {amount}g',
+  'gamble.double': '🎲 Double → {amount}g',
+  'gamble.bust': '💀 Bust!',
+  'gamble.hint': '50/50 — lose it all if you bust',
   'picker.choose': 'Choose',
   'picker.skip': 'Skip',
   'picker.reroll': '🎲 Reroll',
@@ -289,6 +293,10 @@ const de = {
 
   // Symbol picker
   'picker.victory': '⚔️ Sieg!',
+  'gamble.cashOut': '💰 Auszahlen {amount}g',
+  'gamble.double': '🎲 Verdoppeln → {amount}g',
+  'gamble.bust': '💀 Verloren!',
+  'gamble.hint': '50/50 — alles weg, wenn du verlierst',
   'picker.goldEarned': '+{amount} Gold',
   'picker.subtitle': 'Füge ein Symbol zu deinem Pool hinzu — oder überspringe.',
   'picker.choose': 'Wählen',
@@ -515,6 +523,10 @@ const bg = {
 
   // Symbol picker
   'picker.victory': '⚔️ Победа!',
+  'gamble.cashOut': '💰 Вземи {amount}g',
+  'gamble.double': '🎲 Удвои → {amount}g',
+  'gamble.bust': '💀 Загуба!',
+  'gamble.hint': '50/50 — губиш всичко при провал',
   'picker.goldEarned': '+{amount} злато',
   'picker.subtitle': 'Добави символ към своя пул — или пропусни.',
   'picker.choose': 'Избери',
