@@ -841,6 +841,45 @@ function reducer(state, action) {
     case 'CLOSE_SHOP':
       return transitionAfterRoom({ ...state, shopItems: null });
 
+    case 'DEBUG_JUMP_TO_BOSS': {
+      // Fast-forward this floor: fill mapPath, mark all rooms visited, spawn boss.
+      if (!state.floorMap) return state;
+      const fakePath = [];
+      const fakeMapPath = [];
+      // Walk a valid path: pick first reachable slot at each level
+      let prevSlot = null;
+      for (let lvl = 0; lvl < state.floorMap.length; lvl++) {
+        const row = state.floorMap[lvl];
+        let pick;
+        if (prevSlot === null) pick = row[0];
+        else {
+          const prevNode = state.floorMap[lvl - 1].find(n => n.slot === prevSlot);
+          const reach = prevNode?.edges || [];
+          pick = row.find(n => reach.includes(n.slot)) || row[0];
+        }
+        prevSlot = pick.slot;
+        fakeMapPath.push({ level: lvl, slot: pick.slot });
+        fakePath.push(pick.type);
+      }
+      return enterRoom(
+        { ...state, floorPath: fakePath.slice(0, -1), mapPath: fakeMapPath.slice(0, -1) },
+        'boss'
+      );
+    }
+
+    case 'DEBUG_GIVE_GOLD':
+      return { ...state, gold: state.gold + (action.amount || 100) };
+
+    case 'DEBUG_FULL_HEAL':
+      return { ...state, playerHp: state.playerMaxHp };
+
+    case 'DEBUG_NEXT_FLOOR': {
+      // Force-complete the current floor: jump to floorComplete overlay
+      // so the player can pick a perk and continue.
+      if (state.floor >= BOSSES.length) return state;
+      return { ...state, phase: 'floorComplete' };
+    }
+
     case 'DEBUG_KILL_ENEMY': {
       if (!state.enemy || state.phase !== 'combat') return state;
       let gold = state.enemy.gold;
@@ -954,6 +993,10 @@ export default function useGameState() {
   const setSpinning = useCallback((value) => dispatch({ type: 'SET_SPINNING', value }), []);
   const setReelResults = useCallback((results) => dispatch({ type: 'SET_REEL_RESULTS', results }), []);
   const debugKillEnemy = useCallback(() => dispatch({ type: 'DEBUG_KILL_ENEMY' }), []);
+  const debugJumpToBoss = useCallback(() => dispatch({ type: 'DEBUG_JUMP_TO_BOSS' }), []);
+  const debugNextFloor = useCallback(() => dispatch({ type: 'DEBUG_NEXT_FLOOR' }), []);
+  const debugGiveGold = useCallback((amount) => dispatch({ type: 'DEBUG_GIVE_GOLD', amount }), []);
+  const debugFullHeal = useCallback(() => dispatch({ type: 'DEBUG_FULL_HEAL' }), []);
   const useLockTokens = useCallback((count) => dispatch({ type: 'USE_LOCK_TOKENS', count }), []);
   const rerollShop = useCallback(() => dispatch({ type: 'REROLL_SHOP' }), []);
   const sacrificeSymbol = useCallback((symbolId) => dispatch({ type: 'SACRIFICE_SYMBOL', symbolId }), []);
@@ -979,6 +1022,10 @@ export default function useGameState() {
     setSpinning,
     setReelResults,
     debugKillEnemy,
+    debugJumpToBoss,
+    debugNextFloor,
+    debugGiveGold,
+    debugFullHeal,
     useLockTokens,
     rerollShop,
     chooseNextRoom,
