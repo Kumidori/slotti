@@ -14,6 +14,7 @@ const en = {
   'slot.lockHintWithCount': '💡 Tap a reel to lock — {count} locks left',
   'slot.lockedWithCount': '🔒 Locked — {count} more available',
   'slot.noLocks': '🔒 No locks left this fight',
+  'slot.lockAfterSpin': '💡 Spin first — locks unlock after your first roll',
 
   // Combo names
   'combo.tripleSkull': '☠️ TRIPLE SKULL!',
@@ -244,6 +245,7 @@ const de = {
   'slot.lockHintWithCount': '💡 Tippe zum Sperren — {count} Sperren übrig',
   'slot.lockedWithCount': '🔒 Gesperrt — noch {count} verfügbar',
   'slot.noLocks': '🔒 Keine Sperren mehr in diesem Kampf',
+  'slot.lockAfterSpin': '💡 Erst drehen — Sperren nach dem ersten Wurf möglich',
 
   // Combo names
   'combo.tripleSkull': '☠️ DREIFACH-SCHÄDEL!',
@@ -474,6 +476,7 @@ const bg = {
   'slot.lockHintWithCount': '💡 Докоснете за заключване — {count} заключвания',
   'slot.lockedWithCount': '🔒 Заключено — още {count}',
   'slot.noLocks': '🔒 Няма повече заключвания в този бой',
+  'slot.lockAfterSpin': '💡 Първо завърти — заключването е след първото завъртане',
 
   // Combo names
   'combo.tripleSkull': '☠️ ТРОЕН ЧЕРЕП!',
