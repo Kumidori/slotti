@@ -117,7 +117,10 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
     highlightCells: (cells) => setWinningCells(cells || []),
   }), [spin]);
 
-  const canLockNow = !isSpinning.current && !disabled && state.spinsLeft >= 1 && state.locksLeft > 0;
+  // Locking only allowed AFTER the first spin of the fight — otherwise
+  // players could carry symbols from the previous round into a new enemy.
+  const hasSpunThisFight = state.spinsLeft < state.maxSpins;
+  const canLockNow = !isSpinning.current && !disabled && hasSpunThisFight && state.spinsLeft >= 1 && state.locksLeft > 0;
   const lockedCount = lockedReels.filter(Boolean).length;
   const anyLocked = lockedCount > 0;
   const remainingTokens = state.locksLeft - lockedCount;
@@ -140,11 +143,13 @@ const SlotMachine = forwardRef(function SlotMachine({ state, onResolve, onSpinni
         ))}
       </div>
       <div className={`lock-hint ${state.spinsLeft >= 1 ? 'visible' : ''} ${anyLocked ? 'active' : ''}`}>
-        {state.locksLeft <= 0 && lockedCount === 0
-          ? t('slot.noLocks')
-          : anyLocked
-            ? t('slot.lockedWithCount', { count: state.locksLeft - lockedCount })
-            : t('slot.lockHintWithCount', { count: state.locksLeft })}
+        {!hasSpunThisFight
+          ? t('slot.lockAfterSpin')
+          : state.locksLeft <= 0 && lockedCount === 0
+            ? t('slot.noLocks')
+            : anyLocked
+              ? t('slot.lockedWithCount', { count: state.locksLeft - lockedCount })
+              : t('slot.lockHintWithCount', { count: state.locksLeft })}
       </div>
     </div>
   );
