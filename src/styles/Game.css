@@ -362,6 +362,63 @@
 }
 
 /* Spin button */
+.ability-btn {
+  width: 100%;
+  max-width: 400px;
+  background: linear-gradient(180deg, #6e3bd6, #4f2aa3);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: filter 0.15s, transform 0.1s, opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 12px rgba(110, 59, 214, 0.35);
+}
+
+.ability-btn:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+.ability-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.ability-btn.disabled,
+.ability-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.ability-btn.pending {
+  animation: abilityPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes abilityPulse {
+  0%, 100% { box-shadow: 0 4px 12px rgba(231, 76, 60, 0.5); }
+  50%      { box-shadow: 0 4px 24px rgba(231, 76, 60, 0.9); }
+}
+
+.ability-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.ability-charges {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
 .spin-btn {
   background: linear-gradient(180deg, #e94560, #c0324d);
   color: #fff;
