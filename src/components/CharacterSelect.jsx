@@ -51,11 +51,13 @@ export default function CharacterSelect({ unlockedChars, onStart }) {
                 disabled={!unlocked}
               >
                 <div className="char-icon">
-                  {SPRITE_IMAGES[c.id] && unlocked
-                    ? <img src={SPRITE_IMAGES[c.id]} alt={c.id} className="char-img" />
-                    : <span className="char-emoji">{unlocked ? c.icon : '🔒'}</span>}
+                  {!unlocked
+                    ? <span className="char-emoji">?</span>
+                    : SPRITE_IMAGES[c.id]
+                      ? <img src={SPRITE_IMAGES[c.id]} alt={c.id} className="char-img" />
+                      : <span className="char-emoji">{c.icon}</span>}
                 </div>
-                <div className="char-name">{t(`char.${c.id}.name`)}</div>
+                <div className="char-name">{unlocked ? t(`char.${c.id}.name`) : '???'}</div>
                 {!unlocked && (
                   <div className="char-locked">{t('charSelect.lockedHint')}</div>
                 )}
