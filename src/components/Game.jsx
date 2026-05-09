@@ -260,9 +260,13 @@ export default function Game() {
     // below handles enemy death after per-line damage applies)
     const lineCount = state.lineResults?.length || 0;
     const animDelay = Math.max(300, lineCount * 600 + 200);
+    let attackTimer;
     if (state.spinsLeft <= 0) {
-      setTimeout(() => doEnemyAttack(), animDelay + 200);
+      attackTimer = setTimeout(() => doEnemyAttack(), animDelay + 200);
     }
+    return () => {
+      if (attackTimer) clearTimeout(attackTimer);
+    };
   }, [state.comboType, state.spinsLeft, state.dmg]);
 
   // Watch for enemy death (per-line damage may finish them mid-animation)
@@ -276,9 +280,17 @@ export default function Game() {
     }
   }, [state.enemy?.hp, state.phase, enemyDefeated]);
 
+  // Latest-state ref so deferred callbacks (setTimeouts) see fresh values
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   const doEnemyAttack = useCallback(() => {
-    // Don't attack if enemy is already dead (line damage may have killed them)
-    if (!state.enemy || state.enemy.hp <= 0 || state.phase !== 'combat') return;
+    // Read CURRENT state, not the closure's stale snapshot — otherwise
+    // a timer scheduled during the previous fight fires here and uses
+    // the dead enemy's name/frenzy data.
+    const cur = stateRef.current;
+    if (!cur.enemy || cur.enemy.hp <= 0 || cur.phase !== 'combat') return;
+    const state = cur; // shadow so the rest of the function uses fresh state
     const isFrenzy = state.enemy.frenzyEvery &&
       ((state.enemy.attackCount || 0) + 1) % state.enemy.frenzyEvery === 0;
     const hits = isFrenzy ? state.enemy.frenzyHits : 1;
