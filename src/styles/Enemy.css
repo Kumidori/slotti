@@ -20,6 +20,24 @@
   align-items: center;
 }
 
+.enemy-sprite-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.enemy-affinities.side {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
 .affinity {
   font-size: 12px;
   padding: 2px 6px;
