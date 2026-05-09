@@ -16,6 +16,10 @@ export function shopRerollCost(rerollCount, luckBonus = 0) {
 // Each floor has ROOMS_PER_FLOOR non-boss rooms then the boss as the final room.
 const ROOMS_PER_FLOOR = 5;
 
+// Gamble ladder: max number of successful doubles before forced cash-out.
+// 5 doubles = up to 32× the base reward.
+export const GAMBLE_MAX_DOUBLES = 5;
+
 function spawnForRoom(floor, room) {
   if (room > ROOMS_PER_FLOOR) return spawnBoss(floor);
   return spawnEnemy(floor, room);
@@ -370,6 +374,10 @@ const INITIAL_STATE = {
   floorMap: null,         // { levels: [[node,...]] } — branching graph
   mapPath: [],            // [{ level, slot }] — chosen positions on the graph so far
   pendingRoomReward: null, // 'shop' | 'rest' | 'sacrifice' — bonus phase after the fight
+  pendingGold: 0,         // un-banked fight reward (used by gamble ladder)
+  gambleTier: 0,          // 0 = base reward, +1 per successful double
+  gambleBusted: false,    // true after a failed gamble — disables further play
+  gambleAnim: null,       // 'win' | 'lose' | null — drives flash animation
   sacrificeChosen: null,
   sacrificeReward: null,
   poisonStacks: [],
@@ -661,9 +669,17 @@ function reducer(state, action) {
         const reward = pickByRarity(relicPool, 1)[0];
         if (reward) bonusRelics = [...state.relics, reward.id];
       }
+      // Bosses bank gold immediately (no gamble screen between fights and boss screen).
+      // Regular fights stash it as pendingGold so the player can gamble it.
+      const banked = isBoss ? gold : 0;
+      const pending = isBoss ? 0 : gold;
       return {
         ...state,
-        gold: state.gold + gold,
+        gold: state.gold + banked,
+        pendingGold: pending,
+        gambleTier: 0,
+        gambleBusted: false,
+        gambleAnim: null,
         phase: isBoss ? (isFinalBoss ? 'runComplete' : 'floorComplete') : 'victory',
         lastGoldEarned: gold,
         symbolPicks: isBoss ? null : rollSymbolPicks(3),
@@ -677,13 +693,61 @@ function reducer(state, action) {
       };
     }
 
+    case 'GAMBLE': {
+      // 50/50 — win doubles pending gold and advances tier; lose busts to 0.
+      if (state.pendingGold <= 0 || state.gambleBusted) return state;
+      if (state.gambleTier >= GAMBLE_MAX_DOUBLES) return state;
+      const win = Math.random() < 0.5;
+      if (win) {
+        return {
+          ...state,
+          pendingGold: state.pendingGold * 2,
+          gambleTier: state.gambleTier + 1,
+          gambleAnim: 'win',
+        };
+      }
+      return {
+        ...state,
+        pendingGold: 0,
+        gambleBusted: true,
+        gambleAnim: 'lose',
+      };
+    }
+
+    case 'CLEAR_GAMBLE_ANIM':
+      return { ...state, gambleAnim: null };
+
+    case 'CASH_OUT': {
+      if (state.pendingGold <= 0) return state;
+      return {
+        ...state,
+        gold: state.gold + state.pendingGold,
+        lastGoldEarned: state.pendingGold,
+        pendingGold: 0,
+      };
+    }
+
     case 'PICK_SYMBOL': {
+      // Auto cash-out anything still on the gamble ladder
+      const banked = state.pendingGold;
       const newPool = [...state.symbolPool, action.symbolId];
-      return transitionAfterRoom({ ...state, symbolPool: newPool, symbolPicks: null });
+      return transitionAfterRoom({
+        ...state,
+        gold: state.gold + banked,
+        pendingGold: 0,
+        symbolPool: newPool,
+        symbolPicks: null,
+      });
     }
 
     case 'SKIP_SYMBOL': {
-      return transitionAfterRoom({ ...state, symbolPicks: null });
+      const banked = state.pendingGold;
+      return transitionAfterRoom({
+        ...state,
+        gold: state.gold + banked,
+        pendingGold: 0,
+        symbolPicks: null,
+      });
     }
 
     case 'REROLL_PICKS': {
@@ -893,10 +957,16 @@ function reducer(state, action) {
         gridRows = 3;
         justUnlockedRows = true;
       }
+      const banked = isBoss ? gold : 0;
+      const pending = isBoss ? 0 : gold;
       return {
         ...state,
         enemy: { ...state.enemy, hp: 0 },
-        gold: state.gold + gold,
+        gold: state.gold + banked,
+        pendingGold: pending,
+        gambleTier: 0,
+        gambleBusted: false,
+        gambleAnim: null,
         phase: isBoss ? (isFinalBoss ? 'runComplete' : 'floorComplete') : 'victory',
         lastGoldEarned: gold,
         symbolPicks: isBoss ? null : rollSymbolPicks(3),
@@ -1005,6 +1075,9 @@ export default function useGameState() {
   const pickSymbol = useCallback((symbolId) => dispatch({ type: 'PICK_SYMBOL', symbolId }), []);
   const skipSymbol = useCallback(() => dispatch({ type: 'SKIP_SYMBOL' }), []);
   const rerollPicks = useCallback(() => dispatch({ type: 'REROLL_PICKS' }), []);
+  const gamble = useCallback(() => dispatch({ type: 'GAMBLE' }), []);
+  const cashOut = useCallback(() => dispatch({ type: 'CASH_OUT' }), []);
+  const clearGambleAnim = useCallback(() => dispatch({ type: 'CLEAR_GAMBLE_ANIM' }), []);
 
   return {
     state,
@@ -1037,6 +1110,9 @@ export default function useGameState() {
     pickSymbol,
     skipSymbol,
     rerollPicks,
+    gamble,
+    cashOut,
+    clearGambleAnim,
     goToMenu,
     clearJustUnlocked,
   };

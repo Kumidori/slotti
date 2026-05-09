@@ -71,6 +71,7 @@ export default function Game() {
     pickSymbol, skipSymbol, rerollPicks,
     sacrificeSymbol, skipSacrifice, finishSacrifice,
     rerollShop, goToMenu, chooseNextRoom, finishRest, useAbility,
+    gamble, cashOut, clearGambleAnim,
   } = useGameState();
 
   // Debug mode is on when ?debug=1 is in the URL or localStorage flag is set.
@@ -656,6 +657,13 @@ export default function Game() {
           lastGoldEarned={state.lastGoldEarned}
           rerollCount={state.pickRerollCount}
           luckBonus={state.luckBonus}
+          pendingGold={state.pendingGold}
+          gambleTier={state.gambleTier}
+          gambleBusted={state.gambleBusted}
+          gambleAnim={state.gambleAnim}
+          onGamble={() => { sfx.buttonClick(); gamble(); }}
+          onCashOut={() => { sfx.buttonClick(); cashOut(); }}
+          onClearGambleAnim={clearGambleAnim}
           onPick={(id) => { sfx.victory(); pickSymbol(id); }}
           onSkip={() => { sfx.buttonClick(); skipSymbol(); }}
           onReroll={() => { sfx.buttonClick(); rerollPicks(); }}

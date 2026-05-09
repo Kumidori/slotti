@@ -124,19 +124,19 @@ export function rollSacrificeReward() {
 // Each enemy can resist (50% dmg) and/or be weak (150% dmg) to symbol types.
 // Symbol IDs: 'sword', 'magic', 'shield', 'potion', 'skull'
 export const ENEMIES = [
-  { name: 'Goblin',       sprite: '👺', hp: 20,  atk: 3,  gold: 6,  weakTo: [],         resists: [] },
-  { name: 'Skeleton',     sprite: '💀', hp: 30,  atk: 5,  gold: 8,  weakTo: ['sword'],  resists: ['magic'] },
-  { name: 'Slime',        sprite: '🟢', hp: 25,  atk: 4,  gold: 7,  weakTo: ['magic'],  resists: ['sword'] },
-  { name: 'Dark Knight',  sprite: '🖤', hp: 45,  atk: 7,  gold: 11, weakTo: [],         resists: ['sword'] },
-  { name: 'Dragon',       sprite: '🐉', hp: 60,  atk: 10, gold: 14, weakTo: ['sword'],  resists: ['magic'] },
-  { name: 'Lich',         sprite: '👻', hp: 50,  atk: 8,  gold: 12, weakTo: ['magic'],  resists: ['sword'] },
-  { name: 'Demon Lord',   sprite: '😈', hp: 80,  atk: 12, gold: 18, weakTo: ['magic'],  resists: [] },
+  { name: 'Goblin',       sprite: '👺', hp: 20,  atk: 3,  gold: 3,  weakTo: [],         resists: [] },
+  { name: 'Skeleton',     sprite: '💀', hp: 30,  atk: 5,  gold: 4,  weakTo: ['sword'],  resists: ['magic'] },
+  { name: 'Slime',        sprite: '🟢', hp: 25,  atk: 4,  gold: 4,  weakTo: ['magic'],  resists: ['sword'] },
+  { name: 'Dark Knight',  sprite: '🖤', hp: 45,  atk: 7,  gold: 6,  weakTo: [],         resists: ['sword'] },
+  { name: 'Dragon',       sprite: '🐉', hp: 60,  atk: 10, gold: 7,  weakTo: ['sword'],  resists: ['magic'] },
+  { name: 'Lich',         sprite: '👻', hp: 50,  atk: 8,  gold: 6,  weakTo: ['magic'],  resists: ['sword'] },
+  { name: 'Demon Lord',   sprite: '😈', hp: 80,  atk: 12, gold: 9,  weakTo: ['magic'],  resists: [] },
 ];
 
 export const BOSSES = [
-  { name: 'Lili', sprite: 'lili', hp: 80, atk: 6, gold: 15, enrageAt: 0.3, enrageAtk: 12, weakTo: ['magic'], resists: [] },
-  { name: 'Ruby', sprite: 'ruby', hp: 110, atk: 5, gold: 22, frenzyEvery: 3, frenzyHits: 5, frenzyMult: 0.5, weakTo: ['sword'], resists: ['potion'] },
-  { name: 'Furzkopf', sprite: 'furzkopf', hp: 280, atk: 11, gold: 40, poisonOnHit: { dmg: 3, ticks: 3 }, weakTo: ['magic'], resists: ['shield'] },
+  { name: 'Lili', sprite: 'lili', hp: 80, atk: 6, gold: 8, enrageAt: 0.3, enrageAtk: 12, weakTo: ['magic'], resists: [] },
+  { name: 'Ruby', sprite: 'ruby', hp: 110, atk: 5, gold: 11, frenzyEvery: 3, frenzyHits: 5, frenzyMult: 0.5, weakTo: ['sword'], resists: ['potion'] },
+  { name: 'Furzkopf', sprite: 'furzkopf', hp: 280, atk: 11, gold: 20, poisonOnHit: { dmg: 3, ticks: 3 }, weakTo: ['magic'], resists: ['shield'] },
 ];
 
 export const SHOP_ITEMS = [
