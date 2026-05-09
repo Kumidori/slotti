@@ -98,7 +98,7 @@ function evaluateLine(ids, s) {
 
   if (combo.type === 'skull-triple') {
     if (hasRelic(s, 'cursedCoin')) {
-      heal = 20; comboText = '☠️ TRIPLE SKULL!'; comboType = 'triple';
+      heal = 14; comboText = '☠️ TRIPLE SKULL!'; comboType = 'triple';
     } else {
       selfDmg = 15; comboText = '☠️ TRIPLE SKULL!'; comboType = 'skull-triple';
     }
@@ -106,22 +106,22 @@ function evaluateLine(ids, s) {
     const t = combo.symbol;
     if (t === 'sword')  { dmg = 18 + (s.swordBonus || 0) * 3; comboText = '⚔️ TRIPLE SLASH!'; }
     else if (t === 'magic')  { dmg = 22 + (s.magicBonus || 0) * 3; comboText = '✨ ARCANE BURST!'; }
-    else if (t === 'shield') { block = 99; heal = 5; comboText = '🛡️ FORTRESS!'; }
-    else if (t === 'potion') { heal = 20; comboText = '🧪 FULL RESTORE!'; }
+    else if (t === 'shield') { block = 50; heal = 4; comboText = '🛡️ FORTRESS!'; }
+    else if (t === 'potion') { heal = 14; comboText = '🧪 FULL RESTORE!'; }
     comboType = 'triple';
   } else if (combo.type === 'double') {
     const t = combo.symbol;
     if (t === 'sword')  { dmg = 8 + (s.swordBonus || 0); comboText = '⚔️ Double Strike'; }
     else if (t === 'magic')  { dmg = 10 + (s.magicBonus || 0); comboText = '✨ Spell Cast'; }
-    else if (t === 'shield') { block = 8; comboText = '🛡️ Shield Wall'; }
-    else if (t === 'potion') { heal = 10; comboText = '🧪 Quick Heal'; }
+    else if (t === 'shield') { block = 5; comboText = '🛡️ Shield Wall'; }
+    else if (t === 'potion') { heal = 6; comboText = '🧪 Quick Heal'; }
     comboType = 'double';
   } else if (combo.type === 'rainbow') {
     for (const t of combo.symbols) {
       if (t === 'sword')  dmg += 8 + (s.swordBonus || 0);
       else if (t === 'magic')  dmg += 10 + (s.magicBonus || 0);
-      else if (t === 'shield') block += 8;
-      else if (t === 'potion') heal += 10;
+      else if (t === 'shield') block += 5;
+      else if (t === 'potion') heal += 6;
     }
     comboText = '⭐ Rainbow Combo';
     comboType = 'triple';
@@ -155,6 +155,12 @@ function evaluateLine(ids, s) {
   if (heal > 0 && comboSymbol === 'potion') {
     const n = relicCount(s, 'greenThumb');
     if (n > 0) heal = Math.round(heal * (1 + 0.5 * n));
+  }
+
+  // Enemy weakness / resistance (multiplies dmg only, not heal/block)
+  if (dmg > 0 && comboSymbol && s.enemy) {
+    if (s.enemy.weakTo?.includes(comboSymbol)) dmg = Math.round(dmg * 1.5);
+    else if (s.enemy.resists?.includes(comboSymbol)) dmg = Math.round(dmg * 0.5);
   }
 
   // Multiplier within the line
