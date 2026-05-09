@@ -14,6 +14,32 @@
   margin-bottom: 0;
 }
 
+.enemy-affinities {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.affinity {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.affinity.weak {
+  background: rgba(231, 76, 60, 0.2);
+  color: #ff8a7d;
+  border: 1px solid rgba(231, 76, 60, 0.4);
+}
+
+.affinity.resist {
+  background: rgba(80, 160, 255, 0.18);
+  color: #8ec3ff;
+  border: 1px solid rgba(80, 160, 255, 0.4);
+}
+
 .enemy-sprite {
   font-size: 48px;
   line-height: 1;
