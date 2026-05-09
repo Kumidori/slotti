@@ -36,10 +36,18 @@ function spawnForRoom(floor, room) {
 }
 
 // Apply per-fight relic effects when entering combat (block, heal, locks).
+// Also restores a small flat amount of HP between rooms ("rest heal").
 function applyFightStartRelics(state) {
   const sturdyStacks = relicCount(state, 'sturdyBoots');
   let block = 5 * sturdyStacks;
   let playerHp = state.playerHp;
+
+  // Base inter-room heal: 8% of max HP, minimum 4
+  if (playerHp > 0 && playerHp < state.playerMaxHp) {
+    const restHeal = Math.max(4, Math.round(state.playerMaxHp * 0.08));
+    playerHp = Math.min(state.playerMaxHp, playerHp + restHeal);
+  }
+
   const tonicStacks = relicCount(state, 'tonicVial');
   if (tonicStacks > 0) {
     const want = 5 * tonicStacks;
