@@ -217,8 +217,8 @@ function evaluateLine(ids, s) {
     block = block * multFactor;
   }
 
-  // Coins (per-line)
-  const coinGold = coins * 2;
+  // Coins (per-line) — 1g per coin per payline
+  const coinGold = coins;
 
   return { comboType, comboText, comboSymbol, dmg, heal, block, selfDmg, multFactor, coinGold };
 }
@@ -280,7 +280,7 @@ function enterFight(baseTransition, type, roomNumber) {
 function enterRoomReward(state, type) {
   const cleared = { ...state, pendingRoomReward: null };
   if (type === 'shop') {
-    const cap = 5 + 5 * relicCount(state, 'pennyPincher');
+    const cap = 3 + 3 * relicCount(state, 'pennyPincher');
     const interest = calcInterest(state.gold, cap);
     return {
       ...cleared,

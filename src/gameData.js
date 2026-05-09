@@ -124,19 +124,19 @@ export function rollSacrificeReward() {
 // Each enemy can resist (50% dmg) and/or be weak (150% dmg) to symbol types.
 // Symbol IDs: 'sword', 'magic', 'shield', 'potion', 'skull'
 export const ENEMIES = [
-  { name: 'Goblin',       sprite: '👺', hp: 20,  atk: 3,  gold: 13, weakTo: [],         resists: [] },
-  { name: 'Skeleton',     sprite: '💀', hp: 30,  atk: 5,  gold: 16, weakTo: ['sword'],  resists: ['magic'] },
-  { name: 'Slime',        sprite: '🟢', hp: 25,  atk: 4,  gold: 14, weakTo: ['magic'],  resists: ['sword'] },
-  { name: 'Dark Knight',  sprite: '🖤', hp: 45,  atk: 7,  gold: 22, weakTo: [],         resists: ['sword'] },
-  { name: 'Dragon',       sprite: '🐉', hp: 60,  atk: 10, gold: 28, weakTo: ['sword'],  resists: ['magic'] },
-  { name: 'Lich',         sprite: '👻', hp: 50,  atk: 8,  gold: 25, weakTo: ['magic'],  resists: ['sword'] },
-  { name: 'Demon Lord',   sprite: '😈', hp: 80,  atk: 12, gold: 36, weakTo: ['magic'],  resists: [] },
+  { name: 'Goblin',       sprite: '👺', hp: 20,  atk: 3,  gold: 6,  weakTo: [],         resists: [] },
+  { name: 'Skeleton',     sprite: '💀', hp: 30,  atk: 5,  gold: 8,  weakTo: ['sword'],  resists: ['magic'] },
+  { name: 'Slime',        sprite: '🟢', hp: 25,  atk: 4,  gold: 7,  weakTo: ['magic'],  resists: ['sword'] },
+  { name: 'Dark Knight',  sprite: '🖤', hp: 45,  atk: 7,  gold: 11, weakTo: [],         resists: ['sword'] },
+  { name: 'Dragon',       sprite: '🐉', hp: 60,  atk: 10, gold: 14, weakTo: ['sword'],  resists: ['magic'] },
+  { name: 'Lich',         sprite: '👻', hp: 50,  atk: 8,  gold: 12, weakTo: ['magic'],  resists: ['sword'] },
+  { name: 'Demon Lord',   sprite: '😈', hp: 80,  atk: 12, gold: 18, weakTo: ['magic'],  resists: [] },
 ];
 
 export const BOSSES = [
-  { name: 'Lili', sprite: 'lili', hp: 80, atk: 6, gold: 30, enrageAt: 0.3, enrageAtk: 12, weakTo: ['magic'], resists: [] },
-  { name: 'Ruby', sprite: 'ruby', hp: 110, atk: 5, gold: 45, frenzyEvery: 3, frenzyHits: 5, frenzyMult: 0.5, weakTo: ['sword'], resists: ['potion'] },
-  { name: 'Furzkopf', sprite: 'furzkopf', hp: 280, atk: 11, gold: 80, poisonOnHit: { dmg: 3, ticks: 3 }, weakTo: ['magic'], resists: ['shield'] },
+  { name: 'Lili', sprite: 'lili', hp: 80, atk: 6, gold: 15, enrageAt: 0.3, enrageAtk: 12, weakTo: ['magic'], resists: [] },
+  { name: 'Ruby', sprite: 'ruby', hp: 110, atk: 5, gold: 22, frenzyEvery: 3, frenzyHits: 5, frenzyMult: 0.5, weakTo: ['sword'], resists: ['potion'] },
+  { name: 'Furzkopf', sprite: 'furzkopf', hp: 280, atk: 11, gold: 40, poisonOnHit: { dmg: 3, ticks: 3 }, weakTo: ['magic'], resists: ['shield'] },
 ];
 
 export const SHOP_ITEMS = [
@@ -214,7 +214,7 @@ export function spawnEnemy(floor, room) {
   // to keep up with the multi-payline output.
   if (floor >= 3) {
     statScale *= 2.0;
-    goldScale *= 1.4;
+    // No goldScale bump on floor 3+: 5 paylines already triple coin output
   }
   return {
     name: template.name,
@@ -246,10 +246,9 @@ export function spawnBoss(floor) {
   const template = BOSSES[Math.min(floor - 1, BOSSES.length - 1)];
   let statScale = 1 + (floor - 1) * 0.3;
   let goldScale = 1 + (floor - 1) * 0.2;
-  // Floor 3+ bosses face a 5-payline player — bump them similarly
+  // Floor 3+ bosses face a 5-payline player — bump stats but not gold
   if (floor >= 3) {
     statScale *= 1.7;
-    goldScale *= 1.3;
   }
   const boss = {
     name: template.name,
