@@ -433,11 +433,16 @@ export default function Game() {
             <span className="floor-label">{t('ui.floor', { floor: state.floor })}</span>
             {(() => {
               const visited = state.floorPath || [];
-              const plan = (state.floorMap || []).map(l => l.chosen);
+              const mapPath = state.mapPath || [];
+              const fmap = state.floorMap || [];
               const ROOMS = 5;
               const dots = [];
               for (let i = 0; i < ROOMS; i++) {
-                const type = visited[i] || plan[i] || null;
+                let type = visited[i] || null;
+                if (!type && mapPath[i] && fmap[i]) {
+                  const n = fmap[i].find(nd => nd.slot === mapPath[i].slot);
+                  type = n?.type || null;
+                }
                 const isVisited = i < visited.length;
                 const isCurrent = i === visited.length - 1 && state.phase !== 'planning' && state.phase !== 'floorComplete';
                 const icon = !type ? '?' :
@@ -654,7 +659,7 @@ export default function Game() {
         <FloorMap
           floor={state.floor}
           levels={state.floorMap}
-          currentLevelIndex={state.floorPath?.length || 0}
+          mapPath={state.mapPath || []}
           onChoose={chooseNextRoom}
         />
       )}

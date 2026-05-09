@@ -15,7 +15,7 @@
   border: 2px solid #533483;
   border-radius: 18px;
   padding: 18px 16px;
-  max-width: 460px;
+  max-width: 380px;
   width: calc(100vw - 32px);
   max-height: calc(100vh - 32px);
   overflow-y: auto;
@@ -39,96 +39,94 @@
   text-align: center;
 }
 
-.map-tracks {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  width: 100%;
-  gap: 6px;
+/* Graph container — absolute positioning so we can place nodes at exact (x,y) */
+.map-graph {
   position: relative;
+  margin: 0 auto;
 }
 
-.map-row {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  position: relative;
-  z-index: 1;
-}
-
-.map-row::before {
-  content: '';
+.map-edges {
   position: absolute;
-  left: 50%;
-  top: -6px;
-  width: 2px;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.18);
-  z-index: 0;
+  inset: 0;
+  pointer-events: none;
 }
 
-.map-row-boss::before {
-  display: none;
+.map-edge {
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
 }
 
+.map-edge.visited {
+  stroke: #f1c40f;
+  stroke-width: 3;
+  stroke-dasharray: none;
+}
+
+/* Nodes are absolutely positioned over the SVG */
 .map-node {
+  position: absolute;
+  width: 80px;
+  height: 64px;
   background: rgba(255, 255, 255, 0.05);
   border: 2px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
-  padding: 8px 6px;
+  padding: 4px 4px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
   transition: border-color 0.15s, transform 0.1s, background 0.15s, opacity 0.2s;
-  width: 96px;
 }
 
-.map-node:hover:not(.boss) {
+.map-node:hover:not(.boss):not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-.map-node:active:not(.boss) {
+.map-node:active:not(.boss):not(:disabled) {
   transform: scale(0.96);
+}
+
+.map-node:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .map-node.chosen {
   border-color: #f1c40f;
   background: rgba(241, 196, 15, 0.18);
   box-shadow: 0 0 14px rgba(241, 196, 15, 0.45);
+  opacity: 1;
 }
 
-.map-node.dimmed {
-  opacity: 0.4;
+.map-node.future {
+  opacity: 0.55;
 }
 
 .map-node.locked-out {
-  opacity: 0.3;
-  cursor: not-allowed;
+  opacity: 0.25;
   filter: grayscale(0.6);
 }
 
 .map-node.available {
-  border-color: rgba(241, 196, 15, 0.5);
-  animation: nodeAvailablePulse 1.6s ease-in-out infinite;
+  opacity: 1;
+  border-color: rgba(241, 196, 15, 0.6);
+  animation: nodeAvailablePulse 1.4s ease-in-out infinite;
 }
 
 .map-node.available:hover {
   background: rgba(241, 196, 15, 0.18);
   border-color: #f1c40f;
-  transform: scale(1.04);
+  transform: scale(1.06);
 }
 
 @keyframes nodeAvailablePulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(241, 196, 15, 0.3); }
-  50%      { box-shadow: 0 0 16px rgba(241, 196, 15, 0.6); }
-}
-
-.current-row {
-  position: relative;
+  0%, 100% { box-shadow: 0 0 8px rgba(241, 196, 15, 0.35); }
+  50%      { box-shadow: 0 0 18px rgba(241, 196, 15, 0.7); }
 }
 
 .map-node.boss {
@@ -136,6 +134,7 @@
   background: rgba(233, 69, 96, 0.15);
   cursor: default;
   box-shadow: 0 0 14px rgba(233, 69, 96, 0.4);
+  opacity: 1;
 }
 
 .map-node-icon { font-size: 22px; line-height: 1; }
@@ -151,30 +150,3 @@
 .map-node.type-shop      { border-color: rgba(241, 196, 15, 0.4); }
 .map-node.type-rest      { border-color: rgba(46, 204, 113, 0.5); }
 .map-node.type-sacrifice { border-color: rgba(180, 80, 255, 0.4); }
-
-.plan-start {
-  width: 100%;
-  max-width: 320px;
-  padding: 12px 0;
-  border: none;
-  border-radius: 12px;
-  font-weight: 900;
-  font-size: 16px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  background: linear-gradient(180deg, #e94560, #c0324d);
-  color: #fff;
-  cursor: pointer;
-  margin-top: 6px;
-  transition: filter 0.15s, transform 0.1s, opacity 0.15s;
-  -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 4px 14px rgba(233, 69, 96, 0.35);
-}
-
-.plan-start:hover:not(:disabled) { filter: brightness(1.1); }
-.plan-start:active:not(:disabled) { transform: scale(0.97); }
-.plan-start:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  box-shadow: none;
-}

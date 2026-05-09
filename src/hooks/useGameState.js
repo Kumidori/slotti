@@ -21,14 +21,56 @@ function spawnForRoom(floor, room) {
   return spawnEnemy(floor, room);
 }
 
-// Build the planning UI — 5 levels, each with 2 distinct options the player chooses between.
-function generatePlanningLevels(floor) {
-  const visited = [];
-  return Array.from({ length: ROOMS_PER_FLOOR }, () => {
-    const opts = rollPathChoice(floor, visited);
-    visited.push(opts[0]);
-    return { options: opts, chosen: null };
-  });
+// Build a real branching graph for the floor.
+// 5 levels × 3 slots (with some empty), each node has 1-2 edges to adjacent
+// slots on the next level — so where you go next depends on where you are now.
+function generateFloorGraph(floor) {
+  const SLOTS = 3;
+  const levels = [];
+  for (let i = 0; i < ROOMS_PER_FLOOR; i++) {
+    const row = [];
+    for (let j = 0; j < SLOTS; j++) {
+      const type = pickRoomType(floor);
+      row.push({ slot: j, type, edges: [] });
+    }
+    levels.push(row);
+  }
+  // Generate edges: each node connects to 1-2 nodes on the next level
+  // within ±1 slot. Boss at the end (level ROOMS_PER_FLOOR has 1 boss node;
+  // every level-4 node connects to it).
+  for (let i = 0; i < ROOMS_PER_FLOOR - 1; i++) {
+    for (const node of levels[i]) {
+      const candidates = levels[i + 1].filter(n => Math.abs(n.slot - node.slot) <= 1);
+      // Pick 1-2 random candidates
+      const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+      const count = Math.random() < 0.5 ? 1 : 2;
+      node.edges = shuffled.slice(0, Math.max(1, Math.min(count, shuffled.length))).map(n => n.slot);
+    }
+  }
+  // Final level → boss (single node, slot 1 / center). Mark all final-level edges to boss.
+  for (const node of levels[ROOMS_PER_FLOOR - 1]) {
+    node.edges = [1]; // boss is "slot 1" symbolically
+  }
+  // Ensure every node has at least one incoming edge from previous level
+  // (so no orphan nodes). For each level i > 0, check each node, if no
+  // predecessor reaches it, add an edge from the nearest predecessor.
+  for (let i = 1; i < ROOMS_PER_FLOOR; i++) {
+    for (const node of levels[i]) {
+      const hasIncoming = levels[i - 1].some(p => p.edges.includes(node.slot));
+      if (!hasIncoming) {
+        // Find nearest predecessor in slot
+        const pred = [...levels[i - 1]].sort((a, b) => Math.abs(a.slot - node.slot) - Math.abs(b.slot - node.slot))[0];
+        if (pred && !pred.edges.includes(node.slot)) pred.edges.push(node.slot);
+      }
+    }
+  }
+  return levels;
+}
+
+function pickRoomType(floor) {
+  const pool = ['fight', 'fight', 'fight', 'shop', 'shop', 'sacrifice', 'rest'];
+  if (floor >= 2) pool.push('elite');
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 // Apply per-fight relic effects when entering combat (block, heal, locks).
@@ -302,7 +344,8 @@ const INITIAL_STATE = {
   locksLeft: 3,
   maxLocks: 3,
   floorPath: [],          // rooms VISITED so far this floor
-  floorMap: null,         // [{ options: [a,b], chosen: type|null }] — full floor map, picked one level at a time
+  floorMap: null,         // { levels: [[node,...]] } — branching graph
+  mapPath: [],            // [{ level, slot }] — chosen positions on the graph so far
   sacrificeChosen: null,
   sacrificeReward: null,
   poisonStacks: [],
@@ -323,7 +366,7 @@ function reducer(state, action) {
         symbolPool: char?.pool || DEFAULT_POOL,
         unlockedChars: state.unlockedChars,
         phase: 'pathChoice',
-        floorMap: generatePlanningLevels(1),
+        floorMap: generateFloorGraph(1),
       };
     }
 
@@ -638,7 +681,8 @@ function reducer(state, action) {
         ...state,
         floor: nextFloor,
         floorPath: [],
-        floorMap: generatePlanningLevels(nextFloor),
+        floorMap: generateFloorGraph(nextFloor),
+        mapPath: [],
         gridRows,
         phase: 'pathChoice',
       };
@@ -716,15 +760,20 @@ function reducer(state, action) {
       return transitionAfterRoom(state);
 
     case 'CHOOSE_NEXT_ROOM': {
-      const { option } = action;
+      const { slot } = action;
       if (!state.floorMap) return state;
       const visited = state.floorPath?.length || 0;
       if (visited >= ROOMS_PER_FLOOR) return state;
-      // Lock in the chosen option for this level on the map
-      const newMap = state.floorMap.map((l, i) =>
-        i === visited ? { ...l, chosen: option } : l
-      );
-      return enterRoom({ ...state, floorMap: newMap }, option);
+      const node = state.floorMap[visited]?.find(n => n.slot === slot);
+      if (!node) return state;
+      // Validate the move (must be reachable from previous position)
+      if (visited > 0) {
+        const prev = state.mapPath[visited - 1];
+        const prevNode = state.floorMap[visited - 1]?.find(n => n.slot === prev.slot);
+        if (!prevNode || !prevNode.edges.includes(slot)) return state;
+      }
+      const newMapPath = [...state.mapPath, { level: visited, slot }];
+      return enterRoom({ ...state, mapPath: newMapPath }, node.type);
     }
 
     case 'FINISH_REST':
@@ -816,7 +865,7 @@ export default function useGameState() {
   const buyItem = useCallback((item) => dispatch({ type: 'BUY_ITEM', item }), []);
   const setLockedItems = useCallback((items) => dispatch({ type: 'SET_LOCKED_ITEMS', items }), []);
   const closeShop = useCallback(() => dispatch({ type: 'CLOSE_SHOP' }), []);
-  const chooseNextRoom = useCallback((option) => dispatch({ type: 'CHOOSE_NEXT_ROOM', option }), []);
+  const chooseNextRoom = useCallback((slot) => dispatch({ type: 'CHOOSE_NEXT_ROOM', slot }), []);
   const finishRest = useCallback(() => dispatch({ type: 'FINISH_REST' }), []);
   const useAbility = useCallback(() => dispatch({ type: 'USE_ABILITY' }), []);
   const nextFloor = useCallback(() => dispatch({ type: 'NEXT_FLOOR' }), []);
