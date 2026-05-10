@@ -49,6 +49,15 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems, onReroll
       sfx.cantBuy();
       return;
     }
+    // Recipe gating: must own all ingredients
+    if (entry.item.type === 'recipe') {
+      const remaining = [...(state.relics || [])];
+      for (const ing of entry.item.ingredients || []) {
+        const idx = remaining.indexOf(ing);
+        if (idx === -1) { sfx.cantBuy(); return; }
+        remaining.splice(idx, 1);
+      }
+    }
 
     sfx.buy();
     setEntries(prev => prev.map(e =>
@@ -79,6 +88,16 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems, onReroll
   const selectedItem = entries.find(e => e.item.id === selectedName)?.item;
   const selectedCost = selectedItem ? Math.ceil(selectedItem.cost * discount) : Infinity;
   const canAfford = selectedName ? state.gold >= selectedCost : true;
+  // Recipe ingredient check for the buy button
+  let recipeReady = true;
+  if (selectedItem?.type === 'recipe') {
+    const remaining = [...(state.relics || [])];
+    for (const ing of selectedItem.ingredients || []) {
+      const idx = remaining.indexOf(ing);
+      if (idx === -1) { recipeReady = false; break; }
+      remaining.splice(idx, 1);
+    }
+  }
   const rerollPrice = shopRerollCost(state.shopRerollCount || 0, state.luckBonus || 0);
   const canReroll = state.gold >= rerollPrice;
 
@@ -102,17 +121,18 @@ export default function Shop({ state, onBuy, onClose, onSetLockedItems, onReroll
             selected={entry.item.id === selectedName}
             gold={state.gold}
             discount={discount}
+            ownedRelics={state.relics || []}
             onSelect={handleSelect}
             onToggleLock={handleToggleLock}
           />
         ))}
       </div>
       <button
-        className={`shop-choose-btn ${!canAfford ? 'cant-afford' : ''}`}
+        className={`shop-choose-btn ${!canAfford || !recipeReady ? 'cant-afford' : ''}`}
         onClick={handleChoose}
-        disabled={!selectedName || !canAfford}
+        disabled={!selectedName || !canAfford || !recipeReady}
       >
-        {t('shop.choose')}
+        {!recipeReady ? t('shop.missingIngredients') : t('shop.choose')}
       </button>
       <div className="shop-bottom-row">
         <button

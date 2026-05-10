@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { SHOP_ITEMS } from '../gameData';
+import { SHOP_ITEMS, COMPOUND_RELICS } from '../gameData';
 import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/RelicTray.css';
 
-const RELIC_INDEX = Object.fromEntries(
-  SHOP_ITEMS.filter(i => i.type === 'relic').map(i => [i.id, i])
-);
+const RELIC_INDEX = Object.fromEntries([
+  ...SHOP_ITEMS.filter(i => i.type === 'relic').map(i => [i.id, i]),
+  ...COMPOUND_RELICS.map(r => [r.id, r]),
+]);
 
 export default function RelicTray({ relics }) {
   const { t } = useTranslation();

@@ -171,9 +171,29 @@ export const SHOP_ITEMS = [
   { id: 'cursedCoin',    type: 'relic', icon: '☠️', cost: 55, rarity: 'epic' },
   { id: 'phoenixFeather',type: 'relic', icon: '🪶', cost: 70, rarity: 'epic' },
   { id: 'twinFang',      type: 'relic', icon: '🐍', cost: 65, rarity: 'epic' },
+
+  // Recipes — combine two relics in your inventory into a stronger compound.
+  // Cost is paid in gold, ingredients are consumed, the `result` relic is added.
+  { id: 'recipeBerserker', type: 'recipe', icon: '🔱', cost: 55, rarity: 'rare',
+    ingredients: ['twinFang', 'glassCannon'],   result: 'berserker' },
+  { id: 'recipeArchmage',  type: 'recipe', icon: '🧠', cost: 60, rarity: 'rare',
+    ingredients: ['arcaneFocus', 'spellEcho'],  result: 'archmage' },
+  { id: 'recipeBloodPact', type: 'recipe', icon: '🩸', cost: 75, rarity: 'epic',
+    ingredients: ['vampiricCharm', 'phoenixFeather'], result: 'bloodPact' },
+  { id: 'recipeGoldHoard', type: 'recipe', icon: '👑', cost: 50, rarity: 'rare',
+    ingredients: ['magnet', 'pennyPincher'],    result: 'goldHoard' },
 ];
 
 export const RELIC_IDS = SHOP_ITEMS.filter(i => i.type === 'relic').map(i => i.id);
+
+// Compound relics — only obtained via recipes, never sold directly.
+// Used by RelicTray to render their icon + rarity once owned.
+export const COMPOUND_RELICS = [
+  { id: 'berserker', icon: '🔱', rarity: 'epic' },
+  { id: 'archmage',  icon: '🧠', rarity: 'epic' },
+  { id: 'bloodPact', icon: '🩸', rarity: 'epic' },
+  { id: 'goldHoard', icon: '👑', rarity: 'epic' },
+];
 
 export function applyItemEffect(state, effectKey) {
   switch (effectKey) {
