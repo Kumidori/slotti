@@ -1,0 +1,153 @@
+.reaction-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reaction-card {
+  pointer-events: auto;
+  background: rgba(20, 16, 42, 0.96);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 240px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  animation: reactionPop 0.2s ease-out;
+}
+
+.reaction-card.parry {
+  border: 2px solid #f1c40f;
+  box-shadow: 0 0 30px rgba(241, 196, 15, 0.5);
+}
+
+.reaction-card.dodge {
+  border: 2px solid #5aa0ff;
+  box-shadow: 0 0 30px rgba(90, 160, 255, 0.5);
+}
+
+@keyframes reactionPop {
+  0%   { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+.reaction-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.reaction-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.reaction-bar-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #2ecc71, #f1c40f, #e74c3c);
+  transform-origin: left center;
+  transition: transform 0.05s linear;
+}
+
+.reaction-btn {
+  background: rgba(241, 196, 15, 0.15);
+  border: 2px solid #f1c40f;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.05s, background 0.1s;
+}
+
+.reaction-btn:active { transform: scale(0.96); }
+
+.parry-btn {
+  width: 100%;
+  font-size: 18px;
+  letter-spacing: 1px;
+  background: linear-gradient(180deg, rgba(241, 196, 15, 0.3), rgba(241, 196, 15, 0.1));
+  animation: parryPulse 0.6s ease-in-out infinite;
+}
+
+.parry-btn.hit {
+  background: linear-gradient(180deg, #2ecc71, #25a25a);
+  border-color: #2ecc71;
+  animation: none;
+}
+
+@keyframes parryPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(241, 196, 15, 0.4); }
+  50%      { box-shadow: 0 0 20px rgba(241, 196, 15, 0.8); }
+}
+
+.dodge-sequence {
+  display: flex;
+  gap: 8px;
+  font-family: monospace;
+  font-size: 22px;
+}
+
+.dodge-step {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #888;
+}
+
+.dodge-step.done {
+  background: rgba(46, 204, 113, 0.3);
+  border-color: #2ecc71;
+  color: #2ecc71;
+}
+
+.dodge-step.current {
+  background: rgba(90, 160, 255, 0.3);
+  border-color: #5aa0ff;
+  color: #fff;
+  animation: dodgeCurrent 0.6s ease-in-out infinite;
+}
+
+@keyframes dodgeCurrent {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.15); }
+}
+
+.dodge-pad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+.dodge-btn {
+  font-size: 22px;
+  padding: 10px 0;
+  border-color: rgba(90, 160, 255, 0.6);
+  background: rgba(90, 160, 255, 0.15);
+}
+
+.dodge-mistakes {
+  color: #e74c3c;
+  font-weight: bold;
+  font-family: monospace;
+  font-size: 14px;
+}
