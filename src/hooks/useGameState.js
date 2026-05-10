@@ -378,6 +378,7 @@ const INITIAL_STATE = {
   gambleTier: 0,          // 0 = base reward, +1 per successful double
   gambleBusted: false,    // true after a failed gamble — disables further play
   gambleAnim: null,       // 'win' | 'lose' | null — drives flash animation
+  gambleReveal: null,     // { choice, drawn } from the most recent gamble
   sacrificeChosen: null,
   sacrificeReward: null,
   poisonStacks: [],
@@ -680,6 +681,7 @@ function reducer(state, action) {
         gambleTier: 0,
         gambleBusted: false,
         gambleAnim: null,
+        gambleReveal: null,
         phase: isBoss ? (isFinalBoss ? 'runComplete' : 'floorComplete') : 'victory',
         lastGoldEarned: gold,
         symbolPicks: isBoss ? null : rollSymbolPicks(3),
@@ -694,16 +696,20 @@ function reducer(state, action) {
     }
 
     case 'GAMBLE': {
-      // 50/50 — win doubles pending gold and advances tier; lose busts to 0.
+      // Player picks 'red' or 'black'; draw a random color.
+      // Match = win (double + advance tier); mismatch = bust to 0.
       if (state.pendingGold <= 0 || state.gambleBusted) return state;
       if (state.gambleTier >= GAMBLE_MAX_DOUBLES) return state;
-      const win = Math.random() < 0.5;
+      const choice = action.choice === 'black' ? 'black' : 'red';
+      const drawn = Math.random() < 0.5 ? 'red' : 'black';
+      const win = choice === drawn;
       if (win) {
         return {
           ...state,
           pendingGold: state.pendingGold * 2,
           gambleTier: state.gambleTier + 1,
           gambleAnim: 'win',
+          gambleReveal: { choice, drawn },
         };
       }
       return {
@@ -711,6 +717,7 @@ function reducer(state, action) {
         pendingGold: 0,
         gambleBusted: true,
         gambleAnim: 'lose',
+        gambleReveal: { choice, drawn },
       };
     }
 
@@ -961,6 +968,7 @@ function reducer(state, action) {
         gambleTier: 0,
         gambleBusted: false,
         gambleAnim: null,
+        gambleReveal: null,
         phase: isBoss ? (isFinalBoss ? 'runComplete' : 'floorComplete') : 'victory',
         lastGoldEarned: gold,
         symbolPicks: isBoss ? null : rollSymbolPicks(3),
@@ -1069,7 +1077,7 @@ export default function useGameState() {
   const pickSymbol = useCallback((symbolId) => dispatch({ type: 'PICK_SYMBOL', symbolId }), []);
   const skipSymbol = useCallback(() => dispatch({ type: 'SKIP_SYMBOL' }), []);
   const rerollPicks = useCallback(() => dispatch({ type: 'REROLL_PICKS' }), []);
-  const gamble = useCallback(() => dispatch({ type: 'GAMBLE' }), []);
+  const gamble = useCallback((choice) => dispatch({ type: 'GAMBLE', choice }), []);
   const cashOut = useCallback(() => dispatch({ type: 'CASH_OUT' }), []);
   const clearGambleAnim = useCallback(() => dispatch({ type: 'CLEAR_GAMBLE_ANIM' }), []);
 
