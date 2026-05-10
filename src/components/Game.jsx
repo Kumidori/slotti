@@ -661,7 +661,8 @@ export default function Game() {
           gambleTier={state.gambleTier}
           gambleBusted={state.gambleBusted}
           gambleAnim={state.gambleAnim}
-          onGamble={() => { sfx.buttonClick(); gamble(); }}
+          gambleReveal={state.gambleReveal}
+          onGamble={(choice) => { sfx.buttonClick(); gamble(choice); }}
           onCashOut={() => { sfx.buttonClick(); cashOut(); }}
           onClearGambleAnim={clearGambleAnim}
           onPick={(id) => { sfx.victory(); pickSymbol(id); }}

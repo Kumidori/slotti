@@ -11,6 +11,7 @@ const STOP_DELAYS = [600, 900, 1200];
 export default function SymbolPicker({
   picks, gold, lastGoldEarned, rerollCount, luckBonus,
   pendingGold = 0, gambleTier = 0, gambleBusted = false, gambleAnim = null,
+  gambleReveal = null,
   onGamble, onCashOut, onClearGambleAnim,
   onPick, onSkip, onReroll,
 }) {
@@ -91,26 +92,45 @@ export default function SymbolPicker({
                 );
               }).reverse()}
             </div>
+            {gambleReveal && (
+              <div className={`gamble-reveal ${gambleReveal.drawn}`}>
+                <span className="gamble-reveal-card">
+                  {gambleReveal.drawn === 'red' ? '🟥' : '⬛'}
+                </span>
+                <span className="gamble-reveal-label">
+                  {gambleReveal.drawn === 'red' ? t('gamble.red') : t('gamble.black')}
+                </span>
+              </div>
+            )}
             <div className="gamble-actions">
               {gambleBusted ? (
                 <div className="gamble-bust">{t('gamble.bust')}</div>
               ) : canGamble ? (
                 <>
-                  <button className="gamble-btn cashout" onClick={onCashOut}>
-                    {t('gamble.cashOut', { amount: pendingGold })}
+                  <button
+                    className="gamble-btn color-btn red"
+                    onClick={() => onGamble('red')}
+                    title={t('gamble.pickRed', { amount: nextGoldOnWin })}
+                  >
+                    🟥 {t('gamble.red')}
                   </button>
-                  <button className="gamble-btn double" onClick={onGamble}>
-                    {t('gamble.double', { amount: nextGoldOnWin })}
+                  <button
+                    className="gamble-btn color-btn black"
+                    onClick={() => onGamble('black')}
+                    title={t('gamble.pickBlack', { amount: nextGoldOnWin })}
+                  >
+                    ⬛ {t('gamble.black')}
                   </button>
                 </>
-              ) : (
-                <button className="gamble-btn cashout" onClick={onCashOut}>
-                  {t('gamble.cashOut', { amount: pendingGold })}
-                </button>
-              )}
+              ) : null}
             </div>
             {!gambleBusted && pendingGold > 0 && (
-              <div className="gamble-hint">{t('gamble.hint')}</div>
+              <button className="gamble-btn cashout full-width" onClick={onCashOut}>
+                {t('gamble.cashOut', { amount: pendingGold })}
+              </button>
+            )}
+            {!gambleBusted && pendingGold > 0 && canGamble && (
+              <div className="gamble-hint">{t('gamble.hintColor', { amount: nextGoldOnWin })}</div>
             )}
           </div>
         )}

@@ -188,9 +188,61 @@
   color: #fff;
 }
 
-.gamble-btn.double {
-  background: linear-gradient(180deg, #e94560, #c0324d);
+.gamble-btn.full-width {
+  flex: none;
+  width: 100%;
+  max-width: 320px;
+}
+
+.gamble-btn.color-btn {
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.gamble-btn.color-btn.red {
+  background: linear-gradient(180deg, #e74c3c, #b03323);
   color: #fff;
+  border: 2px solid #ff6b5b;
+}
+
+.gamble-btn.color-btn.black {
+  background: linear-gradient(180deg, #2c2c2c, #111);
+  color: #fff;
+  border: 2px solid #555;
+}
+
+.gamble-reveal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  animation: gambleRevealPop 0.4s ease-out;
+}
+
+.gamble-reveal.red {
+  background: rgba(231, 76, 60, 0.25);
+  color: #ff8a7d;
+  border: 1px solid rgba(231, 76, 60, 0.6);
+}
+
+.gamble-reveal.black {
+  background: rgba(0, 0, 0, 0.55);
+  color: #ddd;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.gamble-reveal-card { font-size: 22px; line-height: 1; }
+
+@keyframes gambleRevealPop {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
 }
 
 .gamble-btn:hover { filter: brightness(1.1); }
