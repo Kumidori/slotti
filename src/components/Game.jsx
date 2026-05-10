@@ -8,6 +8,8 @@ import Overlay from './Overlay';
 import FloatNumber from './FloatNumber';
 import SymbolPicker from './SymbolPicker';
 import GambleRoom from './GambleRoom';
+import LoadoutRoom from './LoadoutRoom';
+import InventoryBar from './InventoryBar';
 import ReactionOverlay from './ReactionOverlay';
 
 const DODGE_ARROWS = ['←', '↑', '→', '↓'];
@@ -79,6 +81,7 @@ export default function Game() {
     sacrificeSymbol, skipSacrifice, finishSacrifice,
     rerollShop, goToMenu, chooseNextRoom, finishRest, useAbility,
     setGambleBet, playGamble, leaveGamble, clearGambleAnim,
+    moveToInventory, moveToChest, confirmLoadout, useItem,
   } = useGameState();
 
   // Debug mode is on when ?debug=1 is in the URL or localStorage flag is set.
@@ -655,6 +658,14 @@ export default function Game() {
             </div>
           </div>
 
+          {state.phase === 'combat' && state.inventory?.length > 0 && (
+            <InventoryBar
+              inventory={state.inventory}
+              disabled={state.spinning}
+              onUse={useItem}
+            />
+          )}
+
           {(() => {
             const c = getCharacter(state.character);
             const ab = c?.ability;
@@ -695,6 +706,17 @@ export default function Game() {
           onPick={(id) => { sfx.victory(); pickSymbol(id); }}
           onSkip={() => { sfx.buttonClick(); skipSymbol(); }}
           onReroll={() => { sfx.buttonClick(); rerollPicks(); }}
+        />
+      )}
+
+      {state.phase === 'loadout' && (
+        <LoadoutRoom
+          chest={state.chest}
+          inventory={state.inventory}
+          pendingRoomNode={state.pendingRoomNode}
+          onMoveToInventory={moveToInventory}
+          onMoveToChest={moveToChest}
+          onConfirm={confirmLoadout}
         />
       )}
 

@@ -1,5 +1,5 @@
 import { useReducer, useCallback, useEffect } from 'react';
-import { spawnEnemy, spawnBoss, spawnElite, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, rollPathChoice, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines, SHOP_ITEMS, RARITIES, pickByRarity } from '../gameData';
+import { spawnEnemy, spawnBoss, spawnElite, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, rollPathChoice, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines, SHOP_ITEMS, RARITIES, pickByRarity, rollConsumable, CHEST_CAPACITY, INVENTORY_CAPACITY } from '../gameData';
 import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars, getAbility } from '../characters';
 
 // Reroll cost: 5g first, +5g each subsequent reroll within the same picker.
@@ -379,6 +379,11 @@ const INITIAL_STATE = {
   floorMap: null,         // { levels: [[node,...]] } — branching graph
   mapPath: [],            // [{ level, slot }] — chosen positions on the graph so far
   pendingRoomReward: null, // 'shop' | 'rest' | 'sacrifice' — bonus phase after the fight
+  // Loadout / consumable items
+  chest: [],              // ids of items stored, max 15
+  inventory: [],          // ids equipped for the next fight, max 3
+  pendingRoomNode: null,  // { type } — set after picking a room, before loadout confirm
+
   // Boss-room gamble (red/black with player-chosen wager)
   gambleBet: 5,           // current wager amount (UI-controlled)
   gambleAnim: null,       // 'win' | 'lose' | null — drives flash animation
@@ -690,6 +695,12 @@ function reducer(state, action) {
         const reward = pickByRarity(relicPool, 1)[0];
         if (reward) bonusRelics = [...state.relics, reward.id];
       }
+      // Drop a consumable (or two for bosses/elites) into the chest, capped at 15
+      const drops = isBoss || state.enemy.isElite ? 2 : 1;
+      const room = Math.max(0, CHEST_CAPACITY - state.chest.length);
+      const newDrops = Array.from({ length: Math.min(drops, room) }, () => rollConsumable());
+      const newChest = [...state.chest, ...newDrops];
+
       // Bank ALL gold immediately. Bosses then trigger the optional gamble room.
       const newGold = state.gold + gold;
       // Default the next bet to a reasonable fraction of new gold
@@ -701,6 +712,8 @@ function reducer(state, action) {
       return {
         ...state,
         gold: newGold,
+        chest: newChest,
+        lastDropped: newDrops,
         gambleBet: defaultBet,
         gambleAnim: null,
         gambleReveal: null,
@@ -864,7 +877,68 @@ function reducer(state, action) {
         if (!prevNode || !prevNode.edges.includes(slot)) return state;
       }
       const newMapPath = [...state.mapPath, { level: visited, slot }];
-      return enterRoom({ ...state, mapPath: newMapPath }, node.type);
+      // Merge any leftover inventory back into the chest before showing loadout
+      const merged = [...state.chest, ...state.inventory].slice(0, CHEST_CAPACITY);
+      return {
+        ...state,
+        mapPath: newMapPath,
+        chest: merged,
+        inventory: [],
+        pendingRoomNode: { type: node.type },
+        phase: 'loadout',
+      };
+    }
+
+    case 'MOVE_TO_INVENTORY': {
+      if (state.inventory.length >= INVENTORY_CAPACITY) return state;
+      const idx = state.chest.indexOf(action.itemId);
+      if (idx === -1) return state;
+      const newChest = [...state.chest];
+      newChest.splice(idx, 1);
+      return { ...state, chest: newChest, inventory: [...state.inventory, action.itemId] };
+    }
+
+    case 'MOVE_TO_CHEST': {
+      if (state.chest.length >= CHEST_CAPACITY) return state;
+      const idx = state.inventory.indexOf(action.itemId);
+      if (idx === -1) return state;
+      const newInv = [...state.inventory];
+      newInv.splice(idx, 1);
+      return { ...state, inventory: newInv, chest: [...state.chest, action.itemId] };
+    }
+
+    case 'CONFIRM_LOADOUT': {
+      if (!state.pendingRoomNode) return state;
+      const node = state.pendingRoomNode;
+      return enterRoom({ ...state, pendingRoomNode: null }, node.type);
+    }
+
+    case 'USE_ITEM': {
+      const idx = state.inventory.indexOf(action.itemId);
+      if (idx === -1) return state;
+      if (state.phase !== 'combat' || !state.enemy || state.enemy.hp <= 0) return state;
+      const newInv = [...state.inventory];
+      newInv.splice(idx, 1);
+      let s = { ...state, inventory: newInv };
+      switch (action.itemId) {
+        case 'minorHeal':
+          s.playerHp = Math.min(s.playerMaxHp, s.playerHp + 15);
+          s.lastItemEffect = { id: 'minorHeal', amount: 15 };
+          break;
+        case 'bomb':
+          s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - 12) };
+          s.lastItemEffect = { id: 'bomb', amount: 12 };
+          break;
+        case 'shieldBrew':
+          s.block = (s.block || 0) + 8;
+          s.lastItemEffect = { id: 'shieldBrew', amount: 8 };
+          break;
+        case 'extraSpin':
+          s.spinsLeft = s.spinsLeft + 1;
+          s.lastItemEffect = { id: 'extraSpin', amount: 1 };
+          break;
+      }
+      return s;
     }
 
     case 'FINISH_REST':
@@ -1090,6 +1164,10 @@ export default function useGameState() {
   const pickSymbol = useCallback((symbolId) => dispatch({ type: 'PICK_SYMBOL', symbolId }), []);
   const skipSymbol = useCallback(() => dispatch({ type: 'SKIP_SYMBOL' }), []);
   const rerollPicks = useCallback(() => dispatch({ type: 'REROLL_PICKS' }), []);
+  const moveToInventory = useCallback((itemId) => dispatch({ type: 'MOVE_TO_INVENTORY', itemId }), []);
+  const moveToChest = useCallback((itemId) => dispatch({ type: 'MOVE_TO_CHEST', itemId }), []);
+  const confirmLoadout = useCallback(() => dispatch({ type: 'CONFIRM_LOADOUT' }), []);
+  const useItem = useCallback((itemId) => dispatch({ type: 'USE_ITEM', itemId }), []);
   const setGambleBet = useCallback((amount) => dispatch({ type: 'SET_GAMBLE_BET', amount }), []);
   const playGamble = useCallback((choice) => dispatch({ type: 'PLAY_GAMBLE', choice }), []);
   const leaveGamble = useCallback(() => dispatch({ type: 'LEAVE_GAMBLE' }), []);
@@ -1126,6 +1204,10 @@ export default function useGameState() {
     pickSymbol,
     skipSymbol,
     rerollPicks,
+    moveToInventory,
+    moveToChest,
+    confirmLoadout,
+    useItem,
     setGambleBet,
     playGamble,
     leaveGamble,
