@@ -77,6 +77,7 @@ export async function submitOnline(entry, name) {
       dmgHealed: entry.totalDmgHealed || 0,
       dmgTaken: entry.totalDmgTaken || 0,
       enemiesDefeated: entry.totalEnemiesDefeated || 0,
+      speedBonus: entry.totalSpeedBonus || 0,
       achievementPoints: entry.achievementPoints || 0,
     };
     const res = await fetch(API_URL, {
