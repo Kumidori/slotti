@@ -1,5 +1,5 @@
 import { useReducer, useCallback, useEffect } from 'react';
-import { spawnEnemy, spawnBoss, spawnElite, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, rollPathChoice, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines, SHOP_ITEMS, RARITIES, pickByRarity, rollConsumable, CHEST_CAPACITY, INVENTORY_CAPACITY, FUSION_RECIPES } from '../gameData';
+import { spawnEnemy, spawnBoss, spawnElite, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, rollPathChoice, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines, SHOP_ITEMS, RARITIES, pickByRarity } from '../gameData';
 import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars, getAbility } from '../characters';
 import { recordRun, getPlayerName, submitOnline } from '../leaderboard';
 import { tryUnlock, totalPoints } from '../achievements';
@@ -8,8 +8,7 @@ function recordRunResult(state, result) {
   // Run-level achievements
   if (result === 'win') {
     tryUnlock('firstWin');
-    if (state.itemsUsedThisRun === 0) tryUnlock('noConsumWin');
-    if (state.timesHitThisRun === 0) tryUnlock('untouchableWin');
+    if ((state.timesHitThisRun || 0) === 0) tryUnlock('untouchableWin');
   }
   const entry = {
     result,
@@ -406,15 +405,9 @@ const INITIAL_STATE = {
   totalGoldEarned: 0,
 
   // Achievement counters (reset per run via START_RUN spreading INITIAL_STATE)
-  itemsUsedThisRun: 0,    // → noConsumWin if 0 at win
   timesHitThisRun: 0,     // → untouchableWin if 0 at win
   gambleWonTotal: 0,      // → highRoller at 1000+
   goldHighWatermark: 0,   // → greedy at 200+ once per run
-
-  // Loadout / consumable items
-  chest: [],              // ids of items stored, max 15
-  inventory: [],          // ids equipped for the next fight, max 3
-  pendingRoomNode: null,  // { type } — set after picking a room, before loadout confirm
 
   // Boss-room gamble (red/black with player-chosen wager)
   gambleBet: 5,           // current wager amount (UI-controlled)
@@ -643,12 +636,6 @@ function reducer(state, action) {
         incomingDmg = Math.round(incomingDmg * 1.5);
       }
 
-      // Reaction reduction (Parry/Dodge) — caller passes a 0..1 multiplier on the
-      // raw incoming damage. 0 = perfect block, 1 = no reduction.
-      if (typeof action.reactionMult === 'number') {
-        incomingDmg = Math.round(incomingDmg * Math.max(0, Math.min(1, action.reactionMult)));
-      }
-
       if (s.block > 0) {
         blocked = Math.min(incomingDmg, s.block);
         incomingDmg = Math.max(0, incomingDmg - s.block);
@@ -682,18 +669,6 @@ function reducer(state, action) {
         s.spikeDmg = 0;
       }
 
-      // Parry counter — flat damage to enemy when player nailed the parry window
-      if (action.counterDmg > 0 && s.enemy && s.enemy.hp > 0) {
-        s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - action.counterDmg) };
-        s.lastCounterDmg = action.counterDmg;
-        tryUnlock('perfectParry');
-      } else {
-        s.lastCounterDmg = 0;
-      }
-      // Perfect dodge: incoming damage was reduced to zero by reaction (not by block)
-      if (typeof action.reactionMult === 'number' && action.reactionMult === 0 && action.counterDmg === 0) {
-        tryUnlock('perfectDodge');
-      }
       // Track times the player got tagged this run (for untouchable achievement)
       if (incomingDmg > 0) {
         s.timesHitThisRun = (s.timesHitThisRun || 0) + 1;
@@ -737,32 +712,19 @@ function reducer(state, action) {
         justUnlockedRows = true;
       }
       // Loot rolls
-      // - Normal fight: 10% consumable
-      // - Elite: keeps the existing free-relic reward, plus 25% consumable
-      // - Boss: independent 50% consumable AND 50% relic — both can drop together
+      // - Elite: free relic reward
+      // - Boss: 50% chance for an extra relic
       let bonusRelics = state.relics;
       if (state.enemy.isElite) {
         const relicPool = SHOP_ITEMS.filter(i => i.type === 'relic');
         const reward = pickByRarity(relicPool, 1)[0];
         if (reward) bonusRelics = [...state.relics, reward.id];
       }
-      let consumableChance;
-      if (isBoss) consumableChance = 0.5;
-      else if (state.enemy.isElite) consumableChance = 0.25;
-      else consumableChance = 0.1;
-
-      const newDrops = [];
-      const chestRoom = () => CHEST_CAPACITY - (state.chest.length + newDrops.length);
-      if (Math.random() < consumableChance && chestRoom() > 0) {
-        newDrops.push(rollConsumable());
-      }
-      // Boss extra: 50% chance to drop an additional relic on top of any guarantees
       if (isBoss && Math.random() < 0.5) {
         const relicPool = SHOP_ITEMS.filter(i => i.type === 'relic');
         const reward = pickByRarity(relicPool, 1)[0];
         if (reward) bonusRelics = [...bonusRelics, reward.id];
       }
-      const newChest = [...state.chest, ...newDrops];
 
       // Bank ALL gold immediately. Bosses then trigger the optional gamble room.
       const newGold = state.gold + gold;
@@ -784,8 +746,6 @@ function reducer(state, action) {
         gold: newGold,
         totalGoldEarned: newTotalGold,
         goldHighWatermark: newGoldHigh,
-        chest: newChest,
-        lastDropped: newDrops,
         gambleBet: defaultBet,
         gambleAnim: null,
         gambleReveal: null,
@@ -953,101 +913,7 @@ function reducer(state, action) {
         if (!prevNode || !prevNode.edges.includes(slot)) return state;
       }
       const newMapPath = [...state.mapPath, { level: visited, slot }];
-      // Merge any leftover inventory back into the chest before showing loadout
-      const merged = [...state.chest, ...state.inventory].slice(0, CHEST_CAPACITY);
-      return {
-        ...state,
-        mapPath: newMapPath,
-        chest: merged,
-        inventory: [],
-        pendingRoomNode: { type: node.type },
-        phase: 'loadout',
-      };
-    }
-
-    case 'MOVE_TO_INVENTORY': {
-      if (state.inventory.length >= INVENTORY_CAPACITY) return state;
-      const idx = state.chest.indexOf(action.itemId);
-      if (idx === -1) return state;
-      const newChest = [...state.chest];
-      newChest.splice(idx, 1);
-      return { ...state, chest: newChest, inventory: [...state.inventory, action.itemId] };
-    }
-
-    case 'MOVE_TO_CHEST': {
-      if (state.chest.length >= CHEST_CAPACITY) return state;
-      const idx = state.inventory.indexOf(action.itemId);
-      if (idx === -1) return state;
-      const newInv = [...state.inventory];
-      newInv.splice(idx, 1);
-      return { ...state, inventory: newInv, chest: [...state.chest, action.itemId] };
-    }
-
-    case 'CONFIRM_LOADOUT': {
-      if (!state.pendingRoomNode) return state;
-      const node = state.pendingRoomNode;
-      if (state.inventory.length >= 3) tryUnlock('fullLoadout');
-      return enterRoom({ ...state, pendingRoomNode: null }, node.type);
-    }
-
-    case 'USE_ITEM': {
-      const idx = state.inventory.indexOf(action.itemId);
-      if (idx === -1) return state;
-      if (state.phase !== 'combat' || !state.enemy || state.enemy.hp <= 0) return state;
-      const newInv = [...state.inventory];
-      newInv.splice(idx, 1);
-      let s = { ...state, inventory: newInv };
-      s.itemsUsedThisRun = (state.itemsUsedThisRun || 0) + 1;
-      // Fused items use 2.5× the base effect (rounded)
-      const fused = action.itemId.endsWith('Fused');
-      const mult = fused ? 2.5 : 1;
-      const baseId = fused ? action.itemId.replace(/Fused$/, '') : action.itemId;
-      switch (baseId) {
-        case 'minorHeal': {
-          const heal = Math.round(15 * mult);
-          s.playerHp = Math.min(s.playerMaxHp, s.playerHp + heal);
-          s.lastItemEffect = { id: action.itemId, amount: heal };
-          break;
-        }
-        case 'bomb': {
-          const dmg = Math.round(12 * mult);
-          s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - dmg) };
-          s.lastItemEffect = { id: action.itemId, amount: dmg };
-          break;
-        }
-        case 'shieldBrew': {
-          const blk = Math.round(8 * mult);
-          s.block = (s.block || 0) + blk;
-          s.lastItemEffect = { id: action.itemId, amount: blk };
-          break;
-        }
-        case 'extraSpin': {
-          const spins = Math.max(1, Math.round(1 * mult));
-          s.spinsLeft = s.spinsLeft + spins;
-          s.lastItemEffect = { id: action.itemId, amount: spins };
-          break;
-        }
-      }
-      return s;
-    }
-
-    case 'FUSE_ITEMS': {
-      const baseId = action.itemId;
-      const fusedId = FUSION_RECIPES[baseId];
-      if (!fusedId) return state;
-      tryUnlock('firstFuse');
-      // Need 3 of the base in chest
-      const indices = [];
-      for (let i = 0; i < state.chest.length && indices.length < 3; i++) {
-        if (state.chest[i] === baseId) indices.push(i);
-      }
-      if (indices.length < 3) return state;
-      // Remove highest indices first to keep the others valid
-      const newChest = [...state.chest];
-      indices.sort((a, b) => b - a).forEach(i => newChest.splice(i, 1));
-      // Add fused; if no room, drop it (very edge case — chest had 3+ items removed first)
-      if (newChest.length < CHEST_CAPACITY) newChest.push(fusedId);
-      return { ...state, chest: newChest };
+      return enterRoom({ ...state, mapPath: newMapPath }, node.type);
     }
 
     case 'FINISH_REST':
@@ -1274,11 +1140,6 @@ export default function useGameState() {
   const pickSymbol = useCallback((symbolId) => dispatch({ type: 'PICK_SYMBOL', symbolId }), []);
   const skipSymbol = useCallback(() => dispatch({ type: 'SKIP_SYMBOL' }), []);
   const rerollPicks = useCallback(() => dispatch({ type: 'REROLL_PICKS' }), []);
-  const moveToInventory = useCallback((itemId) => dispatch({ type: 'MOVE_TO_INVENTORY', itemId }), []);
-  const moveToChest = useCallback((itemId) => dispatch({ type: 'MOVE_TO_CHEST', itemId }), []);
-  const confirmLoadout = useCallback(() => dispatch({ type: 'CONFIRM_LOADOUT' }), []);
-  const useItem = useCallback((itemId) => dispatch({ type: 'USE_ITEM', itemId }), []);
-  const fuseItems = useCallback((itemId) => dispatch({ type: 'FUSE_ITEMS', itemId }), []);
   const setGambleBet = useCallback((amount) => dispatch({ type: 'SET_GAMBLE_BET', amount }), []);
   const playGamble = useCallback((choice) => dispatch({ type: 'PLAY_GAMBLE', choice }), []);
   const leaveGamble = useCallback(() => dispatch({ type: 'LEAVE_GAMBLE' }), []);
@@ -1315,11 +1176,6 @@ export default function useGameState() {
     pickSymbol,
     skipSymbol,
     rerollPicks,
-    moveToInventory,
-    moveToChest,
-    confirmLoadout,
-    useItem,
-    fuseItems,
     setGambleBet,
     playGamble,
     leaveGamble,
