@@ -186,6 +186,24 @@ export const SHOP_ITEMS = [
 
 export const RELIC_IDS = SHOP_ITEMS.filter(i => i.type === 'relic').map(i => i.id);
 
+// Consumables — single-use items collected in the chest, equipped into the
+// inventory before a fight, and used via the inventory bar during combat.
+export const CONSUMABLES = [
+  { id: 'minorHeal',  icon: '🧪' },
+  { id: 'bomb',       icon: '💣' },
+  { id: 'shieldBrew', icon: '🛡️' },
+  { id: 'extraSpin',  icon: '🔁' },
+];
+
+export const CONSUMABLE_INDEX = Object.fromEntries(CONSUMABLES.map(c => [c.id, c]));
+
+export function rollConsumable() {
+  return CONSUMABLES[Math.floor(Math.random() * CONSUMABLES.length)].id;
+}
+
+export const CHEST_CAPACITY = 15;
+export const INVENTORY_CAPACITY = 3;
+
 // Compound relics — only obtained via recipes, never sold directly.
 // Used by RelicTray to render their icon + rarity once owned.
 export const COMPOUND_RELICS = [
