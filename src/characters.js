@@ -22,7 +22,7 @@ export const CHARACTERS = [
     icon: '⚔️',
     pool: makePool({ sword: 2, magic: -1 }),
     passive: null,
-    ability: { id: 'slash', icon: '⚔️', charges: 2, dmg: 10, costSpin: true },
+    ability: null,
     locked: false,
   },
   {
