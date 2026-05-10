@@ -8,15 +8,7 @@ import Overlay from './Overlay';
 import FloatNumber from './FloatNumber';
 import SymbolPicker from './SymbolPicker';
 import GambleRoom from './GambleRoom';
-import LoadoutRoom from './LoadoutRoom';
-import InventoryBar from './InventoryBar';
-import ReactionOverlay from './ReactionOverlay';
 import AchievementToast from './AchievementToast';
-
-const DODGE_ARROWS = ['←', '↑', '→', '↓'];
-function randomDodgeSequence(len) {
-  return Array.from({ length: len }, () => DODGE_ARROWS[Math.floor(Math.random() * DODGE_ARROWS.length)]);
-}
 import SacrificeRoom from './SacrificeRoom';
 import SymbolPool from './SymbolPool';
 import RelicTray from './RelicTray';
@@ -82,7 +74,6 @@ export default function Game() {
     sacrificeSymbol, skipSacrifice, finishSacrifice,
     rerollShop, goToMenu, chooseNextRoom, finishRest, useAbility,
     setGambleBet, playGamble, leaveGamble, clearGambleAnim,
-    moveToInventory, moveToChest, confirmLoadout, useItem, fuseItems,
   } = useGameState();
 
   // Debug mode is on when ?debug=1 is in the URL or localStorage flag is set.
@@ -132,8 +123,6 @@ export default function Game() {
   const [playerHpShake, setPlayerHpShake] = useState(false);
   const [floats, setFloats] = useState([]);
   const [comboAnim, setComboAnim] = useState(null);
-  const [reactionPrompt, setReactionPrompt] = useState(null);
-  const pendingAttackRef = useRef(null);
   const floatId = useRef(0);
 
   const enemySpriteRef = useRef(null);
@@ -328,9 +317,7 @@ export default function Game() {
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  // Apply the actual damage after a reaction (parry/dodge) has resolved.
-  // reactionMult: 0..1 multiplier on the incoming damage. counterDmg: dmg back to enemy.
-  const applyEnemyAttack = useCallback((reactionMult, counterDmg) => {
+  const doEnemyAttack = useCallback(() => {
     const cur = stateRef.current;
     if (!cur.enemy || cur.enemy.hp <= 0 || cur.phase !== 'combat') return;
     const state = cur;
@@ -338,19 +325,15 @@ export default function Game() {
       ((state.enemy.attackCount || 0) + 1) % state.enemy.frenzyEvery === 0;
     const hits = isFrenzy ? state.enemy.frenzyHits : 1;
     const perHit = isFrenzy ? Math.ceil(state.enemy.atk * state.enemy.frenzyMult) : state.enemy.atk;
-    const rawTotal = perHit * hits;
-    const reduced = Math.round(rawTotal * Math.max(0, Math.min(1, reactionMult)));
-    const blocked = Math.min(reduced, state.block);
-    const incoming = Math.max(0, reduced - state.block);
+    const totalDmg = perHit * hits;
+    const blocked = Math.min(totalDmg, state.block);
+    const incoming = Math.max(0, totalDmg - state.block);
 
     const finishAttack = () => {
       const parts = [];
       if (incoming > 0) parts.push(t('enemy.attack.detail.damage', { amount: incoming }));
       if (blocked > 0) parts.push(t('enemy.attack.detail.blocked', { amount: blocked }));
       if (incoming === 0 && blocked > 0) parts.unshift(t('enemy.attack.detail.fullyBlocked'));
-      if (reactionMult === 0 && counterDmg > 0) parts.unshift('✨ PERFECT PARRY');
-      else if (reactionMult === 0) parts.unshift('🛡️ PARRY');
-      else if (reactionMult < 1) parts.unshift(`💨 −${Math.round((1 - reactionMult) * 100)}%`);
       setComboAnim({
         text: isFrenzy
           ? t('enemy.frenzy', { name: state.enemy.name })
@@ -361,14 +344,7 @@ export default function Game() {
           : parts.join(' · ') || null,
         key: Date.now(),
       });
-      // Pass the reactionMult to reducer so its math matches what we showed
-      enemyAttack({ reactionMult, counterDmg });
-      if (counterDmg > 0) {
-        setTimeout(() => {
-          addFloat(enemySpriteRef, `⚔️-${counterDmg}`, 'damage');
-          triggerBarShake('enemy');
-        }, 200);
-      }
+      enemyAttack();
       if (incoming > 0 && state.relics?.includes('spikeShield')) {
         setTimeout(() => {
           addFloat(enemySpriteRef, '🌵-3', 'damage');
@@ -377,19 +353,22 @@ export default function Game() {
       }
     };
 
-    if (isFrenzy && incoming > 0) {
-      // Visualise per-bite when damage actually lands
+    if (isFrenzy) {
       const BITE_GAP = 200;
-      const bitesPerHit = Math.ceil(incoming / hits);
       for (let i = 0; i < hits; i++) {
         setTimeout(() => {
           flashEnemyAnim('bite', 180);
-          sfx.playerHit();
-          triggerBarShake('player');
-          addFloat(playerHpRef, `-${bitesPerHit}`, 'damage');
-          if (i === 0) {
-            triggerShake();
-            triggerFlash('red');
+          if (incoming > 0) {
+            sfx.playerHit();
+            triggerBarShake('player');
+            addFloat(playerHpRef, `-${perHit}`, 'damage');
+            if (i === 0) {
+              triggerShake();
+              triggerFlash('red');
+            }
+          } else if (blocked > 0 && i === 0) {
+            sfx.shieldBreak();
+            addFloat(playerHpRef, `🛡️-${blocked}`, 'shield-block');
           }
         }, i * BITE_GAP);
       }
@@ -414,26 +393,6 @@ export default function Game() {
       finishAttack();
     }, 350);
   }, [enemyAttack, triggerShake, triggerFlash, triggerBarShake, addFloat, flashEnemyAnim, triggerEnemyAnim, t]);
-
-  const doEnemyAttack = useCallback(() => {
-    const cur = stateRef.current;
-    if (!cur.enemy || cur.enemy.hp <= 0 || cur.phase !== 'combat') return;
-    // Decide reaction kind: frenzy hits → dodge ladder, regular hits → parry tap.
-    const isFrenzy = cur.enemy.frenzyEvery &&
-      ((cur.enemy.attackCount || 0) + 1) % cur.enemy.frenzyEvery === 0;
-    const prompt = isFrenzy
-      ? { kind: 'dodge', sequence: randomDodgeSequence(3) }
-      : { kind: 'parry' };
-    pendingAttackRef.current = true;
-    setReactionPrompt(prompt);
-  }, []);
-
-  const handleReactionResolved = useCallback((reactionMult, counterDmg) => {
-    if (!pendingAttackRef.current) return;
-    pendingAttackRef.current = false;
-    setReactionPrompt(null);
-    applyEnemyAttack(reactionMult, counterDmg);
-  }, [applyEnemyAttack]);
 
   const handleBuy = useCallback((item) => {
     buyItem(item);
@@ -659,14 +618,6 @@ export default function Game() {
             </div>
           </div>
 
-          {state.phase === 'combat' && state.inventory?.length > 0 && (
-            <InventoryBar
-              inventory={state.inventory}
-              disabled={state.spinning}
-              onUse={useItem}
-            />
-          )}
-
           {(() => {
             const c = getCharacter(state.character);
             const ab = c?.ability;
@@ -707,18 +658,6 @@ export default function Game() {
           onPick={(id) => { sfx.victory(); pickSymbol(id); }}
           onSkip={() => { sfx.buttonClick(); skipSymbol(); }}
           onReroll={() => { sfx.buttonClick(); rerollPicks(); }}
-        />
-      )}
-
-      {state.phase === 'loadout' && (
-        <LoadoutRoom
-          chest={state.chest}
-          inventory={state.inventory}
-          pendingRoomNode={state.pendingRoomNode}
-          onMoveToInventory={moveToInventory}
-          onMoveToChest={moveToChest}
-          onFuse={fuseItems}
-          onConfirm={confirmLoadout}
         />
       )}
 
@@ -820,10 +759,6 @@ export default function Game() {
       {floats.map(f => (
         <FloatNumber key={f.id} text={f.text} type={f.type} targetRef={f.ref} />
       ))}
-
-      {reactionPrompt && (
-        <ReactionOverlay prompt={reactionPrompt} onResolve={handleReactionResolved} />
-      )}
 
       <AchievementToast />
 

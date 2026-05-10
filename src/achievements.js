@@ -9,19 +9,14 @@ export const ACHIEVEMENTS = [
   // Easy — first-time milestones
   { id: 'firstCombo',     points: 5,   difficulty: 'easy' },
   { id: 'firstGamble',    points: 5,   difficulty: 'easy' },
-  { id: 'firstFuse',      points: 5,   difficulty: 'easy' },
   { id: 'firstRecipe',    points: 10,  difficulty: 'easy' },
   { id: 'firstBoss',      points: 10,  difficulty: 'easy' },
   // Medium — skill / play-pattern based
-  { id: 'perfectParry',   points: 15,  difficulty: 'medium' },
-  { id: 'perfectDodge',   points: 15,  difficulty: 'medium' },
   { id: 'greedy',         points: 15,  difficulty: 'medium' },
-  { id: 'fullLoadout',    points: 10,  difficulty: 'medium' },
   // Hard — completion
   { id: 'firstWin',       points: 50,  difficulty: 'hard' },
   { id: 'highRoller',     points: 30,  difficulty: 'hard' },
   // Legendary — full-run challenges
-  { id: 'noConsumWin',    points: 75,  difficulty: 'legendary' },
   { id: 'untouchableWin', points: 100, difficulty: 'legendary' },
 ];
 
