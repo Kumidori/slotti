@@ -134,6 +134,78 @@
   text-align: center;
 }
 
+.loadout-cell.fused {
+  position: relative;
+  background: linear-gradient(180deg, rgba(180, 80, 255, 0.3), rgba(180, 80, 255, 0.1));
+  border-color: #b04fff;
+  box-shadow: 0 0 12px rgba(180, 80, 255, 0.5);
+}
+
+.loadout-cell-badge {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 14px;
+  color: #f1c40f;
+  font-weight: 900;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+.loadout-fusions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.loadout-fusions-label {
+  font-size: 11px;
+  color: #b04fff;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  width: 100%;
+  text-align: center;
+}
+
+.loadout-fuse-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(180deg, rgba(180, 80, 255, 0.25), rgba(180, 80, 255, 0.05));
+  border: 1px solid #b04fff;
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+}
+
+.loadout-fuse-btn:hover {
+  filter: brightness(1.2);
+}
+
+.loadout-fuse-btn:active {
+  transform: scale(0.95);
+}
+
+.fuse-arrow {
+  color: #b04fff;
+  font-size: 14px;
+}
+
+.fuse-result {
+  position: relative;
+}
+
+.fuse-result sup {
+  font-size: 10px;
+  color: #f1c40f;
+  margin-left: 1px;
+}
+
 .loadout-confirm {
   width: 100%;
   padding: 14px 0;

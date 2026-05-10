@@ -5,6 +5,7 @@ import { useTranslation } from '../i18n/useTranslation.jsx';
 import { sfx, ensureAudio } from '../audio';
 import LangToggle from './LangToggle';
 import MusicToggle from './MusicToggle';
+import Leaderboard from './Leaderboard';
 import liliImg from '../assets/lili.webp';
 import rubyImg from '../assets/ruby.png';
 import furzkopfImg from '../assets/furzkopf.webp';
@@ -15,6 +16,7 @@ const SPRITE_IMAGES = { lili: liliImg, ruby: rubyImg, furzkopf: furzkopfImg };
 export default function CharacterSelect({ unlockedChars, onStart }) {
   const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState('knight');
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   const isUnlocked = (c) => !c.locked || unlockedChars.includes(c.unlockedBy);
 
@@ -34,7 +36,15 @@ export default function CharacterSelect({ unlockedChars, onStart }) {
       <div className="char-select-toolbar">
         <LangToggle />
         <MusicToggle />
+        <button
+          className="icon-button"
+          onClick={() => { sfx.buttonClick(); setShowLeaderboard(true); }}
+          title={t('leaderboard.title')}
+        >
+          🏆
+        </button>
       </div>
+      {showLeaderboard && <Leaderboard onClose={() => setShowLeaderboard(false)} />}
       <div className="char-select-inner">
         <h2>{t('charSelect.title')}</h2>
         <p className="char-select-sub">{t('charSelect.subtitle')}</p>

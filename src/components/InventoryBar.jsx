@@ -21,12 +21,13 @@ export default function InventoryBar({ inventory = [], disabled, onUse }) {
         return (
           <button
             key={i}
-            className="inv-slot filled"
+            className={`inv-slot filled ${def?.fused ? 'fused' : ''}`}
             disabled={disabled}
             onClick={() => { sfx.buttonClick(); onUse(id); }}
             title={`${t(`item.${id}.name`)} — ${t(`item.${id}.desc`)}`}
           >
             <span className="inv-slot-icon">{def?.icon || '?'}</span>
+            {def?.fused && <span className="inv-slot-badge">+</span>}
           </button>
         );
       })}
