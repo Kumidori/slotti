@@ -189,17 +189,20 @@ function evaluateLine(ids, s) {
 
   // Per-line relics — stacks add to multiplier
   if (dmg > 0 && comboType === 'triple') {
-    const n = relicCount(s, 'glassCannon');
+    const n = relicCount(s, 'glassCannon') + relicCount(s, 'berserker');
     if (n > 0) dmg = Math.round(dmg * (1 + 1 * n)); // 1 stack ×2, 2 stacks ×3
   }
   if (dmg > 0 && comboSymbol === 'sword') {
-    const n = relicCount(s, 'twinFang');
+    // Berserker compound = 2× the twinFang bonus (stronger sword scaling)
+    const n = relicCount(s, 'twinFang') + 2 * relicCount(s, 'berserker');
     if (n > 0) dmg = Math.round(dmg * (1 + 0.5 * n));
   }
   if (dmg > 0 && comboSymbol === 'magic') {
-    const a = relicCount(s, 'arcaneFocus');
+    // Archmage compound subsumes both arcaneFocus and spellEcho at 1.5× each
+    const archmage = relicCount(s, 'archmage');
+    const a = relicCount(s, 'arcaneFocus') + Math.ceil(archmage * 1.5);
     if (a > 0) dmg = Math.round(dmg * (1 + 0.75 * a));
-    const e = relicCount(s, 'spellEcho');
+    const e = relicCount(s, 'spellEcho') + Math.ceil(archmage * 1.5);
     if (e > 0) dmg = Math.round(dmg * (1 + 0.5 * e));
   }
   if (heal > 0 && comboSymbol === 'potion') {
@@ -284,7 +287,8 @@ function enterFight(baseTransition, type, roomNumber) {
 function enterRoomReward(state, type) {
   const cleared = { ...state, pendingRoomReward: null };
   if (type === 'shop') {
-    const cap = 3 + 3 * relicCount(state, 'pennyPincher');
+    // Goldsmith / goldHoard compound: counts as 2 stacks of pennyPincher
+    const cap = 3 + 3 * (relicCount(state, 'pennyPincher') + 2 * relicCount(state, 'goldHoard'));
     const interest = calcInterest(state.gold, cap);
     return {
       ...cleared,
@@ -328,11 +332,13 @@ function transitionAfterRoom(state) {
 }
 
 // Phoenix Feather: revive at 25% HP if you would die. Stacks grant extra revives per fight.
+// Blood Pact compound: counts as a Phoenix stack AND revives at 50% HP instead.
 function tryRevive(s) {
-  const stacks = relicCount(s, 'phoenixFeather');
+  const stacks = relicCount(s, 'phoenixFeather') + relicCount(s, 'bloodPact');
   const used = s.phoenixUsed || 0;
   if (s.playerHp <= 0 && used < stacks) {
-    s.playerHp = Math.max(1, Math.ceil(s.playerMaxHp * 0.25));
+    const reviveFrac = relicCount(s, 'bloodPact') > 0 ? 0.5 : 0.25;
+    s.playerHp = Math.max(1, Math.ceil(s.playerMaxHp * reviveFrac));
     s.phoenixUsed = used + 1;
     s.justRevived = true;
   }
@@ -467,7 +473,8 @@ function reducer(state, action) {
           if (packHunterReady) lineRes.dmg = lineRes.dmg * 2;
           if (bloodrage) lineRes.dmg = lineRes.dmg * 2;
           // Vampiric Charm: heal % of dmg dealt (stacks at 20% per copy, cap 100%)
-          const vampStacks = relicCount(s, 'vampiricCharm');
+          // Blood Pact compound: counts as 1.5 stacks (=30%)
+          const vampStacks = relicCount(s, 'vampiricCharm') + 1.5 * relicCount(s, 'bloodPact');
           if (vampStacks > 0) {
             const pct = Math.min(1.0, 0.2 * vampStacks);
             lineRes.heal = (lineRes.heal || 0) + Math.ceil(lineRes.dmg * pct);
@@ -641,7 +648,8 @@ function reducer(state, action) {
 
     case 'ENEMY_DEFEATED': {
       let gold = state.enemy.gold;
-      const magnetStacks = relicCount(state, 'magnet');
+      // Goldsmith / goldHoard compound: counts as 2 stacks of magnet (+100% gold each)
+      const magnetStacks = relicCount(state, 'magnet') + 2 * relicCount(state, 'goldHoard');
       if (magnetStacks > 0) gold = Math.round(gold * (1 + 0.5 * magnetStacks));
       const isBoss = state.enemy.isBoss;
       const isFinalBoss = isBoss && state.floor >= BOSSES.length;
@@ -883,6 +891,15 @@ function reducer(state, action) {
           s.maxLocks = state.maxLocks + 1;
           s.locksLeft = state.locksLeft + 1;
         }
+      } else if (item.type === 'recipe') {
+        // Verify all ingredients are owned, then consume them and add the result.
+        const owned = [...state.relics];
+        for (const ing of item.ingredients || []) {
+          const idx = owned.indexOf(ing);
+          if (idx === -1) return state; // safety — shop UI should prevent this
+          owned.splice(idx, 1);
+        }
+        s.relics = [...owned, item.result];
       } else {
         s = applyItemEffect(s, item.id);
       }
@@ -948,7 +965,8 @@ function reducer(state, action) {
     case 'DEBUG_KILL_ENEMY': {
       if (!state.enemy || state.phase !== 'combat') return state;
       let gold = state.enemy.gold;
-      const magnetStacks = relicCount(state, 'magnet');
+      // Goldsmith / goldHoard compound: counts as 2 stacks of magnet (+100% gold each)
+      const magnetStacks = relicCount(state, 'magnet') + 2 * relicCount(state, 'goldHoard');
       if (magnetStacks > 0) gold = Math.round(gold * (1 + 0.5 * magnetStacks));
       const isBoss = state.enemy.isBoss;
       const isFinalBoss = isBoss && state.floor >= BOSSES.length;
