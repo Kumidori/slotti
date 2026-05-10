@@ -1,8 +1,11 @@
 // Local leaderboard — persists run results in localStorage so the player can
 // see their best runs (highest floor reached + total gold earned).
+// Online submissions also flow through here.
 
 const KEY = 'slotti.leaderboard.v1';
+const NAME_KEY = 'slotti.playerName';
 const MAX_ENTRIES = 10;
+const API_URL = '/api/leaderboard';
 
 export function loadLeaderboard() {
   try {
@@ -42,4 +45,53 @@ export function recordRun(entry) {
 
 export function clearLeaderboard() {
   try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
+}
+
+export function getPlayerName() {
+  try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; }
+}
+
+export function setPlayerName(name) {
+  const clean = (name || '').toString().trim().slice(0, 24);
+  try {
+    if (clean) localStorage.setItem(NAME_KEY, clean);
+    else localStorage.removeItem(NAME_KEY);
+  } catch (e) { /* ignore */ }
+  return clean;
+}
+
+// Fire-and-forget submission to the online leaderboard. Resolves to the new
+// global top list, or null on failure (caller can fall back to local view).
+export async function submitOnline(entry, name) {
+  try {
+    const payload = {
+      name,
+      floor: entry.floor,
+      room: entry.room,
+      gold: entry.totalGoldEarned,
+      character: entry.character,
+      result: entry.result,
+    };
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.entries || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function fetchOnline() {
+  try {
+    const res = await fetch(API_URL);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.entries || [];
+  } catch (e) {
+    return null;
+  }
 }

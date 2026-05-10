@@ -1,16 +1,20 @@
 import { useReducer, useCallback, useEffect } from 'react';
 import { spawnEnemy, spawnBoss, spawnElite, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, rollPathChoice, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines, SHOP_ITEMS, RARITIES, pickByRarity, rollConsumable, CHEST_CAPACITY, INVENTORY_CAPACITY, FUSION_RECIPES } from '../gameData';
 import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars, getAbility } from '../characters';
-import { recordRun } from '../leaderboard';
+import { recordRun, getPlayerName, submitOnline } from '../leaderboard';
 
 function recordRunResult(state, result) {
-  recordRun({
+  const entry = {
     result,
     floor: state.floor,
     room: state.room,
     totalGoldEarned: state.totalGoldEarned || 0,
     character: state.character,
-  });
+  };
+  recordRun(entry);
+  // Fire-and-forget: if the player set a name, send the run to the online board
+  const name = getPlayerName();
+  if (name) submitOnline(entry, name);
 }
 
 // Reroll cost: 5g first, +5g each subsequent reroll within the same picker.
