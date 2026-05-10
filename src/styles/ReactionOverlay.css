@@ -80,19 +80,36 @@
   width: 100%;
   font-size: 18px;
   letter-spacing: 1px;
-  background: linear-gradient(180deg, rgba(241, 196, 15, 0.3), rgba(241, 196, 15, 0.1));
-  animation: parryPulse 0.6s ease-in-out infinite;
+  /* Default = WAIT phase: dim red, no pulse, button still clickable but counts as miss */
+  background: linear-gradient(180deg, rgba(231, 76, 60, 0.15), rgba(231, 76, 60, 0.05));
+  border-color: rgba(231, 76, 60, 0.4);
+  color: #ff8a7d;
+}
+
+.parry-btn.armed {
+  background: linear-gradient(180deg, rgba(241, 196, 15, 0.45), rgba(241, 196, 15, 0.15));
+  border-color: #f1c40f;
+  color: #fff;
+  animation: parryPulse 0.4s ease-in-out infinite;
 }
 
 .parry-btn.hit {
   background: linear-gradient(180deg, #2ecc71, #25a25a);
   border-color: #2ecc71;
+  color: #fff;
+  animation: none;
+}
+
+.parry-btn.early {
+  background: linear-gradient(180deg, #e74c3c, #b03323);
+  border-color: #e74c3c;
+  color: #fff;
   animation: none;
 }
 
 @keyframes parryPulse {
   0%, 100% { box-shadow: 0 0 8px rgba(241, 196, 15, 0.4); }
-  50%      { box-shadow: 0 0 20px rgba(241, 196, 15, 0.8); }
+  50%      { box-shadow: 0 0 24px rgba(241, 196, 15, 0.95); }
 }
 
 .dodge-sequence {

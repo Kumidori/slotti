@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/ReactionOverlay.css';
 
-const PARRY_WINDOW_MS = 700;
+// Parry: random anticipation delay (you can't tap yet), then a short active window.
+// Total time on screen ≈ anticipation + window, but the only successful tap is in
+// the second slice. Tapping during anticipation counts as a miss ("too early").
+const PARRY_ANTICIPATION_MIN = 280;
+const PARRY_ANTICIPATION_MAX = 620;
+const PARRY_WINDOW_MS = 320;
 const DODGE_TOTAL_MS = 1800;
 const ARROWS = ['←', '↑', '→', '↓'];
 const ARROW_KEYS = {
@@ -15,26 +20,41 @@ export default function ReactionOverlay({ prompt, onResolve }) {
   const { t } = useTranslation();
   const [progress, setProgress] = useState(1);
   const [parried, setParried] = useState(false);
+  const [parryEarly, setParryEarly] = useState(false);
+  const [parryArmed, setParryArmed] = useState(false); // window has opened
   const [dodgeIdx, setDodgeIdx] = useState(0);
   const [dodgeMistakes, setDodgeMistakes] = useState(0);
   const startRef = useRef(0);
+  const armRef = useRef(0); // when the parry window opens (ms since start)
   const resolvedRef = useRef(false);
 
   // (Re)set state every time a new prompt fires
   useEffect(() => {
     if (!prompt) return;
     setParried(false);
+    setParryEarly(false);
+    setParryArmed(false);
     setDodgeIdx(0);
     setDodgeMistakes(0);
     setProgress(1);
     resolvedRef.current = false;
     startRef.current = performance.now();
+    if (prompt.kind === 'parry') {
+      // Random anticipation before the active window
+      armRef.current = PARRY_ANTICIPATION_MIN + Math.random() * (PARRY_ANTICIPATION_MAX - PARRY_ANTICIPATION_MIN);
+      const armTimer = setTimeout(() => {
+        if (!resolvedRef.current) setParryArmed(true);
+      }, armRef.current);
+      return () => clearTimeout(armTimer);
+    }
   }, [prompt]);
 
   // Countdown ticker — drives the shrinking timer bar
   useEffect(() => {
     if (!prompt) return;
-    const total = prompt.kind === 'dodge' ? DODGE_TOTAL_MS : PARRY_WINDOW_MS;
+    const total = prompt.kind === 'dodge'
+      ? DODGE_TOTAL_MS
+      : armRef.current + PARRY_WINDOW_MS;
     let raf;
     const tick = () => {
       const elapsed = performance.now() - startRef.current;
@@ -66,6 +86,14 @@ export default function ReactionOverlay({ prompt, onResolve }) {
 
   const handleParry = () => {
     if (!prompt || prompt.kind !== 'parry' || resolvedRef.current) return;
+    if (!parryArmed) {
+      // Tapped during the anticipation phase — full damage, brief flash
+      setParryEarly(true);
+      resolvedRef.current = true;
+      // Tiny delay so player sees the "TOO EARLY" feedback before the prompt vanishes
+      setTimeout(() => onResolve(1, 0), 250);
+      return;
+    }
     setParried(true);
     resolvedRef.current = true;
     onResolve(0, 5);
@@ -111,10 +139,13 @@ export default function ReactionOverlay({ prompt, onResolve }) {
             <div className="reaction-bar-fill" style={{ transform: `scaleX(${progress})` }} />
           </div>
           <button
-            className={`reaction-btn parry-btn ${parried ? 'hit' : ''}`}
+            className={`reaction-btn parry-btn ${parried ? 'hit' : ''} ${parryEarly ? 'early' : ''} ${parryArmed && !parried && !parryEarly ? 'armed' : ''}`}
             onClick={handleParry}
           >
-            {parried ? '✅' : '🛡️'} {t('reaction.parryNow')}
+            {parried ? `✅ ${t('reaction.parryHit')}`
+              : parryEarly ? `❌ ${t('reaction.parryEarly')}`
+              : parryArmed ? `🛡️ ${t('reaction.parryNow')}`
+              : `⏳ ${t('reaction.parryWait')}`}
           </button>
         </div>
       )}
