@@ -522,3 +522,13 @@
   text-align: center;
   margin-top: 2px;
 }
+
+.overlay-button-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.overlay-button-row button {
+  flex: 0 0 auto;
+}
