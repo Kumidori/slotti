@@ -24,11 +24,14 @@ async function getClient() {
   return client;
 }
 
-// Score: wins outrank losses, then floor, then gold. 1e9 leaves headroom
-// for absurd gold totals without colliding into the floor bucket.
+// Score: wins outrank losses, then achievement points, then floor, then gold.
+// Each tier has enough headroom to avoid colliding with the next.
 function scoreFor(entry) {
-  const winBonus = entry.result === 'win' ? 1e15 : 0;
-  return winBonus + (entry.floor || 0) * 1e9 + Math.min(1e9 - 1, entry.gold || 0);
+  const winBonus = entry.result === 'win' ? 1e18 : 0;
+  const achPart = Math.min(99_999, entry.achievementPoints || 0) * 1e12;
+  const floorPart = (entry.floor || 0) * 1e9;
+  const goldPart = Math.min(1e9 - 1, entry.gold || 0);
+  return winBonus + achPart + floorPart + goldPart;
 }
 
 function sanitise(body) {
@@ -36,9 +39,10 @@ function sanitise(body) {
   const floor = Math.max(1, Math.min(99, parseInt(body.floor, 10) || 1));
   const room = Math.max(0, Math.min(99, parseInt(body.room, 10) || 0));
   const gold = Math.max(0, Math.min(1_000_000, parseInt(body.gold, 10) || 0));
+  const achievementPoints = Math.max(0, Math.min(99_999, parseInt(body.achievementPoints, 10) || 0));
   const name = (body.name || '').toString().trim().slice(0, MAX_NAME) || 'Anon';
   const character = (body.character || '').toString().trim().slice(0, MAX_CHAR);
-  return { name, floor, room, gold, character, result, when: new Date().toISOString() };
+  return { name, floor, room, gold, achievementPoints, character, result, when: new Date().toISOString() };
 }
 
 async function topEntries(client, count = RETURN) {

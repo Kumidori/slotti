@@ -71,6 +71,7 @@ export async function submitOnline(entry, name) {
       gold: entry.totalGoldEarned,
       character: entry.character,
       result: entry.result,
+      achievementPoints: entry.achievementPoints || 0,
     };
     const res = await fetch(API_URL, {
       method: 'POST',

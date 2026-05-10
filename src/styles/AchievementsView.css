@@ -1,0 +1,117 @@
+.ach-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+
+.ach-inner {
+  background: linear-gradient(180deg, #1f1638, #14102a);
+  border: 2px solid #f1c40f;
+  border-radius: 16px;
+  padding: 18px 16px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.ach-inner h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #f1c40f;
+}
+
+.ach-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  font-size: 13px;
+  color: #ccc;
+}
+
+.ach-points {
+  font-family: monospace;
+  font-weight: bold;
+  color: #f1c40f;
+  font-size: 16px;
+}
+
+.ach-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.ach-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.ach-card.owned.difficulty-easy      { border-color: #2ecc71; background: rgba(46, 204, 113, 0.1); }
+.ach-card.owned.difficulty-medium    { border-color: #5aa0ff; background: rgba(90, 160, 255, 0.1); }
+.ach-card.owned.difficulty-hard      { border-color: #b04fff; background: rgba(180, 80, 255, 0.1); }
+.ach-card.owned.difficulty-legendary { border-color: #f1c40f; background: rgba(241, 196, 15, 0.12); box-shadow: 0 0 14px rgba(241, 196, 15, 0.3); }
+
+.ach-card.locked {
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+
+.ach-card-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.ach-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ach-card-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.ach-card-desc {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.ach-card-points {
+  font-family: monospace;
+  font-size: 16px;
+  font-weight: 900;
+  color: #2ecc71;
+  white-space: nowrap;
+}
+
+.ach-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.ach-close:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
