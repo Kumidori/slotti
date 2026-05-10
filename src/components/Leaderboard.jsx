@@ -74,6 +74,7 @@ export default function Leaderboard({ onClose }) {
             <th>{t('leaderboard.character')}</th>
             <th>{t('leaderboard.floor')}</th>
             <th>{t('leaderboard.gold')}</th>
+            <th>{t('leaderboard.achievements')}</th>
             <th>{t('leaderboard.result')}</th>
             <th>{t('leaderboard.date')}</th>
           </tr>
@@ -93,6 +94,7 @@ export default function Leaderboard({ onClose }) {
                 </td>
                 <td>{e.floor}{e.room != null ? `–${e.room}` : ''}</td>
                 <td>{goldVal}g</td>
+                <td className="cell-achievements">⭐ {e.achievementPoints || 0}</td>
                 <td>
                   {e.result === 'win'
                     ? <span className="lb-win">🏆 {t('leaderboard.win')}</span>

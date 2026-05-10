@@ -6,6 +6,8 @@ import { sfx, ensureAudio } from '../audio';
 import LangToggle from './LangToggle';
 import MusicToggle from './MusicToggle';
 import Leaderboard from './Leaderboard';
+import AchievementsView from './AchievementsView';
+import { totalPoints } from '../achievements';
 import liliImg from '../assets/lili.webp';
 import rubyImg from '../assets/ruby.png';
 import furzkopfImg from '../assets/furzkopf.webp';
@@ -17,6 +19,8 @@ export default function CharacterSelect({ unlockedChars, onStart }) {
   const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState('knight');
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
+  const points = totalPoints();
 
   const isUnlocked = (c) => !c.locked || unlockedChars.includes(c.unlockedBy);
 
@@ -38,6 +42,13 @@ export default function CharacterSelect({ unlockedChars, onStart }) {
         <MusicToggle />
         <button
           className="icon-button"
+          onClick={() => { sfx.buttonClick(); setShowAchievements(true); }}
+          title={t('achievements.title')}
+        >
+          ⭐ {points}
+        </button>
+        <button
+          className="icon-button"
           onClick={() => { sfx.buttonClick(); setShowLeaderboard(true); }}
           title={t('leaderboard.title')}
         >
@@ -45,6 +56,7 @@ export default function CharacterSelect({ unlockedChars, onStart }) {
         </button>
       </div>
       {showLeaderboard && <Leaderboard onClose={() => setShowLeaderboard(false)} />}
+      {showAchievements && <AchievementsView onClose={() => setShowAchievements(false)} />}
       <div className="char-select-inner">
         <h2>{t('charSelect.title')}</h2>
         <p className="char-select-sub">{t('charSelect.subtitle')}</p>

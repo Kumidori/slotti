@@ -11,6 +11,7 @@ import GambleRoom from './GambleRoom';
 import LoadoutRoom from './LoadoutRoom';
 import InventoryBar from './InventoryBar';
 import ReactionOverlay from './ReactionOverlay';
+import AchievementToast from './AchievementToast';
 
 const DODGE_ARROWS = ['←', '↑', '→', '↓'];
 function randomDodgeSequence(len) {
@@ -823,6 +824,8 @@ export default function Game() {
       {reactionPrompt && (
         <ReactionOverlay prompt={reactionPrompt} onResolve={handleReactionResolved} />
       )}
+
+      <AchievementToast />
 
       {debugOn && state.phase !== 'menu' && (
         <div className="debug-panel">

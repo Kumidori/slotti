@@ -2,14 +2,22 @@ import { useReducer, useCallback, useEffect } from 'react';
 import { spawnEnemy, spawnBoss, spawnElite, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, rollPathChoice, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines, SHOP_ITEMS, RARITIES, pickByRarity, rollConsumable, CHEST_CAPACITY, INVENTORY_CAPACITY, FUSION_RECIPES } from '../gameData';
 import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars, getAbility } from '../characters';
 import { recordRun, getPlayerName, submitOnline } from '../leaderboard';
+import { tryUnlock, totalPoints } from '../achievements';
 
 function recordRunResult(state, result) {
+  // Run-level achievements
+  if (result === 'win') {
+    tryUnlock('firstWin');
+    if (state.itemsUsedThisRun === 0) tryUnlock('noConsumWin');
+    if (state.timesHitThisRun === 0) tryUnlock('untouchableWin');
+  }
   const entry = {
     result,
     floor: state.floor,
     room: state.room,
     totalGoldEarned: state.totalGoldEarned || 0,
     character: state.character,
+    achievementPoints: totalPoints(),
   };
   recordRun(entry);
   // Fire-and-forget: if the player set a name, send the run to the online board
@@ -397,6 +405,12 @@ const INITIAL_STATE = {
   // Cumulative gold earned this run (used for the leaderboard, not affected by spending)
   totalGoldEarned: 0,
 
+  // Achievement counters (reset per run via START_RUN spreading INITIAL_STATE)
+  itemsUsedThisRun: 0,    // → noConsumWin if 0 at win
+  timesHitThisRun: 0,     // → untouchableWin if 0 at win
+  gambleWonTotal: 0,      // → highRoller at 1000+
+  goldHighWatermark: 0,   // → greedy at 200+ once per run
+
   // Loadout / consumable items
   chest: [],              // ids of items stored, max 15
   inventory: [],          // ids equipped for the next fight, max 3
@@ -552,6 +566,11 @@ function reducer(state, action) {
       s.heal = totalHeal;
       s.blockGained = totalBlock;
 
+      // Achievement: first scoring combo
+      if (primaryComboType !== 'weak' && primaryComboType !== 'none') {
+        tryUnlock('firstCombo');
+      }
+
       // Toxic Aura (Furzkopf): instant — applies regardless of any combo
       if (hasPassive(s, 'toxicAura') && s.enemy && s.enemy.hp > 0) {
         s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - 2) };
@@ -667,8 +686,17 @@ function reducer(state, action) {
       if (action.counterDmg > 0 && s.enemy && s.enemy.hp > 0) {
         s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - action.counterDmg) };
         s.lastCounterDmg = action.counterDmg;
+        tryUnlock('perfectParry');
       } else {
         s.lastCounterDmg = 0;
+      }
+      // Perfect dodge: incoming damage was reduced to zero by reaction (not by block)
+      if (typeof action.reactionMult === 'number' && action.reactionMult === 0 && action.counterDmg === 0) {
+        tryUnlock('perfectDodge');
+      }
+      // Track times the player got tagged this run (for untouchable achievement)
+      if (incomingDmg > 0) {
+        s.timesHitThisRun = (s.timesHitThisRun || 0) + 1;
       }
 
       if (s.playerHp <= 0) {
@@ -739,6 +767,9 @@ function reducer(state, action) {
       // Bank ALL gold immediately. Bosses then trigger the optional gamble room.
       const newGold = state.gold + gold;
       const newTotalGold = (state.totalGoldEarned || 0) + gold;
+      const newGoldHigh = Math.max(state.goldHighWatermark || 0, newGold);
+      if (isBoss) tryUnlock('firstBoss');
+      if (newGold >= 200) tryUnlock('greedy');
       // Default the next bet to a reasonable fraction of new gold
       const defaultBet = Math.max(1, Math.min(newGold, Math.floor(newGold / 4) || 5));
       let nextPhase;
@@ -752,6 +783,7 @@ function reducer(state, action) {
         ...state,
         gold: newGold,
         totalGoldEarned: newTotalGold,
+        goldHighWatermark: newGoldHigh,
         chest: newChest,
         lastDropped: newDrops,
         gambleBet: defaultBet,
@@ -785,12 +817,15 @@ function reducer(state, action) {
       const win = choice === drawn;
       const delta = win ? bet : -bet;
       const newGold = state.gold + delta;
-      // Clamp next bet so it remains affordable
       const nextBet = Math.max(1, Math.min(newGold, state.gambleBet));
+      tryUnlock('firstGamble');
+      const newWonTotal = (state.gambleWonTotal || 0) + (win ? bet : 0);
+      if (newWonTotal >= 1000) tryUnlock('highRoller');
       return {
         ...state,
         gold: newGold,
         gambleBet: nextBet,
+        gambleWonTotal: newWonTotal,
         gambleAnim: win ? 'win' : 'lose',
         gambleReveal: { choice, drawn, win, delta },
       };
@@ -951,6 +986,7 @@ function reducer(state, action) {
     case 'CONFIRM_LOADOUT': {
       if (!state.pendingRoomNode) return state;
       const node = state.pendingRoomNode;
+      if (state.inventory.length >= 3) tryUnlock('fullLoadout');
       return enterRoom({ ...state, pendingRoomNode: null }, node.type);
     }
 
@@ -961,6 +997,7 @@ function reducer(state, action) {
       const newInv = [...state.inventory];
       newInv.splice(idx, 1);
       let s = { ...state, inventory: newInv };
+      s.itemsUsedThisRun = (state.itemsUsedThisRun || 0) + 1;
       // Fused items use 2.5× the base effect (rounded)
       const fused = action.itemId.endsWith('Fused');
       const mult = fused ? 2.5 : 1;
@@ -998,6 +1035,7 @@ function reducer(state, action) {
       const baseId = action.itemId;
       const fusedId = FUSION_RECIPES[baseId];
       if (!fusedId) return state;
+      tryUnlock('firstFuse');
       // Need 3 of the base in chest
       const indices = [];
       for (let i = 0; i < state.chest.length && indices.length < 3; i++) {
@@ -1030,6 +1068,7 @@ function reducer(state, action) {
           s.locksLeft = state.locksLeft + 1;
         }
       } else if (item.type === 'recipe') {
+        tryUnlock('firstRecipe');
         // Verify all ingredients are owned, then consume them and add the result.
         const owned = [...state.relics];
         for (const ing of item.ingredients || []) {
