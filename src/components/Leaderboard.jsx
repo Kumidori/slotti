@@ -73,6 +73,7 @@ export default function Leaderboard({ onClose }) {
             {opts.showName && <th>{t('leaderboard.name')}</th>}
             <th>{t('leaderboard.character')}</th>
             <th>{t('leaderboard.floor')}</th>
+            <th>{t('leaderboard.score')}</th>
             <th>{t('leaderboard.gold')}</th>
             <th>{t('leaderboard.achievements')}</th>
             <th>{t('leaderboard.result')}</th>
@@ -83,6 +84,7 @@ export default function Leaderboard({ onClose }) {
           {entries.map((e, i) => {
             const c = getCharacter(e.character);
             const goldVal = e.totalGoldEarned ?? e.gold ?? 0;
+            const scoreVal = e.score ?? 0;
             const dateVal = e.date ?? e.when;
             return (
               <tr key={i} className={`row-${e.result}`}>
@@ -93,6 +95,7 @@ export default function Leaderboard({ onClose }) {
                   <span className="lb-char-name">{c ? t(`char.${c.id}.name`) : '?'}</span>
                 </td>
                 <td>{e.floor}{e.room != null ? `–${e.room}` : ''}</td>
+                <td className="cell-score">{scoreVal}</td>
                 <td>{goldVal}g</td>
                 <td className="cell-achievements">⭐ {e.achievementPoints || 0}</td>
                 <td>

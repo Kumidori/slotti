@@ -4,6 +4,17 @@ import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars, getAbil
 import { recordRun, getPlayerName, submitOnline } from '../leaderboard';
 import { tryUnlock, totalPoints } from '../achievements';
 
+// One number that combines all run stats so we can sort the leaderboard
+// without losing the "play your way" feel — every play style adds to it.
+export function computeRunScore(state, result) {
+  return (state.totalGoldEarned || 0)
+    + (state.totalDmgDealt || 0)
+    + (state.totalDmgBlocked || 0)
+    + (state.totalDmgHealed || 0)
+    + (state.floor || 1) * 250
+    + (result === 'win' ? 1000 : 0);
+}
+
 function recordRunResult(state, result) {
   // Run-level achievements
   if (result === 'win') {
@@ -15,6 +26,12 @@ function recordRunResult(state, result) {
     floor: state.floor,
     room: state.room,
     totalGoldEarned: state.totalGoldEarned || 0,
+    totalDmgDealt: state.totalDmgDealt || 0,
+    totalDmgBlocked: state.totalDmgBlocked || 0,
+    totalDmgHealed: state.totalDmgHealed || 0,
+    totalDmgTaken: state.totalDmgTaken || 0,
+    totalEnemiesDefeated: state.totalEnemiesDefeated || 0,
+    score: computeRunScore(state, result),
     character: state.character,
     achievementPoints: totalPoints(),
   };
@@ -405,6 +422,12 @@ const INITIAL_STATE = {
   pendingRoomReward: null, // 'shop' | 'rest' | 'sacrifice' — bonus phase after the fight
   // Cumulative gold earned this run (used for the leaderboard, not affected by spending)
   totalGoldEarned: 0,
+  // Cumulative combat stats (used by the run summary + leaderboard score)
+  totalDmgDealt: 0,
+  totalDmgTaken: 0,
+  totalDmgBlocked: 0,
+  totalDmgHealed: 0,
+  totalEnemiesDefeated: 0,
 
   // Achievement counters (reset per run via START_RUN spreading INITIAL_STATE)
   timesHitThisRun: 0,     // → untouchableWin if 0 at win
@@ -561,6 +584,14 @@ function reducer(state, action) {
       s.heal = totalHeal;
       s.blockGained = totalBlock;
 
+      // Run-summary stats: count damage actually dealt to the live enemy and
+      // healing actually used (capped by max HP)
+      const enemyHpBefore = s.enemy?.hp ?? 0;
+      const dmgApplied = Math.min(totalDmg, enemyHpBefore);
+      s.totalDmgDealt = (s.totalDmgDealt || 0) + Math.max(0, dmgApplied);
+      const healApplied = Math.min(totalHeal, Math.max(0, s.playerMaxHp - s.playerHp));
+      s.totalDmgHealed = (s.totalDmgHealed || 0) + Math.max(0, healApplied);
+
       // Achievement: first scoring combo
       if (primaryComboType !== 'weak' && primaryComboType !== 'none') {
         tryUnlock('firstCombo');
@@ -675,6 +706,9 @@ function reducer(state, action) {
       if (incomingDmg > 0) {
         s.timesHitThisRun = (s.timesHitThisRun || 0) + 1;
       }
+      // Run-summary stats
+      s.totalDmgTaken = (s.totalDmgTaken || 0) + incomingDmg;
+      s.totalDmgBlocked = (s.totalDmgBlocked || 0) + blocked;
 
       if (s.playerHp <= 0) {
         tryRevive(s);
@@ -734,6 +768,7 @@ function reducer(state, action) {
       const newGoldHigh = Math.max(state.goldHighWatermark || 0, newGold);
       if (isBoss) tryUnlock('firstBoss');
       if (newGold >= 200) tryUnlock('greedy');
+      const newEnemiesDefeated = (state.totalEnemiesDefeated || 0) + 1;
       // Default the next bet to a reasonable fraction of new gold
       const defaultBet = Math.max(1, Math.min(newGold, Math.floor(newGold / 4) || 5));
       let nextPhase;
@@ -747,6 +782,7 @@ function reducer(state, action) {
         ...state,
         gold: newGold,
         totalGoldEarned: newTotalGold,
+        totalEnemiesDefeated: newEnemiesDefeated,
         goldHighWatermark: newGoldHigh,
         gambleBet: defaultBet,
         gambleAnim: null,
