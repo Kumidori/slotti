@@ -1,0 +1,181 @@
+.gamble-room {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.gamble-room-inner {
+  background: linear-gradient(180deg, #1f1638, #14102a);
+  border: 2px solid #f1c40f;
+  border-radius: 18px;
+  padding: 22px 18px;
+  max-width: 380px;
+  width: calc(100vw - 32px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(241, 196, 15, 0.3);
+  transition: background 0.3s, border-color 0.3s, transform 0.3s;
+}
+
+.gamble-room-inner.flash-win {
+  border-color: #2ecc71;
+  background: linear-gradient(180deg, rgba(46, 204, 113, 0.25), #14102a);
+  animation: gambleRoomWin 0.7s ease-out;
+}
+
+.gamble-room-inner.flash-lose {
+  border-color: #e74c3c;
+  background: linear-gradient(180deg, rgba(231, 76, 60, 0.25), #14102a);
+  animation: gambleRoomLose 0.7s ease-out;
+}
+
+@keyframes gambleRoomWin {
+  0%, 100% { transform: scale(1); }
+  40%      { transform: scale(1.04); box-shadow: 0 0 40px rgba(46, 204, 113, 0.7); }
+}
+
+@keyframes gambleRoomLose {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-10px); }
+  40% { transform: translateX(10px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+
+.gamble-room h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #f1c40f;
+  text-shadow: 0 0 12px rgba(241, 196, 15, 0.4);
+}
+
+.gamble-room-sub {
+  margin: 0;
+  font-size: 13px;
+  color: #aaa;
+  text-align: center;
+}
+
+.gamble-room-gold {
+  font-family: monospace;
+  font-size: 24px;
+  font-weight: bold;
+  color: #f1c40f;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(241, 196, 15, 0.4);
+}
+
+.gamble-bet-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.gamble-bet-label {
+  font-size: 12px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.gamble-bet-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gamble-bet-controls button {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.gamble-bet-controls button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.gamble-bet-controls button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.gamble-bet-value {
+  font-family: monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #f1c40f;
+  min-width: 70px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.gamble-bet-shortcuts {
+  display: flex;
+  gap: 6px;
+}
+
+.gamble-bet-shortcuts button {
+  background: rgba(241, 196, 15, 0.15);
+  border: 1px solid rgba(241, 196, 15, 0.4);
+  color: #f1c40f;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.gamble-bet-shortcuts button:hover {
+  background: rgba(241, 196, 15, 0.3);
+}
+
+.gamble-room .gamble-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.gamble-room-hint {
+  font-size: 11px;
+  color: #888;
+  font-style: italic;
+  text-align: center;
+}
+
+.gamble-leave {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ccc;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+
+.gamble-leave:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
