@@ -10,6 +10,7 @@ import SymbolPicker from './SymbolPicker';
 import GambleRoom from './GambleRoom';
 import BossIntro from './BossIntro';
 import AchievementToast from './AchievementToast';
+import Leaderboard from './Leaderboard';
 import SacrificeRoom from './SacrificeRoom';
 import SymbolPool from './SymbolPool';
 import RelicTray from './RelicTray';
@@ -125,6 +126,7 @@ export default function Game() {
   const [playerHpShake, setPlayerHpShake] = useState(false);
   const [floats, setFloats] = useState([]);
   const [comboAnim, setComboAnim] = useState(null);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const floatId = useRef(0);
 
   const enemySpriteRef = useRef(null);
@@ -700,7 +702,10 @@ export default function Game() {
             <p className="unlock-line">🎁 {t('overlay.unlocked', { name: t(`char.${state.justUnlocked}.name`) })}</p>
           )}
           <WinnerClaim />
-          <button onClick={handleBackToMenu}>{t('overlay.playAgain')}</button>
+          <div className="overlay-button-row">
+            <button onClick={() => setShowLeaderboard(true)}>🏆 {t('leaderboard.title')}</button>
+            <button onClick={handleBackToMenu}>{t('overlay.playAgain')}</button>
+          </div>
         </Overlay>
       )}
 
@@ -709,9 +714,14 @@ export default function Game() {
           <h2>{t('overlay.gameOver')}</h2>
           <p>{t('overlay.position', { floor: state.floor, room: state.room })}</p>
           <p>{t('overlay.goldEarned', { gold: state.gold })}</p>
-          <button onClick={handleBackToMenu}>{t('overlay.tryAgain')}</button>
+          <div className="overlay-button-row">
+            <button onClick={() => setShowLeaderboard(true)}>🏆 {t('leaderboard.title')}</button>
+            <button onClick={handleBackToMenu}>{t('overlay.tryAgain')}</button>
+          </div>
         </Overlay>
       )}
+
+      {showLeaderboard && <Leaderboard onClose={() => setShowLeaderboard(false)} />}
 
       {state.phase === 'pathChoice' && state.floorMap && (
         <FloorMap
