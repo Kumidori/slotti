@@ -688,17 +688,32 @@ function reducer(state, action) {
         gridRows = 3;
         justUnlockedRows = true;
       }
-      // Elite reward: pick a random relic and add it for free
+      // Loot rolls
+      // - Normal fight: 10% consumable
+      // - Elite: keeps the existing free-relic reward, plus 25% consumable
+      // - Boss: independent 50% consumable AND 50% relic — both can drop together
       let bonusRelics = state.relics;
       if (state.enemy.isElite) {
         const relicPool = SHOP_ITEMS.filter(i => i.type === 'relic');
         const reward = pickByRarity(relicPool, 1)[0];
         if (reward) bonusRelics = [...state.relics, reward.id];
       }
-      // Drop a consumable (or two for bosses/elites) into the chest, capped at 15
-      const drops = isBoss || state.enemy.isElite ? 2 : 1;
-      const room = Math.max(0, CHEST_CAPACITY - state.chest.length);
-      const newDrops = Array.from({ length: Math.min(drops, room) }, () => rollConsumable());
+      let consumableChance;
+      if (isBoss) consumableChance = 0.5;
+      else if (state.enemy.isElite) consumableChance = 0.25;
+      else consumableChance = 0.1;
+
+      const newDrops = [];
+      const chestRoom = () => CHEST_CAPACITY - (state.chest.length + newDrops.length);
+      if (Math.random() < consumableChance && chestRoom() > 0) {
+        newDrops.push(rollConsumable());
+      }
+      // Boss extra: 50% chance to drop an additional relic on top of any guarantees
+      if (isBoss && Math.random() < 0.5) {
+        const relicPool = SHOP_ITEMS.filter(i => i.type === 'relic');
+        const reward = pickByRarity(relicPool, 1)[0];
+        if (reward) bonusRelics = [...bonusRelics, reward.id];
+      }
       const newChest = [...state.chest, ...newDrops];
 
       // Bank ALL gold immediately. Bosses then trigger the optional gamble room.
