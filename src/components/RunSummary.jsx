@@ -11,9 +11,11 @@ export default function RunSummary({ state, result }) {
   const dmgTaken    = state.totalDmgTaken    || 0;
   const goldEarned  = state.totalGoldEarned  || 0;
   const enemies     = state.totalEnemiesDefeated || 0;
+  const speedBonus  = state.totalSpeedBonus  || 0;
+  const speedScore  = speedBonus * 100;
   const floorBonus  = (state.floor || 1) * 250;
   const winBonus    = result === 'win' ? 1000 : 0;
-  const score       = goldEarned + dmgDealt + dmgBlocked + dmgHealed + floorBonus + winBonus;
+  const score       = goldEarned + dmgDealt + dmgBlocked + dmgHealed + speedScore + floorBonus + winBonus;
 
   const rows = [
     { icon: '⚔️', label: t('summary.dmgDealt'),   value: dmgDealt },
@@ -22,6 +24,7 @@ export default function RunSummary({ state, result }) {
     { icon: '💔', label: t('summary.dmgTaken'),   value: dmgTaken },
     { icon: '💀', label: t('summary.enemies'),    value: enemies },
     { icon: '💰', label: t('summary.goldEarned'), value: goldEarned + 'g' },
+    { icon: '⚡', label: t('summary.speedBonus'), value: `${speedBonus} (×100)` },
   ];
 
   return (
@@ -37,7 +40,7 @@ export default function RunSummary({ state, result }) {
       </div>
       <div className="run-summary-score-block">
         <div className="run-summary-formula">
-          {goldEarned} + {dmgDealt} + {dmgBlocked} + {dmgHealed} + {floorBonus}
+          {goldEarned} + {dmgDealt} + {dmgBlocked} + {dmgHealed} + {speedScore} + {floorBonus}
           {winBonus ? ` + ${winBonus}` : ''}
         </div>
         <div className="run-summary-score">

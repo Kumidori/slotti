@@ -52,6 +52,7 @@ function sanitise(body) {
     dmgHealed: clampInt(body.dmgHealed, 0, 9_999_999),
     dmgTaken: clampInt(body.dmgTaken, 0, 9_999_999),
     enemiesDefeated: clampInt(body.enemiesDefeated, 0, 9999),
+    speedBonus: clampInt(body.speedBonus, 0, 9999),
     achievementPoints: clampInt(body.achievementPoints, 0, 99_999),
     when: new Date().toISOString(),
   };
