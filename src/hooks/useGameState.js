@@ -791,13 +791,7 @@ function reducer(state, action) {
       let s = { ...state, abilityChargesLeft: state.abilityChargesLeft - 1 };
       if (ability.costSpin) s.spinsLeft = Math.max(0, s.spinsLeft - 1);
 
-      if (ability.id === 'slash') {
-        let dmg = ability.dmg + (s.swordBonus || 0) * 2;
-        if (s.enemy.weakTo?.includes('sword')) dmg = Math.round(dmg * 1.5);
-        else if (s.enemy.resists?.includes('sword')) dmg = Math.round(dmg * 0.5);
-        s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - dmg) };
-        s.lastAbilityDmg = dmg;
-      } else if (ability.id === 'bolt') {
+      if (ability.id === 'bolt') {
         let dmg = ability.dmg + (s.magicBonus || 0) * 2;
         if (s.enemy.weakTo?.includes('magic')) dmg = Math.round(dmg * 1.5);
         else if (s.enemy.resists?.includes('magic')) dmg = Math.round(dmg * 0.5);
