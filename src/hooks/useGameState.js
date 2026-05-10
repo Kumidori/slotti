@@ -300,6 +300,8 @@ function enterFight(baseTransition, type, roomNumber) {
     phoenixUsed: false,
     abilityChargesLeft: ability?.charges || 0,
     bloodragePending: false,
+    // Bosses get a Borderlands-style title card before the fight starts
+    bossIntroPending: type === 'boss',
   };
 }
 
@@ -797,6 +799,9 @@ function reducer(state, action) {
     case 'CLEAR_GAMBLE_ANIM':
       return { ...state, gambleAnim: null };
 
+    case 'DISMISS_BOSS_INTRO':
+      return { ...state, bossIntroPending: false };
+
     case 'PICK_SYMBOL': {
       const newPool = [...state.symbolPool, action.symbolId];
       return transitionAfterRoom({ ...state, symbolPool: newPool, symbolPicks: null });
@@ -1144,6 +1149,7 @@ export default function useGameState() {
   const playGamble = useCallback((choice) => dispatch({ type: 'PLAY_GAMBLE', choice }), []);
   const leaveGamble = useCallback(() => dispatch({ type: 'LEAVE_GAMBLE' }), []);
   const clearGambleAnim = useCallback(() => dispatch({ type: 'CLEAR_GAMBLE_ANIM' }), []);
+  const dismissBossIntro = useCallback(() => dispatch({ type: 'DISMISS_BOSS_INTRO' }), []);
 
   return {
     state,
@@ -1180,6 +1186,7 @@ export default function useGameState() {
     playGamble,
     leaveGamble,
     clearGambleAnim,
+    dismissBossIntro,
     goToMenu,
     clearJustUnlocked,
   };
