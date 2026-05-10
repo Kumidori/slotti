@@ -31,6 +31,89 @@
   color: #f1c40f;
 }
 
+.leaderboard-tabs {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.leaderboard-tab {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #aaa;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.leaderboard-tab.active {
+  background: rgba(241, 196, 15, 0.15);
+  border-color: #f1c40f;
+  color: #fff;
+}
+
+.leaderboard-tab:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.leaderboard-name-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.leaderboard-name-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.leaderboard-name-input:focus {
+  outline: none;
+  border-color: #f1c40f;
+}
+
+.leaderboard-submit {
+  background: linear-gradient(180deg, #2ecc71, #25a25a);
+  border: none;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.15s, opacity 0.15s;
+}
+
+.leaderboard-submit:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.leaderboard-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.leaderboard-error {
+  color: #e74c3c;
+  font-size: 12px;
+  text-align: center;
+  margin: 0;
+}
+
+.cell-name { font-weight: bold; color: #f1c40f; }
+
 .leaderboard-empty {
   color: #aaa;
   font-size: 13px;
