@@ -66,11 +66,17 @@ export async function submitOnline(entry, name) {
   try {
     const payload = {
       name,
-      floor: entry.floor,
-      room: entry.room,
-      gold: entry.totalGoldEarned,
       character: entry.character,
       result: entry.result,
+      floor: entry.floor,
+      room: entry.room,
+      score: entry.score || 0,
+      gold: entry.totalGoldEarned || 0,
+      dmgDealt: entry.totalDmgDealt || 0,
+      dmgBlocked: entry.totalDmgBlocked || 0,
+      dmgHealed: entry.totalDmgHealed || 0,
+      dmgTaken: entry.totalDmgTaken || 0,
+      enemiesDefeated: entry.totalEnemiesDefeated || 0,
       achievementPoints: entry.achievementPoints || 0,
     };
     const res = await fetch(API_URL, {

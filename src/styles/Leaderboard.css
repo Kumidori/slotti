@@ -179,3 +179,9 @@
 .leaderboard-close:hover {
   background: rgba(255, 255, 255, 0.14);
 }
+
+.cell-score {
+  font-family: monospace;
+  font-weight: bold;
+  color: #f1c40f;
+}

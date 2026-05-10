@@ -17,7 +17,7 @@ import RelicTray from './RelicTray';
 import LangToggle from './LangToggle';
 import MusicToggle from './MusicToggle';
 import CharacterSelect from './CharacterSelect';
-import WinnerClaim from './WinnerClaim';
+import RunSummary from './RunSummary';
 import FloorMap from './FloorMap';
 import RestRoom from './RestRoom';
 import { getCharacter } from '../characters';
@@ -697,11 +697,10 @@ export default function Game() {
         <Overlay>
           <h2>{t('overlay.runComplete')}</h2>
           <p>{t('overlay.allBossesDefeated')}</p>
-          <p>{t('overlay.totalGold', { gold: state.gold })}</p>
           {state.justUnlocked && (
             <p className="unlock-line">🎁 {t('overlay.unlocked', { name: t(`char.${state.justUnlocked}.name`) })}</p>
           )}
-          <WinnerClaim />
+          <RunSummary state={state} result="win" />
           <div className="overlay-button-row">
             <button onClick={() => setShowLeaderboard(true)}>🏆 {t('leaderboard.title')}</button>
             <button onClick={handleBackToMenu}>{t('overlay.playAgain')}</button>
@@ -713,7 +712,7 @@ export default function Game() {
         <Overlay>
           <h2>{t('overlay.gameOver')}</h2>
           <p>{t('overlay.position', { floor: state.floor, room: state.room })}</p>
-          <p>{t('overlay.goldEarned', { gold: state.gold })}</p>
+          <RunSummary state={state} result="loss" />
           <div className="overlay-button-row">
             <button onClick={() => setShowLeaderboard(true)}>🏆 {t('leaderboard.title')}</button>
             <button onClick={handleBackToMenu}>{t('overlay.tryAgain')}</button>

@@ -24,25 +24,37 @@ async function getClient() {
   return client;
 }
 
-// Score: wins outrank losses, then achievement points, then floor, then gold.
-// Each tier has enough headroom to avoid colliding with the next.
+// Sort: highest computed run score wins. Achievement points break ties.
 function scoreFor(entry) {
-  const winBonus = entry.result === 'win' ? 1e18 : 0;
-  const achPart = Math.min(99_999, entry.achievementPoints || 0) * 1e12;
-  const floorPart = (entry.floor || 0) * 1e9;
-  const goldPart = Math.min(1e9 - 1, entry.gold || 0);
-  return winBonus + achPart + floorPart + goldPart;
+  const score = Math.min(9_999_999, entry.score || 0);
+  const ach = Math.min(99_999, entry.achievementPoints || 0);
+  return score * 1e6 + ach;
+}
+
+function clampInt(v, min, max) {
+  const n = parseInt(v, 10);
+  if (Number.isNaN(n)) return min;
+  return Math.max(min, Math.min(max, n));
 }
 
 function sanitise(body) {
   const result = body.result === 'win' ? 'win' : 'loss';
-  const floor = Math.max(1, Math.min(99, parseInt(body.floor, 10) || 1));
-  const room = Math.max(0, Math.min(99, parseInt(body.room, 10) || 0));
-  const gold = Math.max(0, Math.min(1_000_000, parseInt(body.gold, 10) || 0));
-  const achievementPoints = Math.max(0, Math.min(99_999, parseInt(body.achievementPoints, 10) || 0));
-  const name = (body.name || '').toString().trim().slice(0, MAX_NAME) || 'Anon';
-  const character = (body.character || '').toString().trim().slice(0, MAX_CHAR);
-  return { name, floor, room, gold, achievementPoints, character, result, when: new Date().toISOString() };
+  return {
+    name: (body.name || '').toString().trim().slice(0, MAX_NAME) || 'Anon',
+    character: (body.character || '').toString().trim().slice(0, MAX_CHAR),
+    result,
+    floor: clampInt(body.floor, 1, 99),
+    room: clampInt(body.room, 0, 99),
+    score: clampInt(body.score, 0, 9_999_999),
+    gold: clampInt(body.gold, 0, 1_000_000),
+    dmgDealt: clampInt(body.dmgDealt, 0, 9_999_999),
+    dmgBlocked: clampInt(body.dmgBlocked, 0, 9_999_999),
+    dmgHealed: clampInt(body.dmgHealed, 0, 9_999_999),
+    dmgTaken: clampInt(body.dmgTaken, 0, 9_999_999),
+    enemiesDefeated: clampInt(body.enemiesDefeated, 0, 9999),
+    achievementPoints: clampInt(body.achievementPoints, 0, 99_999),
+    when: new Date().toISOString(),
+  };
 }
 
 async function topEntries(client, count = RETURN) {
