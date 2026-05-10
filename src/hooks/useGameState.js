@@ -1,6 +1,17 @@
 import { useReducer, useCallback, useEffect } from 'react';
-import { spawnEnemy, spawnBoss, spawnElite, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, rollPathChoice, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines, SHOP_ITEMS, RARITIES, pickByRarity, rollConsumable, CHEST_CAPACITY, INVENTORY_CAPACITY } from '../gameData';
+import { spawnEnemy, spawnBoss, spawnElite, applyItemEffect, calcInterest, rollSymbolPicks, rollSacrificeReward, rollPathChoice, hasRelic, relicCount, DEFAULT_POOL, BOSSES, getPaylines, SHOP_ITEMS, RARITIES, pickByRarity, rollConsumable, CHEST_CAPACITY, INVENTORY_CAPACITY, FUSION_RECIPES } from '../gameData';
 import { getCharacter, hasPassive, loadUnlockedChars, saveUnlockedChars, getAbility } from '../characters';
+import { recordRun } from '../leaderboard';
+
+function recordRunResult(state, result) {
+  recordRun({
+    result,
+    floor: state.floor,
+    room: state.room,
+    totalGoldEarned: state.totalGoldEarned || 0,
+    character: state.character,
+  });
+}
 
 // Reroll cost: 5g first, +5g each subsequent reroll within the same picker.
 // Lucky Charm reduces cost by 1g per stack (min 1g).
@@ -379,6 +390,9 @@ const INITIAL_STATE = {
   floorMap: null,         // { levels: [[node,...]] } — branching graph
   mapPath: [],            // [{ level, slot }] — chosen positions on the graph so far
   pendingRoomReward: null, // 'shop' | 'rest' | 'sacrifice' — bonus phase after the fight
+  // Cumulative gold earned this run (used for the leaderboard, not affected by spending)
+  totalGoldEarned: 0,
+
   // Loadout / consumable items
   chest: [],              // ids of items stored, max 15
   inventory: [],          // ids equipped for the next fight, max 3
@@ -522,6 +536,7 @@ function reducer(state, action) {
       }
 
       s.gold = (s.gold || 0) + totalCoinGold;
+      s.totalGoldEarned = (s.totalGoldEarned || 0) + totalCoinGold;
       s.coinGold = totalCoinGold;
       s.multFactor = multFactorMax;
       s.multCount = multFactorMax > 1 ? Math.round(Math.log2(multFactorMax)) : 0;
@@ -556,7 +571,7 @@ function reducer(state, action) {
 
       if (s.playerHp <= 0) {
         tryRevive(s);
-        if (s.playerHp <= 0) { s.playerHp = 0; s.phase = 'gameOver'; }
+        if (s.playerHp <= 0) { s.playerHp = 0; s.phase = 'gameOver'; recordRunResult(s, 'loss'); }
       }
 
       return s;
@@ -585,7 +600,7 @@ function reducer(state, action) {
         s.playerHp -= line.selfDmg;
         if (s.playerHp <= 0) {
           tryRevive(s);
-          if (s.playerHp <= 0) { s.playerHp = 0; s.phase = 'gameOver'; }
+          if (s.playerHp <= 0) { s.playerHp = 0; s.phase = 'gameOver'; recordRunResult(s, 'loss'); }
         }
       }
       return s;
@@ -657,6 +672,7 @@ function reducer(state, action) {
         if (s.playerHp <= 0) {
           s.playerHp = 0;
           s.phase = 'gameOver';
+          recordRunResult(s, 'loss');
         }
       }
 
@@ -718,15 +734,20 @@ function reducer(state, action) {
 
       // Bank ALL gold immediately. Bosses then trigger the optional gamble room.
       const newGold = state.gold + gold;
+      const newTotalGold = (state.totalGoldEarned || 0) + gold;
       // Default the next bet to a reasonable fraction of new gold
       const defaultBet = Math.max(1, Math.min(newGold, Math.floor(newGold / 4) || 5));
       let nextPhase;
       if (isFinalBoss) nextPhase = 'runComplete';
       else if (isBoss) nextPhase = 'gambleRoom';
       else nextPhase = 'victory';
+      if (isFinalBoss) {
+        recordRunResult({ ...state, totalGoldEarned: newTotalGold }, 'win');
+      }
       return {
         ...state,
         gold: newGold,
+        totalGoldEarned: newTotalGold,
         chest: newChest,
         lastDropped: newDrops,
         gambleBet: defaultBet,
@@ -873,6 +894,7 @@ function reducer(state, action) {
       return transitionAfterRoom({ ...state, sacrificeChosen: null, sacrificeReward: null });
 
     case 'GAME_OVER':
+      recordRunResult(state, 'loss');
       return { ...state, phase: 'gameOver' };
 
     case 'NEXT_ROOM':
@@ -935,25 +957,55 @@ function reducer(state, action) {
       const newInv = [...state.inventory];
       newInv.splice(idx, 1);
       let s = { ...state, inventory: newInv };
-      switch (action.itemId) {
-        case 'minorHeal':
-          s.playerHp = Math.min(s.playerMaxHp, s.playerHp + 15);
-          s.lastItemEffect = { id: 'minorHeal', amount: 15 };
+      // Fused items use 2.5× the base effect (rounded)
+      const fused = action.itemId.endsWith('Fused');
+      const mult = fused ? 2.5 : 1;
+      const baseId = fused ? action.itemId.replace(/Fused$/, '') : action.itemId;
+      switch (baseId) {
+        case 'minorHeal': {
+          const heal = Math.round(15 * mult);
+          s.playerHp = Math.min(s.playerMaxHp, s.playerHp + heal);
+          s.lastItemEffect = { id: action.itemId, amount: heal };
           break;
-        case 'bomb':
-          s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - 12) };
-          s.lastItemEffect = { id: 'bomb', amount: 12 };
+        }
+        case 'bomb': {
+          const dmg = Math.round(12 * mult);
+          s.enemy = { ...s.enemy, hp: Math.max(0, s.enemy.hp - dmg) };
+          s.lastItemEffect = { id: action.itemId, amount: dmg };
           break;
-        case 'shieldBrew':
-          s.block = (s.block || 0) + 8;
-          s.lastItemEffect = { id: 'shieldBrew', amount: 8 };
+        }
+        case 'shieldBrew': {
+          const blk = Math.round(8 * mult);
+          s.block = (s.block || 0) + blk;
+          s.lastItemEffect = { id: action.itemId, amount: blk };
           break;
-        case 'extraSpin':
-          s.spinsLeft = s.spinsLeft + 1;
-          s.lastItemEffect = { id: 'extraSpin', amount: 1 };
+        }
+        case 'extraSpin': {
+          const spins = Math.max(1, Math.round(1 * mult));
+          s.spinsLeft = s.spinsLeft + spins;
+          s.lastItemEffect = { id: action.itemId, amount: spins };
           break;
+        }
       }
       return s;
+    }
+
+    case 'FUSE_ITEMS': {
+      const baseId = action.itemId;
+      const fusedId = FUSION_RECIPES[baseId];
+      if (!fusedId) return state;
+      // Need 3 of the base in chest
+      const indices = [];
+      for (let i = 0; i < state.chest.length && indices.length < 3; i++) {
+        if (state.chest[i] === baseId) indices.push(i);
+      }
+      if (indices.length < 3) return state;
+      // Remove highest indices first to keep the others valid
+      const newChest = [...state.chest];
+      indices.sort((a, b) => b - a).forEach(i => newChest.splice(i, 1));
+      // Add fused; if no room, drop it (very edge case — chest had 3+ items removed first)
+      if (newChest.length < CHEST_CAPACITY) newChest.push(fusedId);
+      return { ...state, chest: newChest };
     }
 
     case 'FINISH_REST':
@@ -1183,6 +1235,7 @@ export default function useGameState() {
   const moveToChest = useCallback((itemId) => dispatch({ type: 'MOVE_TO_CHEST', itemId }), []);
   const confirmLoadout = useCallback(() => dispatch({ type: 'CONFIRM_LOADOUT' }), []);
   const useItem = useCallback((itemId) => dispatch({ type: 'USE_ITEM', itemId }), []);
+  const fuseItems = useCallback((itemId) => dispatch({ type: 'FUSE_ITEMS', itemId }), []);
   const setGambleBet = useCallback((amount) => dispatch({ type: 'SET_GAMBLE_BET', amount }), []);
   const playGamble = useCallback((choice) => dispatch({ type: 'PLAY_GAMBLE', choice }), []);
   const leaveGamble = useCallback(() => dispatch({ type: 'LEAVE_GAMBLE' }), []);
@@ -1223,6 +1276,7 @@ export default function useGameState() {
     moveToChest,
     confirmLoadout,
     useItem,
+    fuseItems,
     setGambleBet,
     playGamble,
     leaveGamble,

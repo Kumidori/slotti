@@ -188,17 +188,33 @@ export const RELIC_IDS = SHOP_ITEMS.filter(i => i.type === 'relic').map(i => i.i
 
 // Consumables — single-use items collected in the chest, equipped into the
 // inventory before a fight, and used via the inventory bar during combat.
+// Base consumables roll from drops; fused versions (2.5× effect) come from
+// fusing 3 of the same base id at the loadout screen.
 export const CONSUMABLES = [
-  { id: 'minorHeal',  icon: '🧪' },
-  { id: 'bomb',       icon: '💣' },
-  { id: 'shieldBrew', icon: '🛡️' },
-  { id: 'extraSpin',  icon: '🔁' },
+  { id: 'minorHeal',       icon: '🧪' },
+  { id: 'bomb',            icon: '💣' },
+  { id: 'shieldBrew',      icon: '🛡️' },
+  { id: 'extraSpin',       icon: '🔁' },
+  { id: 'minorHealFused',  icon: '🧪', fused: true },
+  { id: 'bombFused',       icon: '💣', fused: true },
+  { id: 'shieldBrewFused', icon: '🛡️', fused: true },
+  { id: 'extraSpinFused',  icon: '🔁', fused: true },
 ];
 
 export const CONSUMABLE_INDEX = Object.fromEntries(CONSUMABLES.map(c => [c.id, c]));
 
+// 3× base id → 1 fused id
+export const FUSION_RECIPES = {
+  minorHeal:  'minorHealFused',
+  bomb:       'bombFused',
+  shieldBrew: 'shieldBrewFused',
+  extraSpin:  'extraSpinFused',
+};
+
 export function rollConsumable() {
-  return CONSUMABLES[Math.floor(Math.random() * CONSUMABLES.length)].id;
+  // Drops only ever yield base versions — fused ones are crafted by the player
+  const bases = CONSUMABLES.filter(c => !c.fused);
+  return bases[Math.floor(Math.random() * bases.length)].id;
 }
 
 export const CHEST_CAPACITY = 15;

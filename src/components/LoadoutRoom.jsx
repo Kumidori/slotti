@@ -1,5 +1,5 @@
 import { useTranslation } from '../i18n/useTranslation.jsx';
-import { CONSUMABLE_INDEX, CHEST_CAPACITY, INVENTORY_CAPACITY } from '../gameData';
+import { CONSUMABLE_INDEX, CHEST_CAPACITY, INVENTORY_CAPACITY, FUSION_RECIPES } from '../gameData';
 import { sfx } from '../audio';
 import '../styles/LoadoutRoom.css';
 
@@ -11,11 +11,12 @@ function ItemCell({ itemId, onClick, label }) {
   const def = CONSUMABLE_INDEX[itemId];
   return (
     <button
-      className="loadout-cell filled"
+      className={`loadout-cell filled ${def?.fused ? 'fused' : ''}`}
       onClick={() => { sfx.buttonClick(); onClick?.(itemId); }}
       title={`${t(`item.${itemId}.name`)} — ${t(`item.${itemId}.desc`)}`}
     >
       <span className="loadout-cell-icon">{def?.icon || '?'}</span>
+      {def?.fused && <span className="loadout-cell-badge">+</span>}
     </button>
   );
 }
@@ -26,11 +27,17 @@ export default function LoadoutRoom({
   pendingRoomNode,
   onMoveToInventory,
   onMoveToChest,
+  onFuse,
   onConfirm,
 }) {
   const { t } = useTranslation();
   const inventoryFull = inventory.length >= INVENTORY_CAPACITY;
   const chestFull = chest.length >= CHEST_CAPACITY;
+
+  // Detect which base items have ≥3 in chest → can be fused
+  const counts = {};
+  for (const id of chest) counts[id] = (counts[id] || 0) + 1;
+  const fusable = Object.keys(FUSION_RECIPES).filter(id => (counts[id] || 0) >= 3);
   const roomLabelKey = pendingRoomNode?.type
     ? `path.${pendingRoomNode.type}`
     : 'path.fight';
@@ -76,6 +83,26 @@ export default function LoadoutRoom({
           <div className="loadout-hint">
             {inventoryFull ? t('loadout.inventoryFull') : t('loadout.hintChest')}
           </div>
+          {fusable.length > 0 && (
+            <div className="loadout-fusions">
+              <div className="loadout-fusions-label">⚗️ {t('loadout.fusions')}</div>
+              {fusable.map(id => {
+                const baseDef = CONSUMABLE_INDEX[id];
+                const fusedDef = CONSUMABLE_INDEX[FUSION_RECIPES[id]];
+                return (
+                  <button
+                    key={id}
+                    className="loadout-fuse-btn"
+                    onClick={() => { sfx.buttonClick(); onFuse?.(id); }}
+                  >
+                    <span>{baseDef?.icon}×3</span>
+                    <span className="fuse-arrow">→</span>
+                    <span className="fuse-result">{fusedDef?.icon}<sup>+</sup></span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <button className="loadout-confirm" onClick={() => { sfx.buttonClick(); onConfirm(); }}>

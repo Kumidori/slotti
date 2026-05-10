@@ -81,7 +81,7 @@ export default function Game() {
     sacrificeSymbol, skipSacrifice, finishSacrifice,
     rerollShop, goToMenu, chooseNextRoom, finishRest, useAbility,
     setGambleBet, playGamble, leaveGamble, clearGambleAnim,
-    moveToInventory, moveToChest, confirmLoadout, useItem,
+    moveToInventory, moveToChest, confirmLoadout, useItem, fuseItems,
   } = useGameState();
 
   // Debug mode is on when ?debug=1 is in the URL or localStorage flag is set.
@@ -716,6 +716,7 @@ export default function Game() {
           pendingRoomNode={state.pendingRoomNode}
           onMoveToInventory={moveToInventory}
           onMoveToChest={moveToChest}
+          onFuse={fuseItems}
           onConfirm={confirmLoadout}
         />
       )}
