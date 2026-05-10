@@ -2,64 +2,66 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../i18n/useTranslation.jsx';
 import '../styles/ReactionOverlay.css';
 
-// Parry: random anticipation delay (you can't tap yet), then a short active window.
-// Total time on screen ≈ anticipation + window, but the only successful tap is in
-// the second slice. Tapping during anticipation counts as a miss ("too early").
-const PARRY_ANTICIPATION_MIN = 280;
-const PARRY_ANTICIPATION_MAX = 620;
-const PARRY_WINDOW_MS = 320;
+// Skill-stop parry: a cursor sweeps across a bar. Tap inside the green zone
+// to half-block; the small perfect zone in the middle = full block + counter.
+const PARRY_SWEEP_MS = 720;       // one full pass (left → right)
+const PARRY_MAX_PASSES = 3;       // auto-fail after this many passes
+const PARRY_GOOD_HALF = 0.10;     // good zone half-width (=20% of bar)
+const PARRY_PERFECT_HALF = 0.035; // perfect zone half-width (=7% of bar)
+
 const DODGE_TOTAL_MS = 1800;
 const ARROWS = ['←', '↑', '→', '↓'];
 const ARROW_KEYS = {
   ArrowLeft: '←', ArrowUp: '↑', ArrowRight: '→', ArrowDown: '↓',
 };
 
+function classifyParry(cursorPos) {
+  const dist = Math.abs(cursorPos - 0.5);
+  if (dist <= PARRY_PERFECT_HALF) return 'perfect';
+  if (dist <= PARRY_GOOD_HALF) return 'good';
+  return 'miss';
+}
+
 // prompt = { kind: 'parry' } | { kind: 'dodge', sequence: ['←','↑','→'] }
 // onResolve(reactionMult, counterDmg)
 export default function ReactionOverlay({ prompt, onResolve }) {
   const { t } = useTranslation();
   const [progress, setProgress] = useState(1);
-  const [parried, setParried] = useState(false);
-  const [parryEarly, setParryEarly] = useState(false);
-  const [parryArmed, setParryArmed] = useState(false); // window has opened
+  const [cursor, setCursor] = useState(0);
+  const [parryResult, setParryResult] = useState(null); // 'perfect' | 'good' | 'miss' | null
   const [dodgeIdx, setDodgeIdx] = useState(0);
   const [dodgeMistakes, setDodgeMistakes] = useState(0);
   const startRef = useRef(0);
-  const armRef = useRef(0); // when the parry window opens (ms since start)
   const resolvedRef = useRef(false);
 
   // (Re)set state every time a new prompt fires
   useEffect(() => {
     if (!prompt) return;
-    setParried(false);
-    setParryEarly(false);
-    setParryArmed(false);
+    setParryResult(null);
+    setCursor(0);
     setDodgeIdx(0);
     setDodgeMistakes(0);
     setProgress(1);
     resolvedRef.current = false;
     startRef.current = performance.now();
-    if (prompt.kind === 'parry') {
-      // Random anticipation before the active window
-      armRef.current = PARRY_ANTICIPATION_MIN + Math.random() * (PARRY_ANTICIPATION_MAX - PARRY_ANTICIPATION_MIN);
-      const armTimer = setTimeout(() => {
-        if (!resolvedRef.current) setParryArmed(true);
-      }, armRef.current);
-      return () => clearTimeout(armTimer);
-    }
   }, [prompt]);
 
-  // Countdown ticker — drives the shrinking timer bar
+  // Animation tick — moves the cursor (parry) or just the timer (dodge)
   useEffect(() => {
     if (!prompt) return;
-    const total = prompt.kind === 'dodge'
-      ? DODGE_TOTAL_MS
-      : armRef.current + PARRY_WINDOW_MS;
+    const totalMs = prompt.kind === 'parry'
+      ? PARRY_SWEEP_MS * PARRY_MAX_PASSES
+      : DODGE_TOTAL_MS;
     let raf;
     const tick = () => {
       const elapsed = performance.now() - startRef.current;
-      const left = Math.max(0, 1 - elapsed / total);
+      const left = Math.max(0, 1 - elapsed / totalMs);
       setProgress(left);
+      if (prompt.kind === 'parry') {
+        // Triangle wave: 0→1→0→1… across PARRY_SWEEP_MS each direction
+        const t = (elapsed / PARRY_SWEEP_MS) % 2;
+        setCursor(t <= 1 ? t : 2 - t);
+      }
       if (left > 0 && !resolvedRef.current) raf = requestAnimationFrame(tick);
       else if (!resolvedRef.current) finalize();
     };
@@ -71,32 +73,26 @@ export default function ReactionOverlay({ prompt, onResolve }) {
     if (resolvedRef.current || !prompt) return;
     resolvedRef.current = true;
     if (prompt.kind === 'parry') {
-      if (parried) onResolve(0, 5); // perfect parry: full block + 5 counter
-      else onResolve(1, 0);          // missed: full damage
+      onResolve(1, 0); // window expired — full damage
     } else {
-      // Dodge: each correct arrow = 1/N of the damage avoided
-      const correct = dodgeIdx; // number of successful steps so far
+      const correct = dodgeIdx;
       const total = prompt.sequence.length;
-      // Mistakes also dock you a step
       const effective = Math.max(0, correct - dodgeMistakes);
       const mult = Math.max(0, 1 - effective / total);
       onResolve(mult, 0);
     }
   };
 
-  const handleParry = () => {
+  const handleParryStop = () => {
     if (!prompt || prompt.kind !== 'parry' || resolvedRef.current) return;
-    if (!parryArmed) {
-      // Tapped during the anticipation phase — full damage, brief flash
-      setParryEarly(true);
-      resolvedRef.current = true;
-      // Tiny delay so player sees the "TOO EARLY" feedback before the prompt vanishes
-      setTimeout(() => onResolve(1, 0), 250);
-      return;
-    }
-    setParried(true);
+    const result = classifyParry(cursor);
+    setParryResult(result);
     resolvedRef.current = true;
-    onResolve(0, 5);
+    // Brief reveal so player sees the result before the prompt vanishes
+    const delay = 280;
+    if (result === 'perfect') setTimeout(() => onResolve(0, 5), delay);
+    else if (result === 'good') setTimeout(() => onResolve(0.5, 0), delay);
+    else setTimeout(() => onResolve(1, 0), delay);
   };
 
   const handleDodgeInput = (arrow) => {
@@ -106,7 +102,6 @@ export default function ReactionOverlay({ prompt, onResolve }) {
       const next = dodgeIdx + 1;
       setDodgeIdx(next);
       if (next >= prompt.sequence.length) {
-        // All correct — finalize with current mistakes count
         resolvedRef.current = true;
         const effective = Math.max(0, next - dodgeMistakes);
         const mult = Math.max(0, 1 - effective / prompt.sequence.length);
@@ -117,35 +112,60 @@ export default function ReactionOverlay({ prompt, onResolve }) {
     }
   };
 
-  // Keyboard support for dodge
+  // Keyboard support — Space/Enter for parry, arrows for dodge
   useEffect(() => {
-    if (!prompt || prompt.kind !== 'dodge') return;
+    if (!prompt) return;
     const onKey = (e) => {
-      const a = ARROW_KEYS[e.key];
-      if (a) { e.preventDefault(); handleDodgeInput(a); }
+      if (prompt.kind === 'parry' && (e.key === ' ' || e.key === 'Enter')) {
+        e.preventDefault();
+        handleParryStop();
+        return;
+      }
+      if (prompt.kind === 'dodge') {
+        const a = ARROW_KEYS[e.key];
+        if (a) { e.preventDefault(); handleDodgeInput(a); }
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [prompt, dodgeIdx]);
+  }, [prompt, dodgeIdx, cursor]);
 
   if (!prompt) return null;
 
   return (
     <div className="reaction-overlay">
       {prompt.kind === 'parry' && (
-        <div className="reaction-card parry">
+        <div className={`reaction-card parry ${parryResult ? 'result-' + parryResult : ''}`}>
           <div className="reaction-title">⚔️ {t('reaction.parry')}</div>
-          <div className="reaction-bar">
-            <div className="reaction-bar-fill" style={{ transform: `scaleX(${progress})` }} />
+
+          <div className="parry-bar">
+            <div
+              className="parry-zone good"
+              style={{ left: `${(0.5 - PARRY_GOOD_HALF) * 100}%`, width: `${PARRY_GOOD_HALF * 2 * 100}%` }}
+            />
+            <div
+              className="parry-zone perfect"
+              style={{ left: `${(0.5 - PARRY_PERFECT_HALF) * 100}%`, width: `${PARRY_PERFECT_HALF * 2 * 100}%` }}
+            />
+            <div
+              className="parry-cursor"
+              style={{ left: `${cursor * 100}%` }}
+            />
           </div>
+
+          <div className="parry-timer">
+            <div className="parry-timer-fill" style={{ transform: `scaleX(${progress})` }} />
+          </div>
+
           <button
-            className={`reaction-btn parry-btn ${parried ? 'hit' : ''} ${parryEarly ? 'early' : ''} ${parryArmed && !parried && !parryEarly ? 'armed' : ''}`}
-            onClick={handleParry}
+            className={`reaction-btn parry-btn ${parryResult ? 'result-' + parryResult : ''}`}
+            onClick={handleParryStop}
+            disabled={!!parryResult}
           >
-            {parried ? `✅ ${t('reaction.parryHit')}`
-              : parryEarly ? `❌ ${t('reaction.parryEarly')}`
-              : parryArmed ? `🛡️ ${t('reaction.parryNow')}`
-              : `⏳ ${t('reaction.parryWait')}`}
+            {parryResult === 'perfect' ? `✨ ${t('reaction.parryPerfect')}`
+              : parryResult === 'good' ? `🛡️ ${t('reaction.parryGood')}`
+              : parryResult === 'miss' ? `❌ ${t('reaction.parryMiss')}`
+              : `🛑 ${t('reaction.parryStop')}`}
           </button>
         </div>
       )}

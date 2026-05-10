@@ -344,7 +344,8 @@ export default function Game() {
       if (incoming > 0) parts.push(t('enemy.attack.detail.damage', { amount: incoming }));
       if (blocked > 0) parts.push(t('enemy.attack.detail.blocked', { amount: blocked }));
       if (incoming === 0 && blocked > 0) parts.unshift(t('enemy.attack.detail.fullyBlocked'));
-      if (reactionMult === 0) parts.unshift('🛡️ PARRY');
+      if (reactionMult === 0 && counterDmg > 0) parts.unshift('✨ PERFECT PARRY');
+      else if (reactionMult === 0) parts.unshift('🛡️ PARRY');
       else if (reactionMult < 1) parts.unshift(`💨 −${Math.round((1 - reactionMult) * 100)}%`);
       setComboAnim({
         text: isFrenzy
