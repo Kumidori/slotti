@@ -8,6 +8,7 @@ import Overlay from './Overlay';
 import FloatNumber from './FloatNumber';
 import SymbolPicker from './SymbolPicker';
 import GambleRoom from './GambleRoom';
+import BossIntro from './BossIntro';
 import AchievementToast from './AchievementToast';
 import SacrificeRoom from './SacrificeRoom';
 import SymbolPool from './SymbolPool';
@@ -74,6 +75,7 @@ export default function Game() {
     sacrificeSymbol, skipSacrifice, finishSacrifice,
     rerollShop, goToMenu, chooseNextRoom, finishRest, useAbility,
     setGambleBet, playGamble, leaveGamble, clearGambleAnim,
+    dismissBossIntro,
   } = useGameState();
 
   // Debug mode is on when ?debug=1 is in the URL or localStorage flag is set.
@@ -761,6 +763,10 @@ export default function Game() {
       ))}
 
       <AchievementToast />
+
+      {state.bossIntroPending && state.enemy?.isBoss && (
+        <BossIntro enemy={state.enemy} onDismiss={dismissBossIntro} />
+      )}
 
       {debugOn && state.phase !== 'menu' && (
         <div className="debug-panel">
