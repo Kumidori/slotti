@@ -66,6 +66,7 @@ export default function Leaderboard({ onClose }) {
       return <p className="leaderboard-empty">{t('leaderboard.empty')}</p>;
     }
     return (
+      <div className="leaderboard-table-wrap">
       <table className="leaderboard-table">
         <thead>
           <tr>
@@ -109,6 +110,7 @@ export default function Leaderboard({ onClose }) {
           })}
         </tbody>
       </table>
+      </div>
     );
   };
 

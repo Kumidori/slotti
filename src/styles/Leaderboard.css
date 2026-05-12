@@ -14,15 +14,20 @@
   border: 2px solid #f1c40f;
   border-radius: 16px;
   padding: 18px 16px;
-  max-width: 520px;
+  max-width: 760px;
   width: 100%;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.leaderboard-table-wrap {
+  width: 100%;
+  overflow-x: auto;
 }
 
 .leaderboard-inner h2 {
@@ -126,13 +131,19 @@
   border-collapse: collapse;
   font-size: 12px;
   color: #ddd;
+  table-layout: auto;
 }
 
 .leaderboard-table th,
 .leaderboard-table td {
-  padding: 6px 8px;
+  padding: 6px 6px;
   text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.leaderboard-table .cell-date {
+  font-size: 10px;
 }
 
 .leaderboard-table th {
