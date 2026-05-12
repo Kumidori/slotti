@@ -23,8 +23,10 @@ function recordRunResult(state, result) {
     tryUnlock('firstWin');
     if ((state.timesHitThisRun || 0) === 0) tryUnlock('untouchableWin');
   }
+  const name = getPlayerName();
   const entry = {
     result,
+    name: name || '',
     floor: state.floor,
     room: state.room,
     totalGoldEarned: state.totalGoldEarned || 0,
@@ -40,7 +42,6 @@ function recordRunResult(state, result) {
   };
   recordRun(entry);
   // Fire-and-forget: if the player set a name, send the run to the online board
-  const name = getPlayerName();
   if (name) submitOnline(entry, name);
 }
 

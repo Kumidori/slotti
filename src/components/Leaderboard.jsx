@@ -137,7 +137,7 @@ export default function Leaderboard({ onClose }) {
             <div className="leaderboard-name-row">
               <input
                 type="text"
-                className="leaderboard-name-input"
+                className={`leaderboard-name-input ${!name.trim() && latestLocal ? 'needs-name' : ''}`}
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
                 placeholder={t('leaderboard.namePlaceholder')}
@@ -147,12 +147,23 @@ export default function Leaderboard({ onClose }) {
                 className="leaderboard-submit"
                 onClick={handleSubmitLatest}
                 disabled={!latestLocal || !name.trim() || submitting}
+                title={
+                  !latestLocal ? t('leaderboard.disabledNoRun')
+                  : !name.trim() ? t('leaderboard.disabledNoName')
+                  : ''
+                }
               >
                 {submitting ? '…'
                   : justSubmitted ? `✅ ${t('leaderboard.submitted')}`
                   : `📤 ${t('leaderboard.submitLatest')}`}
               </button>
             </div>
+            {!latestLocal && (
+              <p className="leaderboard-hint">{t('leaderboard.disabledNoRun')}</p>
+            )}
+            {latestLocal && !name.trim() && (
+              <p className="leaderboard-hint">{t('leaderboard.disabledNoName')}</p>
+            )}
             {onlineError && (
               <p className="leaderboard-error">{t('leaderboard.errorLoad')}</p>
             )}
@@ -162,7 +173,7 @@ export default function Leaderboard({ onClose }) {
           </>
         )}
 
-        {tab === 'local' && renderTable(localEntries)}
+        {tab === 'local' && renderTable(localEntries, { showName: true })}
 
         <button className="leaderboard-close" onClick={onClose}>
           {t('leaderboard.close')}
