@@ -1070,15 +1070,30 @@ function reducer(state, action) {
         justUnlockedRows = true;
       }
       const newGold = state.gold + gold;
+      const newTotalGold = (state.totalGoldEarned || 0) + gold;
+      const newEnemiesDefeated = (state.totalEnemiesDefeated || 0) + 1;
+      const newSpeedBonus = (state.totalSpeedBonus || 0) + Math.max(0, state.spinsLeft || 0);
       const defaultBet = Math.max(1, Math.min(newGold, Math.floor(newGold / 4) || 5));
       let nextPhase;
       if (isFinalBoss) nextPhase = 'runComplete';
       else if (isBoss) nextPhase = 'gambleRoom';
       else nextPhase = 'victory';
+      // Mirror ENEMY_DEFEATED: record the run when the final boss falls
+      if (isFinalBoss) {
+        recordRunResult({
+          ...state,
+          totalGoldEarned: newTotalGold,
+          totalEnemiesDefeated: newEnemiesDefeated,
+          totalSpeedBonus: newSpeedBonus,
+        }, 'win');
+      }
       return {
         ...state,
         enemy: { ...state.enemy, hp: 0 },
         gold: newGold,
+        totalGoldEarned: newTotalGold,
+        totalEnemiesDefeated: newEnemiesDefeated,
+        totalSpeedBonus: newSpeedBonus,
         gambleBet: defaultBet,
         gambleAnim: null,
         gambleReveal: null,
